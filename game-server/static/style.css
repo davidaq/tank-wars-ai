@@ -1,0 +1,8 @@
+.main {
+  width: 95%;
+  max-width: 100em;
+  margin: 0 auto;
+}
+[data-template] {
+  display: none;
+}
