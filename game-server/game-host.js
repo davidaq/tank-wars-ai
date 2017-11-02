@@ -14,17 +14,18 @@ const Obstacles = 35;
 const InitTank = 5;
 
 class GameHost extends EventEmitter {
-  constructor (id, red, blue, total) {
+  constructor (id, red, blue, total, beginRound = 0) {
     super();
     this.id = id;
     this.red = red;
     this.blue = blue;
     this.total = total;
+    this.beginRound = beginRound;
     this.playRounds();
   }
   playRounds () {
     return co.wrap(function * () {
-      for (let i = 0; i < this.total; i++) {
+      for (let i = this.beginRound; i < this.total; i++) {
         yield this.playRound(i);
       }
     }).call(this).then(() => null, err => console.error(err.stack));
@@ -43,6 +44,7 @@ class GameHost extends EventEmitter {
         }
         yield this.callApi('move');
         this.calcState();
+        this.emit('state');
       }
       const fwriter = fs.createWriteStream(path.join(__dirname, 'db', this.roundId + '.json.gz'));
       const writer = zlib.createGzip();
@@ -151,9 +153,9 @@ class GameHost extends EventEmitter {
   calcStateMoveTank (scene, myTank, myResp, myBullet) {
     try {
       for (let i = 0; i < myTank.length; i++) {
-        const move = myResp[i];
+        const tank = clone(myTank[i]);
+        const move = myResp[tank.id];
         if (move) {
-          const tank = clone(myTank[i]);
           switch (move) {
             case 'move':
               switch (tank.direction) {
@@ -255,15 +257,9 @@ class GameHost extends EventEmitter {
           } else if (target.t === 'r') {
             scene[bullet.y][bullet.x] = 0;
             this.redTank.splice(target.i, 1);
-            if (Array.isArray(this.redResp)) {
-              this.redResp.splice(target.i, 1);
-            }
           } else if (target.t === 'b') {
             scene[bullet.y][bullet.x] = 0;
             this.blueTank.splice(target.i, 1);
-            if (Array.isArray(this.blueResp)) {
-              this.blueResp.splice(target.i, 1);
-            }
           }
           removeBullet = true;
         }
@@ -274,41 +270,55 @@ class GameHost extends EventEmitter {
       }
     }
   }
-  callApi (action) {
-    this.blueResp = false;
-    this.redResp = false;
-    return Promise.all([
-      fetch(this.blue, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          uuid: this.roundId,
-          action: action,
-          state: {
-            terain: this.terain,
-            myTank: this.blueTank,
-            myBullet: this.blueBullet,
-            opponentTank: this.redTank,
-            opponentBullet: this.redBullet,
-          },
-        }),
-      }).then(r => r.json()).then(v => this.blueResp = v, err => this.blueResp = []),
-      fetch(this.red, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          uuid: this.roundId,
-          action: action,
-          state: {
-            terain: this.terain,
-            myTank: this.redTank,
-            myBullet: this.redBullet,
-            opponentTank: this.blueTank,
-            opponentBullet: this.blueBullet,
-          },
-        }),
-      }).then(r => r.json()).then(v => this.redResp = v, err => this.redResp = []),
-    ]);
+  getState (side) {
+    if (side === 'blue') {
+      return {
+        terain: this.terain,
+        myTank: this.blueTank,
+        myBullet: this.blueBullet,
+        opponentTank: this.redTank,
+        opponentBullet: this.redBullet,
+      };
+    } else {
+      return {
+        terain: this.terain,
+        myTank: this.redTank,
+        myBullet: this.redBullet,
+        opponentTank: this.blueTank,
+        opponentBullet: this.blueBullet,
+      };
+    }
+  }
+  callApi (action, side) {
+    if (!side) {
+      return Promise.all([
+        this.callApi(action, 'red'),
+        this.callApi(action, 'blue'),
+      ]);
+    }
+    return co.wrap(function * () {
+      this[side + 'Resp'] = false;
+      if (typeof this[side] === 'function') {
+        yield new Promise(cb => {
+          this[side + 'Resp'] = this[side]((moves, waitCalc) => {
+            this.once('state', () => {
+              waitCalc(this.getState(side));
+            });
+            cb(moves);
+          });
+        });
+      } else {
+        this[side + 'Resp'] = yield fetch(this[side], {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            uuid: this.roundId,
+            action: action,
+            state: this.getState(side),
+          }),
+        }).then(r => r.json(), err => []);
+      }
+    }).call(this);
   }
 }
 

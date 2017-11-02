@@ -12,6 +12,7 @@ class GameList extends EventEmitter {
     }, 15000);
     this.list = [];
     this.map = {};
+    this.clientHost = {};
     fs.readFile(path.resolve(__dirname, 'db', 'list.txt'), 'utf-8', (err, data) => {
       if (err) {
         return;
@@ -54,16 +55,18 @@ class GameList extends EventEmitter {
   }
 
   createGame (opt, isInit = false) {
-    let createGameHost = false;
+    if (!isInit) {
+      opt.id = shortid.generate();
+      opt.createtime = Date.now();
+      opt.games = [];
+    }
     if (opt.client) {
-      if (!isInit) {
-        opt.id = shortid.generate();
-      }
+      opt.client = true;
+      opt.total = opt.games.length;
     } else {
+      opt.client = false;
+      let createGameHost = false;
       if (!isInit) {
-        opt.id = shortid.generate();
-        opt.createtime = Date.now();
-        opt.games = [];
         this.emit('game', opt);
         fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify(opt) + '\n', err => null);
         createGameHost = true;
@@ -96,6 +99,108 @@ class GameList extends EventEmitter {
         fs.unlink(path.resolve(__dirname, 'db', `${id}_${i}.json.gz`), err => null);
       }
     }
+  }
+
+  hostClients (id, side, cb) {
+    if (!this.map[id]) {
+      return cb();
+    }
+    if (!this.clientHost[id]) {
+      this.clientHost[id] = {
+        ready: {
+          red: false,
+          blue: false,
+        },
+        move: {
+          red: null,
+          blue: null,
+        },
+      };
+      setTimeout(() => this.beginClientHostedGame(id), 5000);
+    }
+    const host = this.clientHost[id];
+    if (host.ready[side]) {
+      return cb();
+    }
+    if (host.game) {
+      host.ready[side] = true;
+      cb(host.game.getState(side));
+    } else if (host.ready.red && host.ready.blue) {
+      host.ready[side] = cb;
+      this.beginClientHostedGame(id);
+    }
+  }
+
+  beginClientHostedGame (id) {
+    if (!this.map[id]) {
+      return;
+    }
+    const gameOpt = this.map[id].opt;
+    const host = this.clientHost[id];
+    if (!host || host.game) {
+      return;
+    }
+    const game = new GameHost(id, this.clientMoveProvider(id, 'red'), this.clientMoveProvider(id, 'blue'), gameOpt.total + 1, gameOpt.total);
+    host.game = game;
+    gameOpt.total++;
+    this.emit('game', gameOpt);
+    if (host.ready.red) {
+      host.ready.red(game.getState('red'));
+      host.ready.red = true;
+    }
+    if (host.ready.blue) {
+      host.ready.blue(game.getState('red'));
+      host.ready.blue = true;
+    }
+  }
+
+  clientMove (id, side, moves, cb) {
+    const host = this.clientHost[id];
+    if (!host) {
+      return;
+    }
+    if (host.move[side]) {
+      return cb();
+    }
+    host.move[side] = { moves,  cb };
+  }
+
+  clientMoveProvider (id, side) {
+    const host = this.clientHost[id];
+    if (!host) {
+      return;
+    }
+    return (cb) => {
+      let timedOut = false;
+      const timeout = setTimeout(() => {
+        timedOut = true;
+      }, 3000);
+      const interval = setInterval(() => {
+        if (host.move[side]) {
+          clearTimeout(timeout);
+          clearInterval(interval);
+          cb(host.move[side].moves, state => {
+            host.move[side].cb(state);
+          });
+        } else if (!host.ready[side] || timedOut) {
+          clearTimeout(timeout);
+          clearInterval(interval);
+          const moves = {};
+          host.game.getState(side).myTanks.forEach(tank => {
+            moves[tank.id] = (() => {
+              switch (Math.floor(Math.random() * 7)) {
+                case 0: return 'fire';
+                case 1: return 'left';
+                case 2: return 'right';
+                case 3: return 'stay';
+                default: return 'move';
+              }
+            })();
+          });
+          cb(moves, () => null);
+        }
+      }, 50);
+    };
   }
 }
 

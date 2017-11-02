@@ -24,7 +24,7 @@ router.use('/db', (req, res) => {
   });
 });
 
-router.get('/game-list', (req, res) => {
+router.get('/game/-events', (req, res) => {
   res.writeHead(200, {
     'content-type': 'text/event-stream',
   });
@@ -54,7 +54,7 @@ router.get('/game-list', (req, res) => {
   gameList.on('keepalive', keepaliveHandler);
 });
 
-router.post('/create-game', (req, res) => {
+router.post('/game', (req, res) => {
   req.pipe(concat(buffer => {
     gameList.createGame(JSON.parse(buffer));
   }));
@@ -66,22 +66,54 @@ router.delete('/game/:id', (req, res) => {
   res.end();
 });
 
-const pat = ['fire', 'fire', 'move', 'move'];
-let c = 0;
+// try to take side in a new match
+router.get('/game/:id/match/:side', (req, res) => {
+  if (['red', 'blue'].indexOf(req.params.side) === -1) {
+    res.writeHead(400);
+    res.end('side must be red or blue');
+    return;
+  }
+  gameList.hostClients(req.params.id, req.params.side, state => {
+    if (!state) {
+      res.writeHead(404);
+      res.end('game not found or match already started');
+    } else {
+      res.end(JSON.stringify(state));
+    }
+  });
+});
+
+// emit command and receive results
+router.post('/game/:id/match/:side', (req, res) => {
+  req.pipe(concat(buffer => {
+    const moves = JSON.parse(buffer);
+    gameList.clientMove(req.params.id, req.params.side, moves, state => {
+      if (!state) {
+        res.writeHead(404);
+        res.end('game not found or move already set');
+      } else {
+        res.end(JSON.stringify(state));
+      }
+    });
+  }));
+});
+
 router.post('/random-player', (req, res) => {
   req.pipe(concat(buffer => {
     const msg = JSON.parse(buffer);
     if (msg.action === 'move') {
-      const resp = msg.state.myTank.map(() => {
-        switch (Math.floor(Math.random() * 7)) {
-          case 0: return 'fire';
-          case 1: return 'left';
-          case 2: return 'right';
-          case 3: return 'stay';
-          default: return 'move';
-        }
+      const resp = {};
+      msg.state.myTank.forEach(tank => {
+        resp[tank.id] = (() => {
+          switch (Math.floor(Math.random() * 7)) {
+            case 0: return 'fire';
+            case 1: return 'left';
+            case 2: return 'right';
+            case 3: return 'stay';
+            default: return 'move';
+          }
+        })();
       });
-      c++;
       res.end(JSON.stringify(resp));
     } else {
       res.end('[]');

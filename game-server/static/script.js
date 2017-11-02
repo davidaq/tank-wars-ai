@@ -29,7 +29,7 @@ function receiveGameList () {
       $list.appendChild($el.querySelector('tr'));
     });
   }, 500);
-  const sse = new EventSource('/game-list');
+  const sse = new EventSource('/game/-events');
   // sse.addEventListener('reset', evt => {
   //   gameList = [];
   //   filteredList = false;
@@ -76,7 +76,7 @@ function createGame () {
   if (document.querySelector(`[name="game-client"]`).checked) {
     data.connect = true;
   }
-  fetch('/create-game', {
+  fetch('/game', {
     method: 'post',
     body: JSON.stringify(data),
   });
