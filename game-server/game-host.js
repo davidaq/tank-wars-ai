@@ -119,6 +119,14 @@ class GameHost extends EventEmitter {
     const removedBullet = {};
     this.calcStateMoveBullet(scene, this.blueBullet, removedBullet);
     this.calcStateMoveBullet(scene, this.redBullet, removedBullet);
+    this.history.push(clone({
+      blueTank: this.blueTank,
+      blueBullet: this.blueBullet,
+      redTank: this.redTank,
+      redBullet: this.redBullet,
+    }));
+    this.calcStateMoveBullet(scene, this.blueBullet, removedBullet);
+    this.calcStateMoveBullet(scene, this.redBullet, removedBullet);
     this.calcStateMoveTank(scene, this.blueTank, this.blueResp, this.blueBullet);
     this.calcStateMoveTank(scene, this.redTank, this.redResp, this.redBullet);
     this.history.push(clone({
@@ -127,8 +135,6 @@ class GameHost extends EventEmitter {
       redTank: this.redTank,
       redBullet: this.redBullet,
     }));
-    this.blueBullet = this.blueBullet.filter(bullet => !removedBullet[bullet.id]);
-    this.redBullet = this.redBullet.filter(bullet => !removedBullet[bullet.id]);
   }
   calcStateMoveTank (scene, myTank, myResp, myBullet) {
     try {
@@ -209,44 +215,49 @@ class GameHost extends EventEmitter {
       console.error(err.stack);
     }
   }
-  calcStateMoveBullet (scene, myBullet, removedBullet) {
+  calcStateMoveBullet (scene, myBullet) {
     for (let i = 0; i < myBullet.length; i++) {
       const bullet = myBullet[i];
-      for (let j = 0; j < 2; j++) {
-        switch (bullet.direction) {
-          case 'up':
-            bullet.y--;
-            break;
-          case 'down':
-            bullet.y++;
-            break;
-          case 'left':
-            bullet.x--;
-            break;
-          case 'right':
-            bullet.x++;
-            break;
-        }
-        let removeBullet = false;
-        if (bullet.x < 0 || bullet.x >= MapWidth || bullet.y < 0 || bullet.y >= MapHeight) {
-          removeBullet = true;
-        } else {
-          const target = scene[bullet.y][bullet.x];
-          if (target) {
-            if (target === 1) {
-              // hit wall
-            } else if (target.t === 'r') {
-              this.redTank.splice(target.i, 1);
-            } else if (target.t === 'b') {
-              this.blueTank.splice(target.i, 1);
-            }
-            removeBullet = true;
-          }
-        }
-        if (removeBullet) {
-          removedBullet[bullet.id] = 1;
+      switch (bullet.direction) {
+        case 'up':
+          bullet.y--;
           break;
+        case 'down':
+          bullet.y++;
+          break;
+        case 'left':
+          bullet.x--;
+          break;
+        case 'right':
+          bullet.x++;
+          break;
+      }
+      let removeBullet = false;
+      if (bullet.x < 0 || bullet.x >= MapWidth || bullet.y < 0 || bullet.y >= MapHeight) {
+        removeBullet = true;
+      } else {
+        const target = scene[bullet.y][bullet.x];
+        if (target) {
+          if (target === 1) {
+            // hit wall
+          } else if (target.t === 'r') {
+            this.redTank.splice(target.i, 1);
+            if (Array.isArray(this.redResp)) {
+              this.redResp.splice(target.i, 1);
+            }
+          } else if (target.t === 'b') {
+            this.blueTank.splice(target.i, 1);
+            if (Array.isArray(this.blueResp)) {
+              this.blueResp.splice(target.i, 1);
+            }
+          }
+          removeBullet = true;
         }
+      }
+      if (removeBullet) {
+        myBullet.splice(i, 1);
+        i--;
+        break;
       }
     }
   }

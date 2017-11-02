@@ -100,6 +100,9 @@ async function setupReplay () {
     .transition {
       transition: all ${Math.max(50, document.querySelector('#interval').value - 0) / 1000}s linear;
     }
+    .transition.bullet {
+      transition: all ${Math.max(50, document.querySelector('#interval').value - 0) / 2000}s linear;
+    }
     `));
     document.querySelector('head').appendChild($style);
   }, 1000);
@@ -170,7 +173,7 @@ async function setupReplay () {
         }, playInterval);
       }
     });
-    await new Promise(cb => setTimeout(cb, playInterval));
+    await new Promise(cb => setTimeout(cb, playInterval / 2));
     hi++;
     document.querySelector('#pos').value = hi;
   }
