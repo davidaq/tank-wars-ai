@@ -1,7 +1,7 @@
 const { EventEmitter } = require('events');
 const co = require('co');
 const fetch = require('isomorphic-fetch');
-const UUID = require('uuid');
+const shortid = require('shortid');
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
@@ -110,8 +110,8 @@ class GameHost extends EventEmitter {
         const x = Math.floor(Math.random() * MapWidth);
         const y = Math.floor(Math.random() * MapHeight);
         if (this.terain[y][x] === 0) {
-          this.blueTank.push({ x, y, direction: 'right', id: UUID.v4() });
-          this.redTank.push({ x: MapWidth - x - 1, y: MapHeight - y - 1, direction: 'left', id: UUID.v4() });
+          this.blueTank.push({ x, y, direction: 'right', id: shortid.generate() });
+          this.redTank.push({ x: MapWidth - x - 1, y: MapHeight - y - 1, direction: 'left', id: shortid.generate() });
           break;
         }
       }
@@ -208,7 +208,7 @@ class GameHost extends EventEmitter {
                 x: tank.x,
                 y: tank.y,
                 direction: tank.direction,
-                id: UUID.v4(),
+                id: shortid.generate(),
               });
               break;
           }

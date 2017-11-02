@@ -26,7 +26,6 @@ body, html {
   background: #AAA;
   color: #000;
   transform: scale(0.55);
-  transition: all 0.3s ease;
 }
 .rounds .round:hover {
   transform: scale(1);

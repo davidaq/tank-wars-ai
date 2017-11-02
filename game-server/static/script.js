@@ -16,7 +16,7 @@ function receiveGameList () {
     }
     if (!filteredList) {
       filteredList = gameList.filter(item => {
-        return !item.__del && (nameFilter ? item.title.indexOf(nameFilter) > -1 : true);
+        return !item.__del && (nameFilter ? item.title.indexOf(nameFilter) > -1 || item.id.indexOf(nameFilter) > -1 : true);
       });
       filteredList.reverse();
     }
@@ -73,6 +73,9 @@ function createGame () {
   ['title', 'total', 'red', 'blue'].forEach(f => {
     data[f] = document.querySelector(`[name="game-${f}"]`).value;
   });
+  if (document.querySelector(`[name="game-client"]`).checked) {
+    data.connect = true;
+  }
   fetch('/create-game', {
     method: 'post',
     body: JSON.stringify(data),
@@ -93,6 +96,7 @@ async function setupReplay () {
     cellSize = Math.floor(Math.min((window.innerWidth - 50) / terain[0].length, (window.innerHeight - 200) / terain.length));
     $style.parentElement.removeChild($style);
     $style = document.createElement('style');
+    const playInterval = Math.min(2000, Math.max(50, document.querySelector('#interval').value - 0));
     $style.appendChild(document.createTextNode(`
     .cell-size {
       width: ${cellSize}px;
@@ -105,10 +109,10 @@ async function setupReplay () {
       margin-left: ${Math.floor((window.innerWidth - cellSize * terain[0].length) / 2)}px;
     }
     .transition {
-      transition: all ${Math.max(50, document.querySelector('#interval').value - 0) / 1000}s linear;
+      transition: all ${playInterval / 1000}s linear;
     }
     .transition.bullet {
-      transition: all ${Math.max(50, document.querySelector('#interval').value - 0) / 2000}s linear;
+      transition: all ${playInterval / 2000}s linear;
     }
     `));
     document.querySelector('head').appendChild($style);
@@ -144,12 +148,13 @@ async function setupReplay () {
   };
   
   document.querySelector('#total').innerHTML = history.length / 2;
+  document.querySelector('#pos').max = history.length / 2;
   while (true) {
     if (paused || hi >= history.length) {
       await new Promise(cb => setTimeout(cb, 1000));
       continue;
     }
-    const playInterval = Math.max(50, document.querySelector('#interval').value - 0);
+    const playInterval = Math.min(2000, Math.max(50, document.querySelector('#interval').value - 0));
     const state = history[hi];
     const setObj = (type, color) => state => {
       if (!objs[state.id]) {

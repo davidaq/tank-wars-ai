@@ -1,5 +1,5 @@
 const { EventEmitter } = require('events');
-const UUID = require('uuid');
+const shortid = require('shortid');
 const fs = require('fs');
 const path = require('path');
 const GameHost = require('./game-host');
@@ -55,26 +55,32 @@ class GameList extends EventEmitter {
 
   createGame (opt, isInit = false) {
     let createGameHost = false;
-    if (!isInit) {
-      opt.id = UUID.v4();
-      opt.createtime = Date.now();
-      opt.games = [];
-      this.emit('game', opt);
-      fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify(opt) + '\n', err => null);
-      createGameHost = true;
+    if (opt.client) {
+      if (!isInit) {
+        opt.id = shortid.generate();
+      }
     } else {
-      createGameHost = opt.games.length < opt.total;
-    }
-    if (createGameHost) {
-      const game = new GameHost(opt.id, opt.red, opt.blue, opt.total);
-      game.on('round', result => {
-        opt.games.push(result);
+      if (!isInit) {
+        opt.id = shortid.generate();
+        opt.createtime = Date.now();
+        opt.games = [];
         this.emit('game', opt);
-        fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify({
-          id: opt.id,
-          __game: result,
-        }) + '\n', err => null);
-      });
+        fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify(opt) + '\n', err => null);
+        createGameHost = true;
+      } else {
+        createGameHost = opt.games.length < opt.total;
+      }
+      if (createGameHost) {
+        const game = new GameHost(opt.id, opt.red, opt.blue, opt.total);
+        game.on('round', result => {
+          opt.games.push(result);
+          this.emit('game', opt);
+          fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify({
+            id: opt.id,
+            __game: result,
+          }) + '\n', err => null);
+        });
+      }
     }
     this.map[opt.id] = { opt, index: this.list.length };
     this.list.push(opt);
