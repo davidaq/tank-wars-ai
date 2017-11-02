@@ -77,7 +77,8 @@ async function setupReplay () {
   const id = location.search.substr(1);
   const $stage = document.querySelector('#stage');
   $stage.innerHTML = 'Loading...';
-  const { terain, history } = await fetch(`/db/${id}.json`).then(r => r.json());
+  window.replay = await fetch(`/db/${id}.json`).then(r => r.json());
+  const { terain, history } = replay;
   $stage.innerHTML = '';
   let $style = document.createElement('style');
   document.querySelector('head').appendChild($style);
@@ -133,10 +134,10 @@ async function setupReplay () {
   
   window.resume = () => {
     paused = false;
-    hi = document.querySelector('#pos').value - 0;
+    hi = document.querySelector('#pos').value * 2;
   };
   
-  document.querySelector('#total').innerHTML = history.length;
+  document.querySelector('#total').innerHTML = history.length / 2;
   while (true) {
     if (paused || hi >= history.length) {
       await new Promise(cb => setTimeout(cb, 1000));
@@ -150,6 +151,7 @@ async function setupReplay () {
           $el: document.createElement('div'),
         };
         $stage.appendChild(tank.$el);
+        tank.$el.title = state.id;
       }
       const tank = objs[state.id];
       tank.stamp = hi;
@@ -175,6 +177,8 @@ async function setupReplay () {
     });
     await new Promise(cb => setTimeout(cb, playInterval / 2));
     hi++;
-    document.querySelector('#pos').value = hi;
+    if ((hi & 1) === 0 && !paused) {
+      document.querySelector('#pos').value = hi / 2;
+    }
   }
 }

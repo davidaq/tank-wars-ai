@@ -67,12 +67,13 @@ body, html {
 #stage .bullet::after {
   content: '';
   display: block;
-  width: 50%;
-  height: 50%;
+  width: 30%;
+  height: 30%;
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  border-radius: 1000px;
   background: #00F;
 }
 #stage .bullet-red::after {
