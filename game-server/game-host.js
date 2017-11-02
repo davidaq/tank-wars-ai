@@ -30,7 +30,7 @@ class GameHost extends EventEmitter {
   playRound (roundNum) {
     return co.wrap(function * () {
       this.roundId = `${this.id}_${roundNum}`;
-      const history = [];
+      this.history = [];
       this.setupTerrain();
       this.spawnTank();
       yield this.callApi('setup');
@@ -41,16 +41,10 @@ class GameHost extends EventEmitter {
         }
         yield this.callApi('move');
         this.calcState();
-        history.push(clone({
-          blueTank: this.blueTank,
-          blueBullet: this.blueBullet,
-          redTank: this.redTank,
-          redBullet: this.redBullet,
-        }));
       }
       fs.writeFile(path.join(__dirname, 'db', this.roundId + '.json'), JSON.stringify({
         terain: this.terain,
-        history,
+        history: this.history,
       }), err => {
         this.emit('round', {
           blue: this.blueTank.length,
@@ -122,10 +116,19 @@ class GameHost extends EventEmitter {
       const tank = this.redTank[i];
       scene[tank.y][tank.x] = { t: 'r', i };
     }
-    this.calcStateMoveBullet(scene, this.blueBullet);
-    this.calcStateMoveBullet(scene, this.redBullet);
+    const removedBullet = {};
+    this.calcStateMoveBullet(scene, this.blueBullet, removedBullet);
+    this.calcStateMoveBullet(scene, this.redBullet, removedBullet);
     this.calcStateMoveTank(scene, this.blueTank, this.blueResp, this.blueBullet);
     this.calcStateMoveTank(scene, this.redTank, this.redResp, this.redBullet);
+    this.history.push(clone({
+      blueTank: this.blueTank,
+      blueBullet: this.blueBullet,
+      redTank: this.redTank,
+      redBullet: this.redBullet,
+    }));
+    this.blueBullet = this.blueBullet.filter(bullet => !removedBullet[bullet.id]);
+    this.redBullet = this.redBullet.filter(bullet => !removedBullet[bullet.id]);
   }
   calcStateMoveTank (scene, myTank, myResp, myBullet) {
     try {
@@ -206,7 +209,7 @@ class GameHost extends EventEmitter {
       console.error(err.stack);
     }
   }
-  calcStateMoveBullet (scene, myBullet) {
+  calcStateMoveBullet (scene, myBullet, removedBullet) {
     for (let i = 0; i < myBullet.length; i++) {
       const bullet = myBullet[i];
       for (let j = 0; j < 2; j++) {
@@ -241,8 +244,7 @@ class GameHost extends EventEmitter {
           }
         }
         if (removeBullet) {
-          myBullet.splice(i, 1);
-          i--;
+          removedBullet[bullet.id] = 1;
           break;
         }
       }
