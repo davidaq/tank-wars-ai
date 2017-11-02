@@ -12,31 +12,32 @@
   <body>
     <div class="main" style="padding-top: 10px">
       <form class="well form-inline">
-        <div class="row">
-          <div class="span12">
-            <div>
-              <label>
-                游戏名称： <input name="game-title" type="text" value="随意的一次游戏">
-              </label>
-              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-              <label>
-                对战次数： <input name="game-total" type="number" value="1" min="1" step="10">
-              </label>
-            </div>
-            <br>
-            <div>
-              <label>
-                红方接口： <input name="game-red" type="text">
-              </label>
-              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-              <label>
-                蓝方接口： <input name="game-blue" type="text">
-              </label>
-            </div>
-            <br>
-            <a class="btn btn-primary" href="javascript:createGame();">创建游戏</a>
-          </div>
+        <div>
+          <label>
+            游戏名称： <input name="game-title" type="text" value="随意的一次游戏">
+          </label>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <label>
+            <input name="connect" type="checkbox" style="vertical-align: top" onchange="toggleAcceptClient(this.checked)">
+            <span style="display: inline-block; vertical-align: top">接收客户端连接</span>
+          </label>
         </div>
+        <br>
+        <div class="accept-client-disable">
+          <label>
+            对战次数： <input name="game-total" type="number" value="1" min="1" step="10">
+          </label>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <label>
+            红方接口： <input name="game-red" type="text">
+          </label>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <label>
+            蓝方接口： <input name="game-blue" type="text">
+          </label>
+        </div>
+        <br>
+        <a class="btn btn-primary" href="javascript:createGame();">创建游戏</a>
       </form>
       <div>
         <form class="form-inline">
@@ -47,9 +48,10 @@
         <table class="table table-striped table-hover">
           <thead>
             <tr>
-              <th width="30%">游戏名称</th>
+              <th width="25%">游戏名称</th>
               <th width="15%">创建时间</th>
-              <th width="55%">对局</th>
+              <th width="10%">总对局数</th>
+              <th width="50%">对局</th>
             </tr>
           </thead>
           <tbody id="games">
@@ -60,17 +62,18 @@
                   <%=title%>
                 </td>
                 <td><%=new Date(createtime).toLocaleString()%></td>
+                <td><%=total%></td>
                 <td>
                   <div class="rounds">
-                    <%for (let i = 0; i < total; i ++) {const round=games[i];%>
+                    <%for (let i = Math.max(0, Math.min(total - 20, games.length - 20)), c = Math.min(total, i + 30); i < c; i ++) {const round=games[i];%>
                       <%if (round) {%>
                         <a href="/static/replay.html?<%=id%>_<%=i%>" target="_blank" class="round <%
                           if (round.blue === round.red) { %>tie<%}
                           else if (round.blue > round.red) { %>blue<%}
                           else if (round.blue < round.red) { %>red<%}
-                        %>" title="<%=round.moves%>步，蓝：<%=round.blue%> 红：<%=round.red%> "></a>
+                        %>" title="<%=round.moves%>步，蓝：<%=round.blue%> 红：<%=round.red%> "><%=i%></a>
                       <%} else {%>
-                        <div class="round" title="未玩"></div>
+                        <div class="round" title="未玩"><%=i%></div>
                       <%}%>
                     <%}%>
                   </div>

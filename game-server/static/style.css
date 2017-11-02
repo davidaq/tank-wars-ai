@@ -9,25 +9,41 @@ body, html {
 [data-template] {
   display: none;
 }
-.rounds {
-  overflow: hidden;
+.rounds::after {
+  content: '';
+  display: block;
+  clear: both;
 }
 .rounds .round {
   float: left;
-  width: 10px;
-  height: 10px;
-  margin-right: 3px;
-  margin-bottom: 3px;
+  position: relative;
+  width: 30px;
+  height: 30px;
+  margin: -5px;
+  font-size: 10px;
+  text-align: center;
+  line-height: 30px;
   background: #AAA;
+  color: #000;
+  transform: scale(0.55);
+  transition: all 0.3s ease;
+}
+.rounds .round:hover {
+  transform: scale(1);
+  color: #000;
+  z-index: 10;
 }
 .rounds .round.red {
   background: #F00;
+  color: #FFF;
 }
 .rounds .round.blue {
   background: #00F;
+  color: #FFF;
 }
 .rounds .round.tie {
   background: #0F0;
+  color: #000;
 }
 #stage {
   position: relative;

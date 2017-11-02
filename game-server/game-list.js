@@ -24,6 +24,8 @@ class GameList extends EventEmitter {
               if (opt.__del) {
                 this.list[this.map[opt.id].index] = null;
                 delete this.map[opt.id];
+              } else if (opt.__game) {
+                this.map[opt.id].opt.games.push(opt.__game);
               } else {
                 Object.assign(this.map[opt.id].opt, opt);
               }
@@ -52,21 +54,26 @@ class GameList extends EventEmitter {
   }
 
   createGame (opt, isInit = false) {
+    let createGameHost = false;
     if (!isInit) {
       opt.id = UUID.v4();
       opt.createtime = Date.now();
       opt.games = [];
       this.emit('game', opt);
       fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify(opt) + '\n', err => null);
+      createGameHost = true;
+    } else {
+      createGameHost = opt.games.length < opt.total;
+    }
+    if (createGameHost) {
       const game = new GameHost(opt.id, opt.red, opt.blue, opt.total);
-      let gamed = 0;
       game.on('round', result => {
-        gamed++;
         opt.games.push(result);
         this.emit('game', opt);
-        if (gamed == opt.total) {
-          fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify(opt) + '\n', err => null);
-        }
+        fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify({
+          id: opt.id,
+          __game: result,
+        }) + '\n', err => null);
       });
     }
     this.map[opt.id] = { opt, index: this.list.length };
@@ -80,7 +87,7 @@ class GameList extends EventEmitter {
       delete this.map[id];
       fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify({ id, __del: true }) + '\n', err => null);
       for (let i = 0; i < cache.opt.total; i++) {
-        fs.unlink(path.resolve(__dirname, 'db', `${id}_${i}.json`), err => null);
+        fs.unlink(path.resolve(__dirname, 'db', `${id}_${i}.json.gz`), err => null);
       }
     }
   }

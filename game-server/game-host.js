@@ -53,11 +53,14 @@ class GameHost extends EventEmitter {
       }));
       writer.on('error', err => null);
       fwriter.on('error', err => null);
-      fwriter.on('finish', () => {
-        this.emit('round', {
-          blue: this.blueTank.length,
-          red: this.redTank.length,
-          moves: i,
+      yield new Promise(cb => {
+        fwriter.on('finish', () => {
+          this.emit('round', {
+            blue: this.blueTank.length,
+            red: this.redTank.length,
+            moves: i,
+          });
+          cb();
         });
       });
       yield this.callApi('end');

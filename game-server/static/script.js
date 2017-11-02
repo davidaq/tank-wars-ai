@@ -62,6 +62,12 @@ function receiveGameList () {
   window.rmGame = rmGame;
 }
 
+function toggleAcceptClient(accept) {
+  document.querySelectorAll('.accept-client-disable input').forEach(ele => {
+    ele.disabled = accept;
+  });
+}
+
 function createGame () {
   const data = {};
   ['title', 'total', 'red', 'blue'].forEach(f => {
