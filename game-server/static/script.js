@@ -139,8 +139,6 @@ async function setupReplay () {
       await new Promise(cb => setTimeout(cb, 1000));
       continue;
     }
-    hi++;
-    document.querySelector('#pos').value = hi;
     const playInterval = Math.max(50, document.querySelector('#interval').value - 0);
     const state = history[hi];
     const setObj = (type, color) => state => {
@@ -173,5 +171,7 @@ async function setupReplay () {
       }
     });
     await new Promise(cb => setTimeout(cb, playInterval));
+    hi++;
+    document.querySelector('#pos').value = hi;
   }
 }
