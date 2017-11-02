@@ -58,7 +58,6 @@ router.delete('/game/:id', (req, res) => {
 
 router.post('/random-player', (req, res) => {
   req.pipe(concat(buffer => {
-    require('fs').writeFile('tttt', buffer.toString(), err => null);
     const msg = JSON.parse(buffer);
     if (msg.action === 'move') {
       const resp = msg.state.myTank.map(() => {
