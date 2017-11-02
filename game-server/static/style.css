@@ -1,3 +1,6 @@
+body, html {
+  height: 100%;
+}
 .main {
   width: 95%;
   max-width: 100em;
@@ -5,4 +8,89 @@
 }
 [data-template] {
   display: none;
+}
+.rounds {
+  overflow: hidden;
+}
+.rounds .round {
+  float: left;
+  width: 10px;
+  height: 10px;
+  margin-right: 3px;
+  margin-bottom: 3px;
+  background: #AAA;
+}
+.rounds .round.red {
+  background: #F00;
+}
+.rounds .round.blue {
+  background: #00F;
+}
+.rounds .round.tie {
+  background: #0F0;
+}
+#stage {
+  position: relative;
+  overflow: hidden;
+}
+#stage .terain {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+#stage .terain .cell {
+  background: #EEE;
+  float: left;
+}
+#stage .terain .cell.cell-1 {
+  background: #555;
+}
+#stage .terain .linebreak {
+  clear: both;
+}
+
+#stage .tank {
+  background: url(/static/tank-blue.png) no-repeat center center;
+  background-size: contain;
+  position: absolute;
+  z-index: 10;
+  opacity: 1;
+}
+#stage .tank-red {
+  background-image: url(/static/tank-red.png);
+}
+#stage .bullet {
+  position: absolute;
+  z-index: 10;
+  opacity: 1;
+}
+#stage .bullet::after {
+  content: '';
+  display: block;
+  width: 50%;
+  height: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #00F;
+}
+#stage .bullet-red::after {
+  background: #F00;
+}
+#stage .direction-up {
+  transform: rotate(0deg);
+}
+#stage .direction-left {
+  transform: rotate(-90deg);
+}
+#stage .direction-right {
+  transform: rotate(90deg);
+}
+#stage .direction-down {
+  transform: rotate(180deg);
+}
+#stage .destroyed {
+  transform: scale(10);
+  opacity: 0;
 }

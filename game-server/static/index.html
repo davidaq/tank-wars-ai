@@ -26,11 +26,11 @@
             <br>
             <div>
               <label>
-                红方接口： <input name="game-red" type="text" value="http://">
+                红方接口： <input name="game-red" type="text">
               </label>
               &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
               <label>
-                蓝方接口： <input name="game-blue" type="text" value="http://">
+                蓝方接口： <input name="game-blue" type="text">
               </label>
             </div>
             <br>
@@ -47,26 +47,34 @@
         <table class="table table-striped table-hover">
           <thead>
             <tr>
-              <th width="40%">游戏名称</th>
-              <th width="0%"></th>
-              <th width="15%">局数</th>
-              <th width="15%">蓝胜</th>
-              <th width="15%">红胜</th>
-              <th width="15%">平局</th>
+              <th width="30%">游戏名称</th>
+              <th width="15%">创建时间</th>
+              <th width="55%">对局</th>
             </tr>
           </thead>
           <tbody id="games">
             <script id="gameCardTemplate" type="template">
               <tr>
-                <td><%=title%></td>
-                <td width="0%" nowrap>
-                  <a class="btn btn-mini" href="/static/replay?<%=id%>_0">观看回放</a>
-                  <a class="btn btn-mini btn-danger" href="javascript:void(0)" onclick="rmGame('<%=id%>')">删除记录</a>
+                <td>
+                  <a class="btn btn-mini btn-danger" href="javascript:void(0)" onclick="rmGame('<%=id%>')">删除</a>
+                  <%=title%>
                 </td>
-                <td><%=total%></td>
-                <td><%=blueWin%></td>
-                <td><%=redWin%></td>
-                <td><%=tie%></td>
+                <td><%=new Date(createtime).toLocaleString()%></td>
+                <td>
+                  <div class="rounds">
+                    <%for (let i = 0; i < total; i ++) {const round=games[i];%>
+                      <%if (round) {%>
+                        <a href="/static/replay.html?<%=id%>_<%=i%>" target="_blank" class="round <%
+                          if (round.blue === round.red) { %>tie<%}
+                          else if (round.blue > round.red) { %>blue<%}
+                          else if (round.blue < round.red) { %>red<%}
+                        %>" title="<%=round.moves%>步，蓝：<%=round.blue%> 红：<%=round.red%> "></a>
+                      <%} else {%>
+                        <div class="round" title="未玩"></div>
+                      <%}%>
+                    <%}%>
+                  </div>
+                </td>
               </tr>
             </script>
           </tbody>

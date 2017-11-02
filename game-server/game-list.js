@@ -11,15 +11,39 @@ class GameList extends EventEmitter {
       this.emit('keepalive');
     }, 15000);
     this.list = [];
+    this.map = {};
     fs.readFile(path.resolve(__dirname, 'db', 'list.txt'), 'utf-8', (err, data) => {
       if (err) {
         return;
       }
       data.split('\n').forEach(content => {
-        try {
-          this.createGame(JSON.parse(content), true);
-        } catch (err) {}
+        if (content) {
+          try {
+            const opt = JSON.parse(content);
+            if (this.map[opt.id]) {
+              if (opt.__del) {
+                this.list[this.map[opt.id].index] = null;
+                delete this.map[opt.id];
+              } else {
+                Object.assign(this.map[opt.id].opt, opt);
+              }
+            } else {
+              this.createGame(opt, true);
+            }
+          } catch (err) {}
+        }
       });
+      const writer = fs.createWriteStream(path.resolve(__dirname, 'db', 'list.txt.bk'));
+      writer.on('finish', () => {
+        fs.rename(path.resolve(__dirname, 'db', 'list.txt.bk'), path.resolve(__dirname, 'db', 'list.txt'), err => null);
+      });
+      this.list.forEach(item => {
+        if (item) {
+          writer.write(JSON.stringify(item));
+          writer.write('\n');
+        }
+      });
+      writer.end();
     });
   }
 
@@ -28,27 +52,37 @@ class GameList extends EventEmitter {
   }
 
   createGame (opt, isInit = false) {
-    opt.id = UUID.v4();
-    opt.createtime = Date.now();
-    opt.redWin = 0;
-    opt.blueWin = 0;
-    opt.tie = 0;
-    this.list.push(opt);
     if (!isInit) {
+      opt.id = UUID.v4();
+      opt.createtime = Date.now();
+      opt.games = [];
       this.emit('game', opt);
-      fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify(opt) + '\n');
+      fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify(opt) + '\n', err => null);
+      const game = new GameHost(opt.id, opt.red, opt.blue, opt.total);
+      let gamed = 0;
+      game.on('round', result => {
+        gamed++;
+        opt.games.push(result);
+        this.emit('game', opt);
+        if (gamed == opt.total) {
+          fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify(opt) + '\n', err => null);
+        }
+      });
     }
-    const game = new GameHost(opt.id, opt.red, opt.blue, opt.total);
-    game.on('round', winner => {
-      if (winner == 'red') {
-        opt.redWin++;
-      } else if (winner == 'blue') {
-        opt.blueWin++;
-      } else {
-        opt.tie++;
+    this.map[opt.id] = { opt, index: this.list.length };
+    this.list.push(opt);
+  }
+
+  rmGame (id) {
+    const cache = this.map[id];
+    if (cache) {
+      this.list[cache.index] = null;
+      delete this.map[id];
+      fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify({ id, __del: true }) + '\n', err => null);
+      for (let i = 0; i < cache.opt.total; i++) {
+        fs.unlink(path.resolve(__dirname, 'db', `${id}_${i}.json`), err => null);
       }
-      this.emit('game', opt);
-    });
+    }
   }
 }
 

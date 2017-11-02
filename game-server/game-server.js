@@ -1,5 +1,9 @@
 const http = require('http');
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
+
+fs.mkdir(path.join(__dirname, 'db'), err => null);
 
 const PORT = process.env.PORT || 8777;
 

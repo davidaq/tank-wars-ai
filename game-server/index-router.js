@@ -12,6 +12,7 @@ router.get('/', (req, res, next) => {
 });
 
 router.use('/static', serveStatic(path.resolve(__dirname, 'static')));
+router.use('/db', serveStatic(path.resolve(__dirname, 'db')));
 
 router.get('/game-list', (req, res) => {
   res.writeHead(200, {
@@ -19,7 +20,9 @@ router.get('/game-list', (req, res) => {
   });
   res.write(`event: reset\ndata: reset\n\n`);
   gameList.forEach((item) => {
-    res.write(`event: game\ndata: ${JSON.stringify(item)}\n\n`);
+    if (item) {
+      res.write(`event: game\ndata: ${JSON.stringify(item)}\n\n`);
+    }
   });
   const gameHandler = item => {
     if (req.socket.destroyed) {
@@ -46,4 +49,29 @@ router.post('/create-game', (req, res) => {
     gameList.createGame(JSON.parse(buffer));
   }));
   res.end();
+});
+
+router.delete('/game/:id', (req, res) => {
+  gameList.rmGame(req.params.id);
+  res.end();
+});
+
+router.post('/random-player', (req, res) => {
+  req.pipe(concat(buffer => {
+    require('fs').writeFile('tttt', buffer.toString(), err => null);
+    const msg = JSON.parse(buffer);
+    if (msg.action === 'move') {
+      const resp = msg.state.myTank.map(() => {
+        switch (Math.floor(Math.random() * 6)) {
+          case 0: return 'fire';
+          case 1: return 'left';
+          case 2: return 'right';
+          default: return 'move';
+        }
+      });
+      res.end(JSON.stringify(resp));
+    } else {
+      res.end('[]');
+    }
+  }));
 });
