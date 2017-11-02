@@ -7,8 +7,8 @@ const path = require('path');
 const zlib = require('zlib');
 const clone = require('clone');
 
-const MaxMoves = 800;
-const MapWidth = 80;
+const MaxMoves = 1000;
+const MapWidth = 50;
 const MapHeight = 30;
 const Obstacles = 35;
 const InitTank = 5;
@@ -34,15 +34,21 @@ class GameHost extends EventEmitter {
     return co.wrap(function * () {
       this.roundId = `${this.id}_${roundNum}`;
       this.history = [];
+      this.stepsMoved = 0;
+      this.blueEvents = [];
+      this.redEvents = [];
       this.setupTerrain();
       this.spawnTank();
       yield this.callApi('setup');
       let i = 0;
       for (; i < MaxMoves; i++) {
+        this.stepsMoved = i;
         if (this.blueTank.length === 0 || this.redTank.length === 0) {
           break;
         }
         yield this.callApi('move');
+        this.blueEvents = [];
+        this.redEvents = [];
         this.calcState();
         this.emit('state');
       }
@@ -112,8 +118,8 @@ class GameHost extends EventEmitter {
         const x = Math.floor(Math.random() * MapWidth);
         const y = Math.floor(Math.random() * MapHeight);
         if (this.terain[y][x] === 0) {
-          this.blueTank.push({ x, y, direction: 'right', id: shortid.generate() });
-          this.redTank.push({ x: MapWidth - x - 1, y: MapHeight - y - 1, direction: 'left', id: shortid.generate() });
+          this.blueTank.push({ color: 'blue', x, y, direction: 'right', id: shortid.generate() });
+          this.redTank.push({ color: 'red', x: MapWidth - x - 1, y: MapHeight - y - 1, direction: 'left', id: shortid.generate() });
           break;
         }
       }
@@ -151,6 +157,9 @@ class GameHost extends EventEmitter {
     }));
   }
   calcStateMoveTank (scene, myTank, myResp, myBullet) {
+    if (!myResp) {
+      myResp = {};
+    }
     try {
       for (let i = 0; i < myTank.length; i++) {
         const tank = clone(myTank[i]);
@@ -211,16 +220,29 @@ class GameHost extends EventEmitter {
                 y: tank.y,
                 direction: tank.direction,
                 id: shortid.generate(),
+                from: tank.id,
+                color: tank.color,
               });
               break;
           }
           if (move === 'move') {
             if (tank.x < 0 || tank.x >= MapWidth || tank.y < 0 || tank.y >= MapHeight) {
+              this[tank.color + 'Events'].push({
+                type: 'collide-wall',
+                target: tank.id,
+              });
               continue;
             }
             if (scene[tank.y][tank.x] !== 0) {
+              this[tank.color + 'Events'].push({
+                type: typeof scene[tank.y][tank.x] == 'number' ? 'collide-obstacle' : 'collide-tank',
+                target: tank.id,
+              });
               continue;
             }
+            const oTank = myTank[i];
+            scene[tank.y][tank.x] = scene[oTank.y][oTank.x];
+            scene[oTank.y][oTank.x] = 0;
           }
           Object.assign(myTank[i], tank);
         }
@@ -255,9 +277,29 @@ class GameHost extends EventEmitter {
           if (target === 1) {
             // hit wall
           } else if (target.t === 'r') {
+            this.redEvents.push({
+              type: bullet.color == 'red' ? 'me-hit-me' : 'me-hit-enemy',
+              from: bullet.from,
+              target: this.redTank[target.i].id,
+            });
+            this.blueEvents.push({
+              type: bullet.color == 'red' ? 'enemy-hit-enemy' : 'enemy-hit-me',
+              from: bullet.from,
+              target: this.redTank[target.i].id,
+            });
             scene[bullet.y][bullet.x] = 0;
             this.redTank.splice(target.i, 1);
           } else if (target.t === 'b') {
+            this.blueEvents.push({
+              type: bullet.color == 'blue' ? 'me-hit-me' : 'me-hit-enemy',
+              from: bullet.from,
+              target: this.blueTank[target.i].id,
+            });
+            this.redEvents.push({
+              type: bullet.color == 'blue' ? 'enemy-hit-enemy' : 'enemy-hit-me',
+              from: bullet.from,
+              target: this.blueTank[target.i].id,
+            });
             scene[bullet.y][bullet.x] = 0;
             this.blueTank.splice(target.i, 1);
           }
@@ -271,21 +313,26 @@ class GameHost extends EventEmitter {
     }
   }
   getState (side) {
+    const ended = this.blueTank.length === 0 || this.redTank.length === 0 || this.stepsMoved + 1 >= MaxMoves;
     if (side === 'blue') {
       return {
         terain: this.terain,
         myTank: this.blueTank,
         myBullet: this.blueBullet,
-        opponentTank: this.redTank,
-        opponentBullet: this.redBullet,
+        enemyTank: this.redTank,
+        enemyBullet: this.redBullet,
+        events: this.blueEvents,
+        ended,
       };
     } else {
       return {
         terain: this.terain,
         myTank: this.redTank,
         myBullet: this.redBullet,
-        opponentTank: this.blueTank,
-        opponentBullet: this.blueBullet,
+        enemyTank: this.blueTank,
+        enemyBullet: this.blueBullet,
+        events: this.redEvents,
+        ended,
       };
     }
   }
@@ -299,14 +346,16 @@ class GameHost extends EventEmitter {
     return co.wrap(function * () {
       this[side + 'Resp'] = false;
       if (typeof this[side] === 'function') {
-        yield new Promise(cb => {
-          this[side + 'Resp'] = this[side]((moves, waitCalc) => {
-            this.once('state', () => {
-              waitCalc(this.getState(side));
+        if (action === 'move') {
+          this[side + 'Resp'] = yield new Promise(cb => {
+            this[side]((moves, waitCalc) => {
+              this.once('state', () => {
+                waitCalc(this.getState(side));
+              });
+              cb(moves);
             });
-            cb(moves);
           });
-        });
+        }
       } else {
         this[side + 'Resp'] = yield fetch(this[side], {
           method: 'POST',

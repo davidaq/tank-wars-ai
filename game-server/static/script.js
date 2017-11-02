@@ -73,9 +73,7 @@ function createGame () {
   ['title', 'total', 'red', 'blue'].forEach(f => {
     data[f] = document.querySelector(`[name="game-${f}"]`).value;
   });
-  if (document.querySelector(`[name="game-client"]`).checked) {
-    data.connect = true;
-  }
+  data.client = document.querySelector(`[name="game-client"]`).checked;
   fetch('/game', {
     method: 'post',
     body: JSON.stringify(data),

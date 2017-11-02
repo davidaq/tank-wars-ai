@@ -63,6 +63,10 @@ class GameList extends EventEmitter {
     if (opt.client) {
       opt.client = true;
       opt.total = opt.games.length;
+      if (!isInit) {
+        this.emit('game', opt);
+        fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify(opt) + '\n', err => null);
+      }
     } else {
       opt.client = false;
       let createGameHost = false;
@@ -102,7 +106,7 @@ class GameList extends EventEmitter {
   }
 
   hostClients (id, side, cb) {
-    if (!this.map[id]) {
+    if (!this.map[id] || !this.map[id].opt.client) {
       return cb();
     }
     if (!this.clientHost[id]) {
@@ -122,11 +126,11 @@ class GameList extends EventEmitter {
     if (host.ready[side]) {
       return cb();
     }
+    host.ready[side] = cb;
     if (host.game) {
       host.ready[side] = true;
       cb(host.game.getState(side));
     } else if (host.ready.red && host.ready.blue) {
-      host.ready[side] = cb;
       this.beginClientHostedGame(id);
     }
   }
@@ -141,6 +145,14 @@ class GameList extends EventEmitter {
       return;
     }
     const game = new GameHost(id, this.clientMoveProvider(id, 'red'), this.clientMoveProvider(id, 'blue'), gameOpt.total + 1, gameOpt.total);
+    game.on('round', result => {
+      delete this.clientHost[id];
+      gameOpt.games.push(result);
+      this.emit('game', gameOpt);
+      fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify({
+        id, __game: result,
+      }) + '\n', err => null);
+    });
     host.game = game;
     gameOpt.total++;
     this.emit('game', gameOpt);
@@ -162,7 +174,7 @@ class GameList extends EventEmitter {
     if (host.move[side]) {
       return cb();
     }
-    host.move[side] = { moves,  cb };
+    host.move[side] = { moves, cb };
   }
 
   clientMoveProvider (id, side) {
@@ -177,16 +189,18 @@ class GameList extends EventEmitter {
       }, 3000);
       const interval = setInterval(() => {
         if (host.move[side]) {
+          const { moves, cb: clientCb } = host.move[side];
+          host.move[side] = false;
           clearTimeout(timeout);
           clearInterval(interval);
-          cb(host.move[side].moves, state => {
-            host.move[side].cb(state);
+          cb(moves, state => {
+            clientCb(state);
           });
         } else if (!host.ready[side] || timedOut) {
           clearTimeout(timeout);
           clearInterval(interval);
           const moves = {};
-          host.game.getState(side).myTanks.forEach(tank => {
+          host.game.getState(side).myTank.forEach(tank => {
             moves[tank.id] = (() => {
               switch (Math.floor(Math.random() * 7)) {
                 case 0: return 'fire';

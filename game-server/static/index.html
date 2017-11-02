@@ -65,7 +65,9 @@
                 <td>
                   <a class="btn btn-mini btn-danger" href="javascript:void(0)" onclick="rmGame('<%=id%>')">删除</a>
                   <%=title%>
+                  <%if (client) {%>
                   [<small style="color: #AAA; user-select: all"><%=id%></small>]
+                  <%}%>
                 </td>
                 <td><%=new Date(createtime).toLocaleString()%></td>
                 <td><center><%=total%></center></td>
