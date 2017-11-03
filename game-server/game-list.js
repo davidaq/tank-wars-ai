@@ -172,6 +172,12 @@ class GameList extends EventEmitter {
     const game = this.createGameHost(gameOpt);
     game.on('round', result => {
       delete this.clientHost[id];
+      if (host.move.red) {
+        host.move.red.cb({ ended: true });
+      }
+      if (host.move.blue) {
+        host.move.blue.cb({ ended: true });
+      }
     });
     host.game = game;
     gameOpt.total++;
@@ -206,7 +212,7 @@ class GameList extends EventEmitter {
       let timedOut = false;
       const timeout = setTimeout(() => {
         timedOut = true;
-      }, 3000);
+      }, 10000);
       const interval = setInterval(() => {
         if (host.move[side]) {
           const { moves, cb: clientCb } = host.move[side];
