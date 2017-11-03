@@ -389,10 +389,26 @@ class GameHost extends EventEmitter {
   }
   callApi (action, side) {
     if (!side) {
-      return Promise.all([
-        this.callApi(action, 'red'),
-        this.callApi(action, 'blue'),
-      ]);
+      return new Promise((resolve, reject) => {
+        const interval = setInterval(() => {
+          if (this.MaxMoves === 0) {
+            clearInterval(interval);
+            resolve({});
+            resolve = null;
+            reject = null;
+          }
+        }, 1000);
+        Promise.all([
+          this.callApi(action, 'red'),
+          this.callApi(action, 'blue'),
+        ]).then(v => {
+          clearInterval(interval);
+          resolve && resolve(v);
+        }, err => {
+          clearInterval(interval);
+          reject && reject(err);
+        });
+      });
     }
     return co.wrap(function * () {
       this[side + 'Resp'] = false;

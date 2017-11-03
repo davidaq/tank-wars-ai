@@ -1,0 +1,15 @@
+{
+  "name": "tank-wars-ai",
+  "version": "1.0.0",
+  "description": "",
+  "main": "random.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "co": "^4.6.0",
+    "isomorphic-fetch": "^2.2.1"
+  }
+}

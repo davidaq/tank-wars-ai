@@ -200,7 +200,7 @@ class GameList extends EventEmitter {
       host.ready.red = true;
     }
     if (host.ready.blue) {
-      host.ready.blue(game.getState('red'));
+      host.ready.blue(game.getState('blue'));
       host.ready.blue = true;
     }
   }

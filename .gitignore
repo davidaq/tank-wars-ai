@@ -1,4 +1,5 @@
-node_modules
+*.tmp
 .*
 !.gitignore
-db
+db/
+node_modules/
