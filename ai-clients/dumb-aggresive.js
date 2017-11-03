@@ -21,21 +21,32 @@ frame((state, moves) => {
       cool[my.id] = 0;
     });
   }
+  const collide = {};
   state.events.forEach(event => {
     if (event.type.indexOf('collide-') > -1 && frustrate[event.target] <= 0) {
+      collide[event.target] = 1;
       temper[event.target]++;
       frustrate[event.target] = temper[event.target] * 2;
     }
   });
   state.myTank.forEach(my => {
-    moves[my.id] = (() => {
-      switch (Math.floor(Math.random() * 5)) {
-        case 1: return 'left';
-        case 2: return 'right';
-        default: return 'move';
-      }
-    })();
-    if (frustrate[my.id] < -6) {
+    if (collide[my.id]) {
+      moves[my.id] = (() => {
+        switch (Math.floor(Math.random() * 2)) {
+          case 0: return 'left';
+          default: return 'right';
+        }
+      })();
+    } else {
+      moves[my.id] = (() => {
+        switch (Math.floor(Math.random() * 5)) {
+          case 1: return 'left';
+          case 2: return 'right';
+          default: return 'move';
+        }
+      })();
+    }
+    if (frustrate[my.id] < -12) {
       temper[my.id]++;
       frustrate[my.id] = temper[my.id] + 3;
     }
@@ -58,6 +69,16 @@ frame((state, moves) => {
     if (nearest.x === my.x) {
       moveH = false;
     }
+    if (moveH && (state.terain[my.y][my.x - 1] !== 0 || state.terain[my.y][my.x + 1] !== 0)) {
+      moveH = false;
+    }
+    try {
+      if (!moveH && (state.terain[my.y - 1][my.x] !== 0 || state.terain[my.y + 1][my.x] !== 0)) {
+        moveH = true;
+      }
+    } catch (err) {
+      moveH = true;
+    }
     if (moveH) {
       if (nearest.x > my.x) {
         moveDir = 'right';
@@ -76,13 +97,18 @@ frame((state, moves) => {
       }
     }
     if (moveDir === my.direction) {
-      cool[my.id]++;
-      if (cool[my.id] > 10) {
-        temper[my.id]--;
+      if (temper[my.id] > 0) {
+        cool[my.id]++;
+        if (cool[my.id] > 10) {
+          cool[my.id] = 0;
+          temper[my.id]--;
+        }
+      } else {
+        cool[my.id] = 0;
       }
       if (shoot) {
         moves[my.id] = 'fire';
-        frustrate[my.id] -= 2;
+        frustrate[my.id] -= 4;
       } else {
         moves[my.id] = 'move';
       }
