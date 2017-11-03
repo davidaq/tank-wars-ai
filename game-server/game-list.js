@@ -83,7 +83,7 @@ class GameList extends EventEmitter {
   }
 
   interrupt (id) {
-    const item = this.map[opt.id];
+    const item = this.map[id];
     if (item && item.game) {
       item.game.interrupt();
     }

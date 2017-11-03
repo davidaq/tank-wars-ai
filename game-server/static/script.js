@@ -62,6 +62,10 @@ function receiveGameList () {
   window.rmGame = rmGame;
 }
 
+function interruptGame (id) {
+  fetch(`/game/${id}/interrupt`, { method: 'get' });
+}
+
 function toggleAcceptClient(accept) {
   document.querySelectorAll('.accept-client-disable input').forEach(ele => {
     ele.disabled = accept;
