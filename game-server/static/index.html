@@ -44,23 +44,33 @@
         <br>
         <div>
           <label>
-            初始坦克： <input name="game-InitTank" type="number" value="5" min="1" step="1" style="width: 100px">
+            初始坦克： <input name="game-InitTank" type="number" value="5" min="1" step="1" style="width: 60px">
           </label>
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp;&nbsp;
           <label>
-            地图宽度： <input name="game-MapWidth" type="number" value="40" min="5" step="1" style="width: 100px">
+            地图宽度： <input name="game-MapWidth" type="number" value="40" min="5" step="1" style="width: 60px">
           </label>
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp;&nbsp;
           <label>
-            地图高度： <input name="game-MapHeight" type="number" value="20" min="5" step="1" style="width: 100px">
+            地图高度： <input name="game-MapHeight" type="number" value="20" min="5" step="1" style="width: 60px">
           </label>
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp;&nbsp;
           <label>
-            障碍物量： <input name="game-Obstacles" type="number" value="10" min="5" step="1" style="width: 100px">
+            障碍物量： <input name="game-Obstacles" type="number" value="10" min="5" step="1" style="width: 60px">
           </label>
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp;&nbsp;
           <label>
-            最多回合： <input name="game-MaxMoves" type="number" value="500" min="5" step="1" style="width: 100px">
+            最多回合： <input name="game-MaxMoves" type="number" value="500" min="5" step="1" style="width: 60px">
+          </label>
+          &nbsp;&nbsp;&nbsp;&nbsp;
+          <label>
+            <input name="game-StaticMap" type="checkbox" style="vertical-align: top">
+            <span style="display: inline-block; vertical-align: top">固定地形</span>
+          </label>
+          &nbsp;&nbsp;&nbsp;&nbsp;
+          <label>
+            <input name="game-FriendlyFire" type="checkbox" style="vertical-align: top">
+            <span style="display: inline-block; vertical-align: top">友军伤害</span>
           </label>
         </div>
         <br>
@@ -87,7 +97,14 @@
               <tr>
                 <td>
                   <a class="btn btn-mini btn-danger" href="javascript:void(0)" onclick="rmGame('<%=id%>')">删除</a>
-                  <span ondblclick="rename('<%=id%>', this)"><%=title%></span>
+                  <span ondblclick="rename('<%=id%>', this)" title="<%
+                    %>初始坦克：<%=InitTank%>&#10;<%
+                    %>地图大小：<%=MapWidth%>x<%=MapHeight%>&#10;<%
+                    %>障碍物量：<%=Obstacles%>&#10;<%
+                    %>最多回合：<%=MaxMoves%>&#10;<%
+                    %>固定地形：<%=StaticMap%>&#10;<%
+                    %>友军伤害：<%=FriendlyFire%>&#10;<%
+                  %>"><%=title%></span>
                   <%if (client) {%>
                   [<small style="color: #AAA; user-select: all"><%=id%></small>]
                   <%}%>

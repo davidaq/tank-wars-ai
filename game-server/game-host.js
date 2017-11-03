@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 const clone = require('clone');
-
+const Random = require('./prng');
 
 class GameHost extends EventEmitter {
   constructor (settings) {
@@ -22,6 +22,8 @@ class GameHost extends EventEmitter {
     this.Obstacles = 35;
     this.InitTank = 5;
     Object.assign(this, settings);
+    this.FriendlyFire = !!this.FriendlyFire;
+    this.StaticMap = !!this.StaticMap;
     this.InitTank = Math.max(1, this.InitTank - 0);
     this.MapHeight = Math.max(5, this.MapHeight - 0);
     this.MapWidth = Math.max(this.InitTank, this.MapWidth - 0);
@@ -50,6 +52,7 @@ class GameHost extends EventEmitter {
       this.stepsMoved = 0;
       this.blueEvents = [];
       this.redEvents = [];
+      this.random = this.StaticMap ? new Random(this.id) : new Random(this.roundId);
       this.setupTerrain();
       this.spawnTank();
       yield this.callApi('setup');
@@ -105,10 +108,10 @@ class GameHost extends EventEmitter {
         line.push(0);
       }
     }
-    let x = Math.floor(Math.random() * this.MapWidth);
-    let y = Math.floor(Math.random() * this.MapHeight);
+    let x = Math.floor(this.random.nextFloat() * this.MapWidth);
+    let y = Math.floor(this.random.nextFloat() * this.MapHeight);
     for (let i = 0; i < this.Obstacles;) {
-      switch (Math.floor(Math.random() * 4)) {
+      switch (Math.floor(this.random.nextFloat() * 4)) {
         case 0:
           x++;
           break;
@@ -122,8 +125,8 @@ class GameHost extends EventEmitter {
           y--;
           break;
         default:
-          x = Math.floor(Math.random() * this.MapWidth);
-          y = Math.floor(Math.random() * this.MapHeight);
+          x = Math.floor(this.random.nextFloat() * this.MapWidth);
+          y = Math.floor(this.random.nextFloat() * this.MapHeight);
           break;
       }
       if (x >= 0 && x < this.MapWidth && y >= 0 && y < this.MapHeight && this.terain[y][x] === 0) {
@@ -131,8 +134,8 @@ class GameHost extends EventEmitter {
         this.terain[this.MapHeight - y - 1][this.MapWidth - x - 1] = 1;
         i += 2;
       } else {
-        x = Math.floor(Math.random() * this.MapWidth);
-        y = Math.floor(Math.random() * this.MapHeight);
+        x = Math.floor(this.random.nextFloat() * this.MapWidth);
+        y = Math.floor(this.random.nextFloat() * this.MapHeight);
       }
     }
   }
@@ -143,8 +146,8 @@ class GameHost extends EventEmitter {
     this.redBullet = [];
     for (let i = 0; i < this.InitTank; i++) {
       while (true) {
-        const x = Math.floor(Math.random() * this.MapWidth);
-        const y = Math.floor(Math.random() * this.MapHeight);
+        const x = Math.floor(this.random.nextFloat() * this.MapWidth);
+        const y = Math.floor(this.random.nextFloat() * this.MapHeight);
         if (this.terain[y][x] === 0) {
           this.blueTank.push({ color: 'blue', x, y, direction: 'right', id: shortid.generate() });
           this.redTank.push({ color: 'red', x: this.MapWidth - x - 1, y: this.MapHeight - y - 1, direction: 'left', id: shortid.generate() });
@@ -157,11 +160,11 @@ class GameHost extends EventEmitter {
     const scene = clone(this.terain);
     for (let i = 0; i < this.blueTank.length; i++) {
       const tank = this.blueTank[i];
-      scene[tank.y][tank.x] = { t: 'b', i };
+      scene[tank.y][tank.x] = { tank: 'blue', i };
     }
     for (let i = 0; i < this.redTank.length; i++) {
       const tank = this.redTank[i];
-      scene[tank.y][tank.x] = { t: 'r', i };
+      scene[tank.y][tank.x] = { tank: 'red', i };
     }
     this.calcStateMoveBullet(scene, this.blueBullet);
     this.calcStateMoveBullet(scene, this.redBullet);
@@ -175,6 +178,8 @@ class GameHost extends EventEmitter {
     this.calcStateMoveBullet(scene, this.redBullet);
     this.calcStateMoveTank(scene, this.blueTank, this.blueResp, this.blueBullet);
     this.calcStateMoveTank(scene, this.redTank, this.redResp, this.redBullet);
+    this.blueTank = this.blueTank.filter(v => !!v);
+    this.redTank = this.redTank.filter(v => !!v);
     this.history.push(clone({
       blueTank: this.blueTank,
       blueBullet: this.blueBullet,
@@ -190,6 +195,9 @@ class GameHost extends EventEmitter {
     }
     try {
       for (let i = 0; i < myTank.length; i++) {
+        if (!myTank[i]) {
+          continue;
+        }
         const tank = clone(myTank[i]);
         const move = myResp[tank.id];
         if (move) {
@@ -270,7 +278,7 @@ class GameHost extends EventEmitter {
             }
             const oTank = myTank[i];
             scene[tank.y][tank.x] = scene[oTank.y][oTank.x];
-            scene[oTank.y][oTank.x] = 0;
+            scene[oTank.y][oTank.x] = this.terain[oTank.y][oTank.x];
           }
           Object.assign(myTank[i], tank);
         }
@@ -302,36 +310,51 @@ class GameHost extends EventEmitter {
       } else {
         const target = scene[bullet.y][bullet.x];
         if (target) {
+          removeBullet = true;
           if (target === 1) {
             // hit wall
-          } else if (target.t === 'r') {
-            this.redEvents.push({
-              type: bullet.color == 'red' ? 'me-hit-me' : 'me-hit-enemy',
-              from: bullet.from,
-              target: this.redTank[target.i].id,
-            });
-            this.blueEvents.push({
-              type: bullet.color == 'red' ? 'enemy-hit-enemy' : 'enemy-hit-me',
-              from: bullet.from,
-              target: this.redTank[target.i].id,
-            });
-            scene[bullet.y][bullet.x] = 0;
-            this.redTank.splice(target.i, 1);
-          } else if (target.t === 'b') {
-            this.blueEvents.push({
-              type: bullet.color == 'blue' ? 'me-hit-me' : 'me-hit-enemy',
-              from: bullet.from,
-              target: this.blueTank[target.i].id,
-            });
-            this.redEvents.push({
-              type: bullet.color == 'blue' ? 'enemy-hit-enemy' : 'enemy-hit-me',
-              from: bullet.from,
-              target: this.blueTank[target.i].id,
-            });
-            scene[bullet.y][bullet.x] = 0;
-            this.blueTank.splice(target.i, 1);
+          } else if (target.tank) {
+            const isFriendlyFire = bullet.color == target.tank;
+            if (isFriendlyFire) {
+              console.log('FriendlyFire!!!');
+            }
+            if (!this.FriendlyFire && isFriendlyFire) {
+              removeBullet = false;
+            } else {
+              let blueEventType;
+              let redEventType;
+              if (isFriendlyFire) {
+                if (bullet.color === 'red') {
+                  redEventType = 'me-hit-me';
+                  blueEventType = 'enemy-hit-enemy';
+                } else {
+                  blueEventType = 'me-hit_me';
+                  redEventType = 'enemy-hit-enemy';
+                }
+              } else {
+                if (bullet.color === 'red') {
+                  redEventType = 'me-hit-enemy';
+                  blueEventType = 'enemy-hit-me';
+                } else {
+                  blueEventType = 'me-hit-enemy';
+                  redEventType = 'enemy-hit-me';
+                }
+              }
+              scene[bullet.y][bullet.x] = this.terain[bullet.y][bullet.x];
+              const hitTank = this[target.tank + 'Tank'][target.i];
+              this[target.tank + 'Tank'][target.i] = null;
+              this.redEvents.push({
+                type: redEventType,
+                from: bullet.from,
+                target: hitTank.id,
+              });
+              this.blueEvents.push({
+                type: blueEventType,
+                from: bullet.from,
+                target: hitTank.id,
+              });
+            }
           }
-          removeBullet = true;
         }
       }
       if (removeBullet) {

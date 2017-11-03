@@ -63,6 +63,8 @@ class GameList extends EventEmitter {
       opt.createtime = Date.now();
       opt.games = [];
     }
+    opt.FriendlyFire = !!opt.FriendlyFire;
+    opt.StaticMap = !!opt.StaticMap;
     if (opt.client) {
       opt.client = true;
       opt.total = opt.games.length;
@@ -91,18 +93,19 @@ class GameList extends EventEmitter {
 
   createGameHost (opt) {
     const settings = {};
+    ['id', 'MaxMoves', 'MapWidth', 'MapHeight', 'Obstacles', 'InitTank', 'StaticMap', 'FriendlyFire'].forEach(f => {
+      settings[f] = opt[f];
+    });
     if (opt.client) {
-      ['id', 'MaxMoves', 'MapWidth', 'MapHeight', 'Obstacles', 'InitTank'].forEach(f => {
-        settings[f] = opt[f];
-      });
       settings.red = this.clientMoveProvider(opt.id, 'red');
       settings.blue = this.clientMoveProvider(opt.id, 'blue');
       settings.total = opt.total + 1;
       settings.beginRound = opt.total;
     } else {
-      ['id', 'total', 'red', 'blue', 'MaxMoves', 'MapWidth', 'MapHeight', 'Obstacles', 'InitTank'].forEach(f => {
+      ['total', 'red', 'blue'].forEach(f => {
         settings[f] = opt[f];
       });
+      settings.beginRound = opt.games.length;
     }
     const game = new GameHost(settings);
     this.map[opt.id].game = game;

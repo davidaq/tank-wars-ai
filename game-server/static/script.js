@@ -84,7 +84,9 @@ function createGame () {
   ['title', 'total', 'red', 'blue', 'MaxMoves', 'MapWidth', 'MapHeight', 'Obstacles', 'InitTank'].forEach(f => {
     data[f] = document.querySelector(`[name="game-${f}"]`).value;
   });
-  data.client = document.querySelector(`[name="game-client"]`).checked;
+  ['client', 'StaticMap', 'FriendlyFire'].forEach(f => {
+    data[f] = document.querySelector(`[name="game-${f}"]`).checked;
+  });
   fetch('/game', {
     method: 'post',
     body: JSON.stringify(data),
@@ -166,6 +168,9 @@ async function setupReplay () {
     const playInterval = Math.min(2000, Math.max(50, document.querySelector('#interval').value - 0));
     const state = history[hi];
     const setObj = (type, color) => state => {
+      if (!state) {
+        return;
+      }
       if (!objs[state.id]) {
         const tank = objs[state.id] = {
           $el: document.createElement('div'),
