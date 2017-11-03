@@ -48,7 +48,7 @@ function receiveGameList () {
   
   const rmGame = (id) => {
     if (confirm('确认删除？')) {
-      fetch(`/game/${id}`, { method: 'delete' });
+      fetch(`/game/${id}`, { method: 'DELETE' });
       gameList.forEach(item => {
         if (item.id === id) {
           item.__del = true;
@@ -63,7 +63,14 @@ function receiveGameList () {
 }
 
 function interruptGame (id) {
-  fetch(`/game/${id}/interrupt`, { method: 'get' });
+  fetch(`/game/${id}/interrupt`, { method: 'GET' });
+}
+
+function rename(id, $el) {
+  const newTitle = prompt('重命名', $el.innerHTML);
+  if (newTitle) {
+    fetch(`/game/${id}/name`, { method: 'POST', body: newTitle });
+  }
 }
 
 function toggleAcceptClient(accept) {

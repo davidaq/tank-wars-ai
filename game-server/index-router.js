@@ -71,6 +71,13 @@ router.delete('/game/:id', (req, res) => {
   res.end();
 });
 
+router.post('/game/:id/name', (req, res) => {
+  req.pipe(concat(buffer => {
+    gameList.rename(req.params.id, buffer.toString());
+  }));
+  res.end();
+});
+
 // try to take side in a new match
 router.get('/game/:id/match/:side', (req, res) => {
   if (['red', 'blue'].indexOf(req.params.side) === -1) {

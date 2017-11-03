@@ -130,6 +130,16 @@ class GameList extends EventEmitter {
     }
   }
 
+  rename (id, newName) {
+    const cache = this.map[id];
+    if (cache) {
+      fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify({ id, title: newName }) + '\n', err => null);
+      const opt = cache.opt;
+      opt.title = newName;
+      this.emit('game', opt);
+    }
+  }
+
   hostClients (id, side, cb) {
     if (!this.map[id] || !this.map[id].opt.client) {
       return cb();
