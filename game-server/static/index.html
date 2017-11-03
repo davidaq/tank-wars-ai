@@ -42,6 +42,28 @@
           </label>
         </div>
         <br>
+        <div>
+          <label>
+            初始坦克： <input name="game-InitTank" type="number" value="5" min="1" step="1" style="width: 100px">
+          </label>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <label>
+            地图宽度： <input name="game-MapWidth" type="number" value="40" min="5" step="1" style="width: 100px">
+          </label>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <label>
+            地图高度： <input name="game-MapHeight" type="number" value="20" min="5" step="1" style="width: 100px">
+          </label>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <label>
+            障碍物量： <input name="game-Obstacles" type="number" value="10" min="5" step="1" style="width: 100px">
+          </label>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <label>
+            最多回合： <input name="game-MaxMoves" type="number" value="500" min="5" step="1" style="width: 100px">
+          </label>
+        </div>
+        <br>
         <a class="btn btn-primary" href="javascript:createGame();">创建游戏</a>
       </form>
       <div>
@@ -81,7 +103,7 @@
                           else if (round.blue < round.red) { %>red<%}
                         %>" title="<%=round.moves%>步，蓝：<%=round.blue%> 红：<%=round.red%> "><%=i%></a>
                       <%} else {%>
-                        <div class="round" title="未玩"><%=i%></div>
+                        <a href="javascript:void(0)" class="round" title="未完成"><%=i%></a>
                       <%}%>
                     <%}%>
                   </div>

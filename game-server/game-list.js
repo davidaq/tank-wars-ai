@@ -44,6 +44,9 @@ class GameList extends EventEmitter {
         if (item) {
           writer.write(JSON.stringify(item));
           writer.write('\n');
+          if (!item.client && item.games.length < item.total) {
+            this.createGameHost(item);
+          }
         }
       });
       writer.end();
@@ -55,6 +58,8 @@ class GameList extends EventEmitter {
   }
 
   createGame (opt, isInit = false) {
+    this.map[opt.id] = { opt, index: this.list.length, game: null };
+    this.list.push(opt);
     if (!isInit) {
       opt.id = shortid.generate();
       opt.createtime = Date.now();
@@ -69,28 +74,48 @@ class GameList extends EventEmitter {
       }
     } else {
       opt.client = false;
-      let createGameHost = false;
       if (!isInit) {
         this.emit('game', opt);
         fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify(opt) + '\n', err => null);
-        createGameHost = true;
-      } else {
-        createGameHost = opt.games.length < opt.total;
-      }
-      if (createGameHost) {
-        const game = new GameHost(opt.id, opt.red, opt.blue, opt.total);
-        game.on('round', result => {
-          opt.games.push(result);
-          this.emit('game', opt);
-          fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify({
-            id: opt.id,
-            __game: result,
-          }) + '\n', err => null);
-        });
+        this.createGameHost(opt);
       }
     }
-    this.map[opt.id] = { opt, index: this.list.length };
-    this.list.push(opt);
+  }
+
+  interrupt (id) {
+    const item = this.map[opt.id];
+    if (item && item.game) {
+      item.game.interrupt();
+    }
+  }
+
+  createGameHost (opt) {
+    const settings = {};
+    if (opt.client) {
+      ['id', 'MaxMoves', 'MapWidth', 'MapHeight', 'Obstacles', 'InitTank'].forEach(f => {
+        settings[f] = opt[f];
+      });
+      settings.red = this.clientMoveProvider(opt.id, 'red');
+      settings.blue = this.clientMoveProvider(opt.id, 'blue');
+      settings.total = opt.total + 1;
+      settings.beginRound = opt.total;
+    } else {
+      ['id', 'total', 'red', 'blue', 'MaxMoves', 'MapWidth', 'MapHeight', 'Obstacles', 'InitTank'].forEach(f => {
+        settings[f] = opt[f];
+      });
+    }
+    const game = new GameHost(settings);
+    this.map[opt.id].game = game;
+    game.on('round', result => {
+      this.map[opt.id].game = null;
+      opt.games.push(result);
+      this.emit('game', opt);
+      fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify({
+        id: opt.id,
+        __game: result,
+      }) + '\n', err => null);
+    });
+    return game;
   }
 
   rmGame (id) {
@@ -144,14 +169,9 @@ class GameList extends EventEmitter {
     if (!host || host.game) {
       return;
     }
-    const game = new GameHost(id, this.clientMoveProvider(id, 'red'), this.clientMoveProvider(id, 'blue'), gameOpt.total + 1, gameOpt.total);
+    const game = this.createGameHost(gameOpt);
     game.on('round', result => {
       delete this.clientHost[id];
-      gameOpt.games.push(result);
-      this.emit('game', gameOpt);
-      fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify({
-        id, __game: result,
-      }) + '\n', err => null);
     });
     host.game = game;
     gameOpt.total++;

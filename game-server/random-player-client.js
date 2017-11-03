@@ -4,7 +4,7 @@ const co = require('co');
 const api = process.argv[2];
 
 co(function* () {
-  let state = yield fetch(api, { method: 'GET' }).then(r => r.json());
+  let state = yield fetch(api, { method: 'GET' }).then(r => r.json(), err => ({ myTank: [] }));
   let i = 0;
   while (!state.ended) {
     console.log(i++, state.events.map(v => v.type));

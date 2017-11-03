@@ -70,7 +70,7 @@ function toggleAcceptClient(accept) {
 
 function createGame () {
   const data = {};
-  ['title', 'total', 'red', 'blue'].forEach(f => {
+  ['title', 'total', 'red', 'blue', 'MaxMoves', 'MapWidth', 'MapHeight', 'Obstacles', 'InitTank'].forEach(f => {
     data[f] = document.querySelector(`[name="game-${f}"]`).value;
   });
   data.client = document.querySelector(`[name="game-client"]`).checked;

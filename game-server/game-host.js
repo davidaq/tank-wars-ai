@@ -7,20 +7,26 @@ const path = require('path');
 const zlib = require('zlib');
 const clone = require('clone');
 
-const MaxMoves = 1000;
-const MapWidth = 50;
-const MapHeight = 30;
-const Obstacles = 35;
-const InitTank = 5;
 
 class GameHost extends EventEmitter {
-  constructor (id, red, blue, total, beginRound = 0) {
+  constructor (settings) {
     super();
-    this.id = id;
-    this.red = red;
-    this.blue = blue;
-    this.total = total;
-    this.beginRound = beginRound;
+    this.id = '';
+    this.red = '';
+    this.blue = '';
+    this.total = 1;
+    this.beginRound = 0;
+    this.MaxMoves = 1000;
+    this.MapWidth = 50;
+    this.MapHeight = 20;
+    this.Obstacles = 35;
+    this.InitTank = 5;
+    Object.assign(this, settings);
+    this.InitTank = Math.max(1, this.InitTank - 0);
+    this.MapHeight = Math.max(5, this.MapHeight - 0);
+    this.MapWidth = Math.max(this.InitTank, this.MapWidth - 0);
+    this.MaxMoves = Math.max(1, this.MaxMoves - 0);
+    this.Obstacles = Math.min(this.Obstacles - 0, this.MapWidth * (this.MapHeight - this.InitTank * 2));
     this.playRounds();
   }
   playRounds () {
@@ -28,7 +34,14 @@ class GameHost extends EventEmitter {
       for (let i = this.beginRound; i < this.total; i++) {
         yield this.playRound(i);
       }
-    }).call(this).then(() => null, err => console.error(err.stack));
+    }).call(this).then(() => null, err => {
+      console.error(err.stack);
+      this.emit('round', {
+        blue: this.blueTank.length,
+        red: this.redTank.length,
+        moves: i,
+      });
+    });
   }
   playRound (roundNum) {
     return co.wrap(function * () {
@@ -41,7 +54,7 @@ class GameHost extends EventEmitter {
       this.spawnTank();
       yield this.callApi('setup');
       let i = 0;
-      for (; i < MaxMoves; i++) {
+      for (; i < this.MaxMoves; i++) {
         this.stepsMoved = i;
         if (this.blueTank.length === 0 || this.redTank.length === 0) {
           break;
@@ -50,6 +63,12 @@ class GameHost extends EventEmitter {
         this.blueEvents = [];
         this.redEvents = [];
         this.calcState();
+        if (i % 10 === 0) {
+          console.log('GAME', this.roundId, i, {
+            blueTank: this.blueTank.length,
+            redTank: this.redTank.length,
+          });
+        }
         this.emit('state');
       }
       const fwriter = fs.createWriteStream(path.join(__dirname, 'db', this.roundId + '.json.gz'));
@@ -74,37 +93,46 @@ class GameHost extends EventEmitter {
       yield this.callApi('end');
     }).call(this);
   }
+  interrupt () {
+    this.MaxMoves = 0;
+  }
   setupTerrain () {
     this.terain = [];
-    for (let y = 0; y < MapHeight; y++) {
+    for (let y = 0; y < this.MapHeight; y++) {
       const line = [];
       this.terain.push(line);
-      for (let x = 0; x < MapWidth; x++) {
+      for (let x = 0; x < this.MapWidth; x++) {
         line.push(0);
       }
     }
-    for (let i = 0; i < Obstacles; i++) {
-      let x = Math.floor(Math.random() * MapWidth);
-      let y = Math.floor(Math.random() * MapHeight);
-      this.terain[y][x] = 1;
-      this.terain[MapHeight - y - 1][MapWidth - x - 1] = 1;
-      switch (Math.floor(Math.random() * 3)) {
+    let x = Math.floor(Math.random() * this.MapWidth);
+    let y = Math.floor(Math.random() * this.MapHeight);
+    for (let i = 0; i < this.Obstacles;) {
+      switch (Math.floor(Math.random() * 4)) {
         case 0:
           x++;
-          if (x < MapWidth) {
-            this.terain[y][x] = 1;
-            this.terain[MapHeight - y - 1][MapWidth - x - 1] = 1;
-          }
           break;
         case 1:
           y++;
-          if (y < MapHeight) {
-            this.terain[y][x] = 1;
-            this.terain[MapHeight - y - 1][MapWidth - x - 1] = 1;
-          }
+          break;
+        case 2:
+          x--;
+          break;
+        case 3:
+          y--;
           break;
         default:
+          x = Math.floor(Math.random() * this.MapWidth);
+          y = Math.floor(Math.random() * this.MapHeight);
           break;
+      }
+      if (x >= 0 && x < this.MapWidth && y >= 0 && y < this.MapHeight) {
+        this.terain[y][x] = 1;
+        this.terain[this.MapHeight - y - 1][this.MapWidth - x - 1] = 1;
+        i += 2;
+      } else {
+        x = Math.floor(Math.random() * this.MapWidth);
+        y = Math.floor(Math.random() * this.MapHeight);
       }
     }
   }
@@ -113,13 +141,13 @@ class GameHost extends EventEmitter {
     this.redTank = [];
     this.blueBullet = [];
     this.redBullet = [];
-    for (let i = 0; i < InitTank; i++) {
+    for (let i = 0; i < this.InitTank; i++) {
       while (true) {
-        const x = Math.floor(Math.random() * MapWidth);
-        const y = Math.floor(Math.random() * MapHeight);
+        const x = Math.floor(Math.random() * this.MapWidth);
+        const y = Math.floor(Math.random() * this.MapHeight);
         if (this.terain[y][x] === 0) {
           this.blueTank.push({ color: 'blue', x, y, direction: 'right', id: shortid.generate() });
-          this.redTank.push({ color: 'red', x: MapWidth - x - 1, y: MapHeight - y - 1, direction: 'left', id: shortid.generate() });
+          this.redTank.push({ color: 'red', x: this.MapWidth - x - 1, y: this.MapHeight - y - 1, direction: 'left', id: shortid.generate() });
           break;
         }
       }
@@ -226,7 +254,7 @@ class GameHost extends EventEmitter {
               break;
           }
           if (move === 'move') {
-            if (tank.x < 0 || tank.x >= MapWidth || tank.y < 0 || tank.y >= MapHeight) {
+            if (tank.x < 0 || tank.x >= this.MapWidth || tank.y < 0 || tank.y >= this.MapHeight) {
               this[tank.color + 'Events'].push({
                 type: 'collide-wall',
                 target: tank.id,
@@ -269,7 +297,7 @@ class GameHost extends EventEmitter {
           break;
       }
       let removeBullet = false;
-      if (bullet.x < 0 || bullet.x >= MapWidth || bullet.y < 0 || bullet.y >= MapHeight) {
+      if (bullet.x < 0 || bullet.x >= this.MapWidth || bullet.y < 0 || bullet.y >= this.MapHeight) {
         removeBullet = true;
       } else {
         const target = scene[bullet.y][bullet.x];
@@ -313,7 +341,7 @@ class GameHost extends EventEmitter {
     }
   }
   getState (side) {
-    const ended = this.blueTank.length === 0 || this.redTank.length === 0 || this.stepsMoved + 1 >= MaxMoves;
+    const ended = this.blueTank.length === 0 || this.redTank.length === 0 || this.stepsMoved + 1 >= this.MaxMoves;
     if (side === 'blue') {
       return {
         terain: this.terain,

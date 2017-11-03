@@ -61,6 +61,11 @@ router.post('/game', (req, res) => {
   res.end();
 });
 
+router.get('/game/:id/interrupt', (req, res) => {
+  gameList.interrupt(req.params.id);
+  res.end();
+});
+
 router.delete('/game/:id', (req, res) => {
   gameList.rmGame(req.params.id);
   res.end();
