@@ -121,7 +121,7 @@ router.post('/random-player', (req, res) => {
       });
       res.end(JSON.stringify(resp));
     } else {
-      res.end('[]');
+      res.end('');
     }
   }));
 });

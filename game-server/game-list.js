@@ -58,8 +58,6 @@ class GameList extends EventEmitter {
   }
 
   createGame (opt, isInit = false) {
-    this.map[opt.id] = { opt, index: this.list.length, game: null };
-    this.list.push(opt);
     if (!isInit) {
       opt.id = shortid.generate();
       opt.createtime = Date.now();
@@ -77,9 +75,11 @@ class GameList extends EventEmitter {
       if (!isInit) {
         this.emit('game', opt);
         fs.appendFile(path.resolve(__dirname, 'db', 'list.txt'), JSON.stringify(opt) + '\n', err => null);
-        this.createGameHost(opt);
+        setTimeout(() => this.createGameHost(opt), 100);
       }
     }
+    this.map[opt.id] = { opt, index: this.list.length, game: null };
+    this.list.push(opt);
   }
 
   interrupt (id) {

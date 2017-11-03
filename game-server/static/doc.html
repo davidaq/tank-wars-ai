@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Tank Wars AI</title>
+    <meta charset="utf-8">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <link href="https://cdn.bootcss.com/github-markdown-css/2.8.0/github-markdown.min.css" rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="https://cdn.bootcss.com/underscore.js/1.8.3/underscore-min.js"></script>
+    <script type="text/javascript" src="https://cdn.bootcss.com/marked/0.3.6/marked.min.js"></script>
+  </head>
+  <body>
+    <div class="toc"></div>
+    <div class="markdown-body"></div>
+    <script id="doc" type="doc">
+
+# 坦克AI对战说明
+
+- 每个坦克每回合只能有几种动作中的一个：向前移动、左右转向、开炮
+- 坦克一次可前进1格、子弹一次前进2格
+
+## Web界面说明
+
+### 首页界面
+
+<%=img('ui-desc.jpg')%>
+
+不管是哪种方式对战，首先需要创建“游戏”，一个“游戏”可以有多次对局，但是初始参数会是一样的。
+
+在对局状态区，点击小方格可观看本次对局的[回放动画](#回放)。
+
+### 回放
+
+<%=img('ui-replay.png')%>
+
+- 只有已经结束的对局才可观看回放，*不支持实时播放*
+- 通过改小动作间隔，可以让播放速度加快
+- 聚焦播放进度输入框，可以暂停播放
+- 改变播放进度可快进或回退
+
+## AI对战模式
+
+AI型式对有两种：Server vs Server，Client vs Client。
+创建游戏时，勾选“客户端主动请求接口”为Client vs Client。
+
+<%=img('client-check.png')%>
+
+### Server vs Server
+
+这种模式适用于随时观察两个已经比较稳定的AI互相对战。
+
+AI以HTTP服务的型式存在，只需要提供一个接口链接，创建游戏时放在红/蓝方接口输入框里。
+
+<%=img('ai-api.png')%>
+
+该接口需接受整个body为JSON的POST请求，收到的请求如下：
+
+```
+{
+  "uuid":"6f0c6fcb-ce9d-494d-9cc3-e89dcb777dbc_0",
+  "action":"move",
+  "state":{
+    "terain": [
+      [0,0,0],
+      [0,1,0],
+      [0,1,0]
+    ],
+    "myTank":[
+      {"x":97,"y":24,"direction":"right","id":"abf5d8ae-8a45-4611-b93e-296f501202e3"},
+      {"x":91,"y":24,"direction":"right","id":"a5f1d2fe-1445-1641-243e-996f55da0230"}
+    ],
+    "myBullet":[
+      {"x":91,"y":8,"direction":"right","id":"a5b03d87-3845-4d9b-a3fc-2e7d5b426c05","from":"abf5d8ae-8a45-4611-b93e-296f501202e3"}
+    ],
+    "enemyTank":[
+      {"x":73,"y":19,"direction":"left","id":"14df412a-c1d5-433b-8f2a-e9776a799f64"}
+    ],
+    "enemyBullet":[],
+    "events": [],
+    "ended": false
+  }
+}
+```
+
+- **uuid -** 当前对局的唯一ID
+- **action -** 本次请求发起的目的，有三种：setup（初始化AI状态）、move（AI决策如何行动）、end（游戏结束）
+- **state -** 当前游戏状态，详情见[游戏状态](#游戏状态)
+
+请求里action为setup或end的时候，接口不需要有任何返回，action为move的时候需要按如下返回接下来的[行动指令](#行动指令)：
+
+```
+{
+  "abf5d8ae-8a45-4611-b93e-296f501202e3": "move",
+  "a5f1d2fe-1445-1641-243e-996f55da0230": "fire"
+}
+```
+
+### Client vs Client
+
+与Server不同，该模式的AI是HTTP请求的主动方，主动请求：http://<%=location.origin%>/game/:gameid/match/:side
+
+其中:gameid为创建的游戏的id，Client类的游戏能在游戏列表中看到id。
+
+<%=img('game-id.png')%>
+
+:side为red或blue，代表自己要以哪边身份进行对战。
+
+**一局游戏首先以GET方式请求**该接口，如果位置没被别人占用则可获得游戏的初始状态。
+两个客户端可以各占据红/蓝一方进行对战，先就绪的一方会先等后就绪的一方最多5s。
+5s内没就绪的一方，在对局开始后依然可以加入，在加入前，空出来的那一方会随机行动。
+
+**后续通过POST接口发送行动指令**来进行对己方坦克的操作，POST的整个body为JSON格式的[行动指令](#行动指令)：
+
+```
+{
+  "abf5d8ae-8a45-4611-b93e-296f501202e3": "move",
+  "a5f1d2fe-1445-1641-243e-996f55da0230": "fire"
+}
+```
+
+不管是首次的GET或是后续的POST，获得到的结果都是如下的[游戏状态](#游戏状态)：
+
+```
+{
+  "terain": [
+    [0,0,0],
+    [0,1,0],
+    [0,1,0]
+  ],
+  "myTank":[
+    {"x":97,"y":24,"direction":"right","id":"abf5d8ae-8a45-4611-b93e-296f501202e3"},
+    {"x":91,"y":24,"direction":"right","id":"a5f1d2fe-1445-1641-243e-996f55da0230"}
+  ],
+  "myBullet":[
+    {"x":91,"y":8,"direction":"right","id":"a5b03d87-3845-4d9b-a3fc-2e7d5b426c05","from":"abf5d8ae-8a45-4611-b93e-296f501202e3"}
+  ],
+  "enemyTank":[
+    {"x":73,"y":19,"direction":"left","id":"14df412a-c1d5-433b-8f2a-e9776a799f64"}
+  ],
+  "enemyBullet":[],
+  "events": [],
+  "ended": false
+}
+```
+
+## JSON协议详情
+
+### 游戏状态
+
+游戏状态由本平台发送给AI，样例如下：
+
+```
+{
+  "terain": [
+    [0,0,0],
+    [0,1,0],
+    [0,1,0]
+  ],
+  "myTank":[
+    {"x":97,"y":24,"direction":"right","id":"abf5d8ae-8a45-4611-b93e-296f501202e3"},
+    {"x":91,"y":24,"direction":"right","id":"a5f1d2fe-1445-1641-243e-996f55da0230"}
+  ],
+  "myBullet":[
+    {"x":91,"y":8,"direction":"right","id":"a5b03d87-3845-4d9b-a3fc-2e7d5b426c05","from":"abf5d8ae-8a45-4611-b93e-296f501202e3"}
+  ],
+  "enemyTank":[
+    {"x":73,"y":19,"direction":"left","id":"14df412a-c1d5-433b-8f2a-e9776a799f64"}
+  ],
+  "enemyBullet":[],
+  "events": [],
+  "ended": false
+}
+```
+
+- **terain -** 当前游戏的[地形](#地形)
+- **myTank -** 我方（还活着的）[坦克](#坦克信息)
+- **myBullet -** 我方坦克发射的子弹[子弹](#子弹信息)
+- **enemyTank -** 敌方（还活着的）[坦克](#坦克信息)
+- **enemyBullet -** 敌方坦克发射的子弹[子弹](#子弹信息)
+- **events -** 最后一次行动后产生的[事件](#事件)
+
+#### 地形
+
+地形描绘当前游戏中坦克、子弹等玩家操作或生成物***以外***的环境，其定义是如下的二维数组：
+
+```
+"terain": [
+  [0,0,0],
+  [0,1,0],
+  [0,1,0]
+],
+```
+
+获取某个位置的地形如terain[y][x]，目前有：
+- 0 空地（不对坦克、子弹有任何影响）
+- 1 无敌障碍物（不可通行、阻挡子弹、不可毁灭）
+
+#### 坦克信息
+
+坦克拥有的的字段如下：
+
+  - **id -** 坦克的唯一id，发送行动指令的时候需要对应
+  - **x -** 坦克当前x坐标
+  - **y -** 坦克当前y坐标
+  - **direction -** 坦克当前面朝方向，有up、down、left、right
+
+#### 子弹信息
+
+子弹信息与坦克类似，多一个from字段
+
+  - **id -** 子弹的唯一id，子弹不可操纵
+  - **x -** 子弹当前x坐标
+  - **y -** 子弹当前y坐标
+  - **direction -** 子弹当前面朝方向，有up、down、left、right
+  - **from -** 射出该子弹的坦克id
+  
+#### 事件
+
+AI可获得游戏状态的时候会得到一个事件数组，表示上一次行动之后所发生的事情，对于AI训练会有所帮助。
+
+当前有这几种事件：me-hit-me，me-hit-enemy，enemy-hit-me，enemy-hit-enemy
+
+##### 子弹命中
+
+上次行动后有坦克被子弹命中。
+
+```
+{
+  "type": "me-hit-me",
+  "from": "abf5d8ae-8a45-4611-b93e-296f501202e3",
+  "target": "a5f1d2fe-1445-1641-243e-996f55da0230"
+}
+```
+
+- **type -** 事件类型，有me-hit-me，me-hit-enemy，enemy-hit-me，enemy-hit-enemy
+- **from -** 发射出子弹的坦克id
+- **target -** 被击中的坦克id
+
+##### 撞击事件
+
+己方坦克因撞击向前移动失败。
+
+```
+{
+  "type": "collide-wall",
+  "target": "a5f1d2fe-1445-1641-243e-996f55da0230"
+}
+```
+
+- **type -** 事件类型，有collide-wall（撞击边缘），collide-obstacle（撞击障碍物），collide-tank（撞击坦克）
+- **target -** 发生撞击的坦克id
+
+### 行动指令
+
+行动指令由AI发送给本平台，定义下一步AI如何行动，样例如下：
+
+```
+{
+  "abf5d8ae-8a45-4611-b93e-296f501202e3": "move",
+  "a5f1d2fe-1445-1641-243e-996f55da0230": "fire"
+}
+```
+
+- 己方坦克id为key
+- 下一步的行动为value，有：move（前进一格），left（逆时针旋转90°），right（顺时针旋转90°），fire（发射炮弹），stay（不动）
+- 没指定行动的坦克都视为stay
+- 只能操作己方还活着的坦克，其他指令都会被自动忽略
+
+    </script>
+    <script>
+      function img (name) {
+        return `![](/static/doc-images/${name})`;
+      }
+      const html = marked(_.template(document.querySelector('#doc').innerHTML)());
+      document.querySelector('.markdown-body').innerHTML = html;
+      setTimeout(() => {
+        const $toc = document.querySelector('.toc');
+        document.querySelectorAll('.markdown-body h1,h2,h3,h4').forEach(item => {
+          const anchor = document.createElement('a');
+          anchor.name = item.innerHTML;
+          item.parentElement.insertBefore(anchor, item);
+          const link = document.createElement('a');
+          link.href = '#' + item.innerHTML;
+          link.innerHTML = item.innerHTML;
+          link.className = item.tagName.toLowerCase();
+          $toc.appendChild(link);
+        });
+      }, 100);
+    </script>
+    <style>
+      .toc {
+        position: fixed;
+        top: 40px;
+        left: 10px;
+        width: 220px;
+        box-sizing: border-box;
+        border-right: 3px solid #CCC;
+      }
+      .toc a {
+        color: #777;
+        display: block;
+        margin: 5px 0;
+        text-decoration: none;
+      }
+      .toc a:hover {
+        color: #333;
+      }
+      .toc a.h1 {
+        font-size: 18px;
+      }
+      .toc a.h2 {
+        font-size: 16px;
+        text-indent: 10px;
+      }
+      .toc a.h3 {
+        font-size: 14px;
+        text-indent: 20px;
+      }
+      .toc a.h4 {
+        font-size: 12px;
+        text-indent: 30px;
+      }
+      .markdown-body {
+        margin-left: 250px;
+        margin-bottom: 70vh;
+      }
+      .markdown-body img {
+        box-shadow: 2px 2px 30px rgba(0, 0, 0, 0.5);
+      }
+    </style>
+  </body>
+</html>

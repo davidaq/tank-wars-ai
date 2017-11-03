@@ -393,7 +393,7 @@ class GameHost extends EventEmitter {
             action: action,
             state: this.getState(side),
           }),
-        }).then(r => r.json(), err => []);
+        }).then(r => r.json()).catch(err => []);
       }
     }).call(this);
   }
