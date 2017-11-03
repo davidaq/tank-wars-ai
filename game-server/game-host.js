@@ -126,7 +126,7 @@ class GameHost extends EventEmitter {
           y = Math.floor(Math.random() * this.MapHeight);
           break;
       }
-      if (x >= 0 && x < this.MapWidth && y >= 0 && y < this.MapHeight) {
+      if (x >= 0 && x < this.MapWidth && y >= 0 && y < this.MapHeight && this.terain[y][x] === 0) {
         this.terain[y][x] = 1;
         this.terain[this.MapHeight - y - 1][this.MapWidth - x - 1] = 1;
         i += 2;
