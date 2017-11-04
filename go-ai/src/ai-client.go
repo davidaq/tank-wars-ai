@@ -6,14 +6,15 @@ import (
 	"net/http"
 	"io/ioutil"
 	"fmt"
+	"os"
 	"encoding/json"
 	"strings"
 )
 
 func main() {
-	host := "ml.niven.cn:8777"
-	gameid := "ryImt-sAW"
-	side := "red"
+	host := os.Getenv("HOST")
+	gameid := os.Getenv("GAME")
+	side := os.Getenv("SIDE")
 
 	player := f.NewPlayer(t.NewRandom())
 	var state *f.GameState = setup(host, gameid, side)
