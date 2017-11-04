@@ -10,10 +10,7 @@ func NewDodger() *Dodger {
 	return inst
 }
 
-func (self *Dodger) Init(state *GameState, tankid string) {
-}
-
-func (self *Dodger) Suggest(state *GameState, objective *Objective) SuggestionItem {
+func (self *Dodger) Suggest(tank *Tank, state *GameState, objective *Objective) SuggestionItem {
 	ret := SuggestionItem {
 		Action: ActionMove,
 		Urgent: 1,

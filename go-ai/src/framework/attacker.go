@@ -10,10 +10,7 @@ func NewAttacker() *Attacker {
 	return inst
 }
 
-func (self *Attacker) Init(state *GameState, tankid string) {
-}
-
-func (self *Attacker) Suggest(state *GameState, objective *Objective) SuggestionItem {
+func (self *Attacker) Suggest(tank *Tank, state *GameState, objective *Objective) SuggestionItem {
 	ret := SuggestionItem {
 		Action: ActionFire,
 		Urgent: 0.5,

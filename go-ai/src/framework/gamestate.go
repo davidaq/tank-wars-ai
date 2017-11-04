@@ -18,6 +18,13 @@ type Terain struct {
 	Data [][]int
 }
 
+func (self Terain) Get(x int, y int) int {
+	if (x < 0 || x >= self.Width || y < 0 || y >= self.Height) {
+		return 1
+	}
+	return self.Data[y][x]
+}
+
 type Tank struct {
 	Id string
 	Pos Position
@@ -60,10 +67,11 @@ func ParseGameState (bytes []byte) (*GameState, error) {
 	}
 	for _, ievent := range dat["events"].([]interface{}) {
 		event := ievent.(map[string]interface{})
+		from, _ := event["from"].(string)
 		ret.Events = append(ret.Events, Event {
 			Typ: event["type"].(string),
 			Target: event["target"].(string),
-			From: event["from"].(string),
+			From: from,
 		})
 	}
 	directionMapToInt := make(map[string]int)

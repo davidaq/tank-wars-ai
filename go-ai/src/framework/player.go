@@ -26,15 +26,11 @@ func (self *Player) Play(state *GameState) map[string]int {
 		self.inited = true
 		self.tactics.Init(state)
 		for _, tank  := range state.MyTank {
-			group := reactors {
+			self.reactors[tank.Id] = reactors {
 				dodger: NewDodger(),
 				attacker: NewAttacker(),
 				traveller: NewTraveller(),
 			}
-			group.dodger.Init(state, tank.Id)
-			group.attacker.Init(state, tank.Id)
-			group.traveller.Init(state, tank.Id)
-			self.reactors[tank.Id] = group
 		}
 	}
 	self.tactics.Plan(state, &self.objectives)
@@ -44,11 +40,11 @@ func (self *Player) Play(state *GameState) map[string]int {
 		objective := self.objectives[tank.Id]
 		reactors := self.reactors[tank.Id]
 		suggestion := Suggestion {
-			dodge: reactors.dodger.Suggest(state, &objective),
-			attack: reactors.attacker.Suggest(state, &objective),
-			travel: reactors.traveller.Suggest(state, &objective),
+			dodge: reactors.dodger.Suggest(&tank, state, &objective),
+			attack: reactors.attacker.Suggest(&tank, state, &objective),
+			travel: reactors.traveller.Suggest(&tank, state, &objective),
 		}
-		movement[tank.Id] = self.tactics.Decide(tank.Id, suggestion)
+		movement[tank.Id] = self.tactics.Decide(&tank, state, suggestion)
 	}
 	return movement
 }

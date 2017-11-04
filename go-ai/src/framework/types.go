@@ -35,13 +35,12 @@ type Suggestion struct {
 
 // 行动子系统协议
 type reactor interface {
-	Init(state *GameState, tankid string)
-	Suggest(state *GameState, objective *Objective) SuggestionItem
+	Suggest(tank *Tank, state *GameState, objective *Objective) SuggestionItem
 }
 
 // 策略系统协议，必须实现计划、决定两种行为
 type Tactics interface {
 	Init(state *GameState)																					// 根据初始state，初始化
 	Plan(state *GameState, objective *map[string]Objective)					// 根据state，填充objective，设定每个坦克的战略目的地
-	Decide(tankid string, suggestion Suggestion) int								// 3个行动系统得出建议后，最终决定采取哪个行动
+	Decide(tank *Tank, state *GameState, suggestion Suggestion) int								// 3个行动系统得出建议后，最终决定采取哪个行动
 }
