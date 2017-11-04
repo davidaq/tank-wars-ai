@@ -315,9 +315,6 @@ class GameHost extends EventEmitter {
             // hit wall
           } else if (target.tank) {
             const isFriendlyFire = bullet.color == target.tank;
-            if (isFriendlyFire) {
-              console.log('FriendlyFire!!!');
-            }
             if (!this.FriendlyFire && isFriendlyFire) {
               removeBullet = false;
             } else {
