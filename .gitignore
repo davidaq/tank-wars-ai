@@ -1,5 +1,6 @@
 *.tmp
 .*
+.idea/
 !.gitignore
 db/
 node_modules/
