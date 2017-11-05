@@ -14,7 +14,7 @@ func path(env [][]int, source Pos, target Pos, ret SuggestionItem) (SuggestionIt
 	for i := 0; i < rows; i++ {
 		for j := 0; j < cols; j++ {
 			if env[i][j]!=0 {
-				a.FillTile(astar.Point{i, j}, -1) 
+				a.FillTile(astar.Point{j, i}, -1) 
 			}
 		}
   	}
@@ -106,45 +106,45 @@ func transDirection (source Pos, target Pos) int {
 		return res
 	}
 	switch source.direction {
-	case 0:
-		if source.x < target.x {
-			res = 4
-		} else if source.x > target.x {
-			res = 3
-		} else if source.y < target.y {
-			res = 2
-		} else if source.y > target.y {
-			res = 4
-		}
-	case 2:
-		if source.x < target.x {
-			res = 3
-		} else if source.x > target.x {
-			res = 4
-		} else if source.y < target.y {
-			res = 4
-		} else if source.y > target.y {
-			res = 2
-		}
 	case 1:
 		if source.x < target.x {
 			res = 4
 		} else if source.x > target.x {
-			res = 2
+			res = 3
 		} else if source.y < target.y {
 			res = 4
 		} else if source.y > target.y {
+			res = 2
+		}
+	case 2:
+		if source.x < target.x {
+			res = 4
+		} else if source.x > target.x {
+			res = 2
+		} else if source.y < target.y {
 			res = 3
+		} else if source.y > target.y {
+			res = 4
 		}
 	case 3:
+		if source.x < target.x {
+			res = 3
+		} else if source.x > target.x {
+			res = 4
+		} else if source.y < target.y {
+			res = 2
+		} else if source.y > target.y {
+			res = 4
+		}
+	case 4:
 		if source.x < target.x {
 			res = 2
 		} else if source.x > target.x {
 			res = 4
 		} else if source.y < target.y {
-			res = 3
-		} else if source.y > target.y {
 			res = 4
+		} else if source.y > target.y {
+			res = 3
 		}
 	}
 	return res
