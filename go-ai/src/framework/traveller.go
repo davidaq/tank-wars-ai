@@ -1,8 +1,7 @@
 // 行走寻路行动子系统
 package framework
 
-import "fmt"
-import "github.com/nickdavies/go-astar/astar"
+import "lib/go-astar"
 
 func path(env [][]int, source Pos, target Pos, ret SuggestionItem) (SuggestionItem) {
 	rows := len(env)
@@ -84,7 +83,7 @@ func path(env [][]int, source Pos, target Pos, ret SuggestionItem) (SuggestionIt
 	count := 0
 	for pathoutput != nil {
 			count++
-			fmt.Printf("At (%d, %d)\n", pathoutput.Col, pathoutput.Row)
+			// fmt.Printf("At (%d, %d)\n", pathoutput.Col, pathoutput.Row)
 			if count == 2 {
 				firstPoint.x = pathoutput.Col
 				firstPoint.y = pathoutput.Row
