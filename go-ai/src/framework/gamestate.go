@@ -100,8 +100,8 @@ func ParseGameState (bytes []byte) (*GameState, error) {
 		line := iline.([]interface{})
 		ret.Terain.Width = len(line)
 		oline := make([]int, ret.Terain.Width)
-		for _, v := range line {
-			oline = append(oline, int(v.(float64)))
+		for i, v := range line {
+			oline[i] = int(v.(float64))
 		}
 		ret.Terain.Data = append(ret.Terain.Data, oline)
 	}
