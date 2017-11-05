@@ -165,7 +165,7 @@ func NewTraveller() *Traveller {
 }
 func (self *Traveller) Suggest(tank *Tank, state *GameState, objective *Objective) SuggestionItem {
 	ret := SuggestionItem {
-		Action: ActionMove,
+		Action: ActionLeft,
 		Urgent: 1,
 	}
 
