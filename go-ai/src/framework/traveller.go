@@ -1,7 +1,9 @@
 // 行走寻路行动子系统
 package framework
 
-import "lib/go-astar"
+import (
+	"lib/go-astar";
+)
 
 func path(env [][]int, source Pos, target Pos, ret SuggestionItem) (SuggestionItem) {
 	rows := len(env)
@@ -10,13 +12,34 @@ func path(env [][]int, source Pos, target Pos, ret SuggestionItem) (SuggestionIt
 	a := astar.NewAStar(rows, cols)
 	p2p := astar.NewPointToPoint()
 
+	
+	a.FillTile(astar.Point{ Row: source.y, Col: source.x + 1}, 1);
+	a.FillTile(astar.Point{ Row: source.y, Col: source.x - 1}, 1);
+	a.FillTile(astar.Point{ Row: source.y + 1, Col: source.x}, 1);
+	a.FillTile(astar.Point{ Row: source.y - 1, Col: source.x}, 1);
+
+	switch source.direction {
+	case DirectionLeft: 
+		a.FillTile(astar.Point{ Row: source.y, Col: source.x - 1}, 0);
+		break;
+	case DirectionRight: 
+		a.FillTile(astar.Point{ Row: source.y, Col: source.x + 1}, 0);
+		break;
+	case DirectionUp: 
+		a.FillTile(astar.Point{ Row: source.y - 1, Col: source.x}, 0);
+		break;
+	case DirectionDown: 
+		a.FillTile(astar.Point{ Row: source.y + 1, Col: source.x}, 0);
+		break;
+	}
+
 	for i := 0; i < rows; i++ {
 		for j := 0; j < cols; j++ {
 			if env[i][j]!=0 {
-				a.FillTile(astar.Point{j, i}, -1) 
+				a.FillTile(astar.Point{ Row: i, Col: j }, -1) 
 			}
 		}
-  	}
+	}
 
 	switch target.direction {
 	case 0: break;
@@ -70,8 +93,8 @@ func path(env [][]int, source Pos, target Pos, ret SuggestionItem) (SuggestionIt
 		break;
 	}
 
-	sourcePoint := []astar.Point{astar.Point{source.x,source.y}}
-	targetPoint := []astar.Point{astar.Point{target.x,target.y}}
+	sourcePoint := []astar.Point{astar.Point{Row: source.y, Col: source.x}}
+	targetPoint := []astar.Point{astar.Point{Row: target.y, Col: target.x}}
 
 	pathoutput := a.FindPath(p2p, sourcePoint, targetPoint)
 
@@ -83,7 +106,6 @@ func path(env [][]int, source Pos, target Pos, ret SuggestionItem) (SuggestionIt
 	count := 0
 	for pathoutput != nil {
 			count++
-			// fmt.Printf("At (%d, %d)\n", pathoutput.Col, pathoutput.Row)
 			if count == 2 {
 				firstPoint.x = pathoutput.Col
 				firstPoint.y = pathoutput.Row
@@ -99,54 +121,27 @@ func path(env [][]int, source Pos, target Pos, ret SuggestionItem) (SuggestionIt
 }
 
 func transDirection (source Pos, target Pos) int {
-	res := 0 
+	targetDirection := DirectionNone
 	if source.x == target.x && source.y == target.y {
-		res = 1
-		return res
+		return ActionStay
 	}
-	switch source.direction {
-	case 1:
-		if source.x < target.x {
-			res = 4
-		} else if source.x > target.x {
-			res = 3
-		} else if source.y < target.y {
-			res = 4
-		} else if source.y > target.y {
-			res = 2
-		}
-	case 2:
-		if source.x < target.x {
-			res = 4
-		} else if source.x > target.x {
-			res = 2
-		} else if source.y < target.y {
-			res = 3
-		} else if source.y > target.y {
-			res = 4
-		}
-	case 3:
-		if source.x < target.x {
-			res = 3
-		} else if source.x > target.x {
-			res = 4
-		} else if source.y < target.y {
-			res = 2
-		} else if source.y > target.y {
-			res = 4
-		}
-	case 4:
-		if source.x < target.x {
-			res = 2
-		} else if source.x > target.x {
-			res = 4
-		} else if source.y < target.y {
-			res = 4
-		} else if source.y > target.y {
-			res = 3
-		}
+	if source.x < target.x {
+		targetDirection = DirectionRight
+	} else if source.x > target.x {
+		targetDirection = DirectionLeft
+	} else if source.y < target.y {
+		targetDirection = DirectionDown
+	} else if source.y > target.y {
+		targetDirection = DirectionUp
 	}
-	return res
+	if targetDirection == source.direction {
+		return ActionMove
+	}
+	if ((targetDirection - 1) - (source.direction - 1) + 4) % 4 == 1 {
+		return ActionLeft
+	} else {
+		return ActionRight
+	}
 }
 
 type Pos struct {
