@@ -5,9 +5,9 @@ frame((state, obj) => {
     obj[tank.id] = {
       x: state.enemyTank[0].x,
       y: state.enemyTank[0].y,
-      attack: 0,
-      travel: 1,
-      dodge: 10000,
+      attack: 10000,
+      travel: 10000,
+      dodge: 0,
     };
   });
 });

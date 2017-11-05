@@ -49,9 +49,12 @@ func path(env [][]int, source Pos, target Pos, ret SuggestionItem) (SuggestionIt
 			if tmpI == cols {
 				break;
 			}
-			if env[target.x][tmpI] == 1 {
+			if env[tmpI][target.x] == 1 {
 				break;
 			}
+		}
+		if source.x == target.x && source.y > target.y {
+			break;
 		}
 		target.y = tmpI - 1
 		break;
@@ -61,9 +64,12 @@ func path(env [][]int, source Pos, target Pos, ret SuggestionItem) (SuggestionIt
 			if tmpI == rows {
 				break;
 			}
-			if env[tmpI][target.y] == 1 {
+			if env[target.y][tmpI] == 1 {
 				break;
 			}
+		}
+		if source.y == target.y && source.x > target.x {
+			break;
 		}
 		target.x = tmpI - 1
 		break;
@@ -73,9 +79,12 @@ func path(env [][]int, source Pos, target Pos, ret SuggestionItem) (SuggestionIt
 			if tmpI == -1 {
 				break;
 			}
-			if env[target.x][tmpI] == 1 {
+			if env[tmpI][target.x] == 1 {
 				break;
 			}
+		}
+		if source.x == target.x && source.y < target.y {
+			break;
 		}
 		target.y = tmpI + 1
 		break;
@@ -85,9 +94,12 @@ func path(env [][]int, source Pos, target Pos, ret SuggestionItem) (SuggestionIt
 			if tmpI == -1 {
 				break;
 			}
-			if env[tmpI][target.y] == 1 {
+			if env[target.y][tmpI] == 1 {
 				break;
 			}
+		}
+		if source.y == target.y && source.x < target.x {
+			break;
 		}
 		target.x = tmpI + 1
 		break;
@@ -122,9 +134,6 @@ func path(env [][]int, source Pos, target Pos, ret SuggestionItem) (SuggestionIt
 
 func transDirection (source Pos, target Pos) int {
 	targetDirection := DirectionNone
-	if source.x == target.x && source.y == target.y {
-		return ActionStay
-	}
 	if source.x < target.x {
 		targetDirection = DirectionRight
 	} else if source.x > target.x {
@@ -133,6 +142,11 @@ func transDirection (source Pos, target Pos) int {
 		targetDirection = DirectionDown
 	} else if source.y > target.y {
 		targetDirection = DirectionUp
+	} else {
+		targetDirection = target.direction
+		if targetDirection == DirectionNone || source.direction == target.direction {
+			return ActionStay	
+		} 
 	}
 	if targetDirection == source.direction {
 		return ActionMove

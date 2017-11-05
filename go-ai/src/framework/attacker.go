@@ -21,28 +21,28 @@ func (self *Attacker) calcFireLine(tank *Tank, state *GameState, fireline *[]Pos
 
 	switch tank.Pos.Direction {
 		case DirectionUp:
-			for y := tank.Pos.Y; y >= 0; y-- {
+			for y := tank.Pos.Y - 1; y >= 0; y-- {
 				if 1 == state.Terain.Get(tank.Pos.X, y) {
 					break
 				}
 				*fireline = append(*fireline, Position{X: tank.Pos.X, Y: y, Direction: tank.Pos.Direction})
 			}
 		case DirectionDown:
-			for y := tank.Pos.Y; y < state.Terain.Height; y++ {
+			for y := tank.Pos.Y + 1; y < state.Terain.Height; y++ {
 				if 1 == state.Terain.Get(tank.Pos.X, y) {
 					break
 				}
 				*fireline = append(*fireline, Position{X: tank.Pos.X, Y: y, Direction: tank.Pos.Direction})
 			}
 		case DirectionLeft:
-			for x := tank.Pos.X; x >= 0; x-- {
+			for x := tank.Pos.X - 1; x >= 0; x-- {
 				if 1 == state.Terain.Get(x, tank.Pos.Y) {
 					break
 				}
 				*fireline = append(*fireline, Position{X: x, Y: tank.Pos.Y, Direction: tank.Pos.Direction})
 			}
 		case DirectionRight:
-			for x := tank.Pos.X; x < state.Terain.Width; x++ {
+			for x := tank.Pos.X + 1; x < state.Terain.Width; x++ {
 				if 1 == state.Terain.Get(x, tank.Pos.Y) {
 					break
 				}
