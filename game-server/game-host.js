@@ -309,48 +309,46 @@ class GameHost extends EventEmitter {
         removeBullet = true;
       } else {
         const target = scene[bullet.y][bullet.x];
-        if (target) {
+        if (target === 1) {
           removeBullet = true;
-          if (target === 1) {
-            // hit wall
-          } else if (target.tank) {
-            const isFriendlyFire = bullet.color == target.tank;
-            if (!this.FriendlyFire && isFriendlyFire) {
-              removeBullet = false;
-            } else {
-              let blueEventType;
-              let redEventType;
-              if (isFriendlyFire) {
-                if (bullet.color === 'red') {
-                  redEventType = 'me-hit-me';
-                  blueEventType = 'enemy-hit-enemy';
-                } else {
-                  blueEventType = 'me-hit_me';
-                  redEventType = 'enemy-hit-enemy';
-                }
+        } else if (target.tank) {
+          removeBullet = true;
+          const isFriendlyFire = bullet.color === target.tank;
+          if (!this.FriendlyFire && isFriendlyFire) {
+            removeBullet = false;
+          } else {
+            let blueEventType;
+            let redEventType;
+            if (isFriendlyFire) {
+              if (bullet.color === 'red') {
+                redEventType = 'me-hit-me';
+                blueEventType = 'enemy-hit-enemy';
               } else {
-                if (bullet.color === 'red') {
-                  redEventType = 'me-hit-enemy';
-                  blueEventType = 'enemy-hit-me';
-                } else {
-                  blueEventType = 'me-hit-enemy';
-                  redEventType = 'enemy-hit-me';
-                }
+                blueEventType = 'me-hit-me';
+                redEventType = 'enemy-hit-enemy';
               }
-              scene[bullet.y][bullet.x] = this.terain[bullet.y][bullet.x];
-              const hitTank = this[target.tank + 'Tank'][target.i];
-              this[target.tank + 'Tank'][target.i] = null;
-              this.redEvents.push({
-                type: redEventType,
-                from: bullet.from,
-                target: hitTank.id,
-              });
-              this.blueEvents.push({
-                type: blueEventType,
-                from: bullet.from,
-                target: hitTank.id,
-              });
+            } else {
+              if (bullet.color === 'red') {
+                redEventType = 'me-hit-enemy';
+                blueEventType = 'enemy-hit-me';
+              } else {
+                blueEventType = 'me-hit-enemy';
+                redEventType = 'enemy-hit-me';
+              }
             }
+            scene[bullet.y][bullet.x] = this.terain[bullet.y][bullet.x];
+            const hitTank = this[target.tank + 'Tank'][target.i];
+            this[target.tank + 'Tank'][target.i] = null;
+            this.redEvents.push({
+              type: redEventType,
+              from: bullet.from,
+              target: hitTank.id,
+            });
+            this.blueEvents.push({
+              type: blueEventType,
+              from: bullet.from,
+              target: hitTank.id,
+            });
           }
         }
       }

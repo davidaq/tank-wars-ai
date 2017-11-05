@@ -5,6 +5,7 @@ import (
 )
 
 type GameState struct {
+	Raw []byte
 	Ended bool
 	Events []Event
 	Terain Terain
@@ -47,12 +48,26 @@ type Position struct {
 	X, Y, Direction int
 }
 
+var directionMapToInt map[string]int
+func DirectionFromStr (str string) int {
+	if directionMapToInt == nil {
+		directionMapToInt := make(map[string]int)
+		directionMapToInt["none"] = DirectionNone
+		directionMapToInt["up"] = DirectionUp
+		directionMapToInt["left"] = DirectionLeft
+		directionMapToInt["down"] = DirectionDown
+		directionMapToInt["right"] = DirectionRight
+	}
+	return directionMapToInt[str]
+}
+
 func ParseGameState (bytes []byte) (*GameState, error) {
 	var dat map[string]interface{}
 	if err := json.Unmarshal(bytes, &dat); err != nil {
 		return nil, err
 	}
 	ret := &GameState {
+		Raw: bytes,
 		Ended: dat["ended"].(bool),
 		Events: nil,
 		MyTank: nil,
@@ -74,15 +89,10 @@ func ParseGameState (bytes []byte) (*GameState, error) {
 			From: from,
 		})
 	}
-	directionMapToInt := make(map[string]int)
-	directionMapToInt["up"] = DirectionUp
-	directionMapToInt["left"] = DirectionLeft
-	directionMapToInt["down"] = DirectionDown
-	directionMapToInt["right"] = DirectionRight
-	parseTank(directionMapToInt, dat["myTank"].([]interface{}), &ret.MyTank)
-	parseTank(directionMapToInt, dat["enemyTank"].([]interface{}), &ret.EnemyTank)
-	parseBullet(directionMapToInt, dat["myBullet"].([]interface{}), &ret.MyBullet)
-	parseBullet(directionMapToInt, dat["enemyBullet"].([]interface{}), &ret.EnemyBullet)
+	parseTank(dat["myTank"].([]interface{}), &ret.MyTank)
+	parseTank(dat["enemyTank"].([]interface{}), &ret.EnemyTank)
+	parseBullet(dat["myBullet"].([]interface{}), &ret.MyBullet)
+	parseBullet(dat["enemyBullet"].([]interface{}), &ret.EnemyBullet)
 
 	for _, iline := range dat["terain"].([]interface{}) {
 		line := iline.([]interface{})
@@ -97,7 +107,7 @@ func ParseGameState (bytes []byte) (*GameState, error) {
 	return ret, nil
 }
 
-func parseTank(directionMapToInt map[string]int, dat []interface{}, tanks *[]Tank) {
+func parseTank(dat []interface{}, tanks *[]Tank) {
 	for _, itank := range dat {
 		tank := itank.(map[string]interface{})
 		*tanks = append(*tanks, Tank {
@@ -105,13 +115,13 @@ func parseTank(directionMapToInt map[string]int, dat []interface{}, tanks *[]Tan
 			Pos: Position {
 				X: int(tank["x"].(float64)),
 				Y: int(tank["y"].(float64)),
-				Direction: directionMapToInt[tank["direction"].(string)],
+				Direction: DirectionFromStr(tank["direction"].(string)),
 			},
 		})
 	}
 }
 
-func parseBullet(directionMapToInt map[string]int, dat []interface{}, bullets *[]Bullet) {
+func parseBullet(dat []interface{}, bullets *[]Bullet) {
 	for _, ibullet := range dat {
 		bullet := ibullet.(map[string]interface{})
 		*bullets = append(*bullets, Bullet {
@@ -120,7 +130,7 @@ func parseBullet(directionMapToInt map[string]int, dat []interface{}, bullets *[
 			Pos: Position {
 				X: int(bullet["x"].(float64)),
 				Y: int(bullet["y"].(float64)),
-				Direction: directionMapToInt[bullet["direction"].(string)],
+				Direction: DirectionFromStr(bullet["direction"].(string)),
 			},
 		})
 	}
