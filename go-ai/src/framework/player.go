@@ -40,9 +40,9 @@ func (self *Player) Play(state *GameState) map[string]int {
 		objective := self.objectives[tank.Id]
 		reactors := self.reactors[tank.Id]
 		suggestion := Suggestion {
-			dodge: reactors.dodger.Suggest(&tank, state, &objective),
-			attack: reactors.attacker.Suggest(&tank, state, &objective),
-			travel: reactors.traveller.Suggest(&tank, state, &objective),
+			Dodge: reactors.dodger.Suggest(&tank, state, &objective),
+			Attack: reactors.attacker.Suggest(&tank, state, &objective),
+			Travel: reactors.traveller.Suggest(&tank, state, &objective),
 		}
 		movement[tank.Id] = self.tactics.Decide(&tank, state, suggestion)
 	}

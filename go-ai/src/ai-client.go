@@ -15,8 +15,9 @@ func main() {
 	host := os.Getenv("HOST")
 	gameid := os.Getenv("GAME")
 	side := os.Getenv("SIDE")
+	tactics := os.Getenv("TACTICS")
 
-	player := f.NewPlayer(t.NewRandom())
+	player := f.NewPlayer(t.StartTactics(tactics))
 	var state *f.GameState = setup(host, gameid, side)
 	i := 0
 	for !state.Ended {
