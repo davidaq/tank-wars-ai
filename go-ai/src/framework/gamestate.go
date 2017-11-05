@@ -48,17 +48,19 @@ type Position struct {
 	X, Y, Direction int
 }
 
-var directionMapToInt map[string]int
 func DirectionFromStr (str string) int {
-	if directionMapToInt == nil {
-		directionMapToInt := make(map[string]int)
-		directionMapToInt["none"] = DirectionNone
-		directionMapToInt["up"] = DirectionUp
-		directionMapToInt["left"] = DirectionLeft
-		directionMapToInt["down"] = DirectionDown
-		directionMapToInt["right"] = DirectionRight
+	switch (str) {
+	case "up":
+		return DirectionUp;
+	case "left":
+		return DirectionLeft;
+	case "down":
+		return DirectionDown;
+	case "right":
+		return DirectionRight;
+	default:
+		return DirectionNone;
 	}
-	return directionMapToInt[str]
 }
 
 func ParseGameState (bytes []byte) (*GameState, error) {
