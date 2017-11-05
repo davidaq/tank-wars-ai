@@ -25,7 +25,9 @@ type Objective struct {
 // 3个行动系统给出的行动建议
 type SuggestionItem struct {
 	Action int				// 建议接下来坦克的行为
-	Urgent float32		// 该建议的迫切程度：[0-1]
+	Urgent int				// 越小越紧急，寻路代表还有多远，
+							// 躲避代表如果不被采纳还有多少步（子弹）就被命中，
+							// 活力系统代表射击目标离自己多远（子弹距离）
 }
 type Suggestion struct {
 	dodge 	SuggestionItem		// 躲避系统建议

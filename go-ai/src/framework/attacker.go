@@ -13,7 +13,7 @@ func NewAttacker() *Attacker {
 func (self *Attacker) Suggest(tank *Tank, state *GameState, objective *Objective) SuggestionItem {
 	ret := SuggestionItem {
 		Action: ActionFire,
-		Urgent: 0.5,
+		Urgent: 1,
 	}
 	return ret
 }
