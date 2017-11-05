@@ -6,9 +6,9 @@ frame((state, obj) => {
       x: state.terain[0].length - 1,
       y: state.terain.length - 1,
       direction: 'up',
-      attack: 0,
-      travel: 1,
-      dodge: 10000,
+      attack: 1,
+      travel: 2,
+      dodge: 0,
     };
   });
 });
