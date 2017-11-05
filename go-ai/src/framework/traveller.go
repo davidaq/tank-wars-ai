@@ -163,7 +163,6 @@ func (self *Traveller) Suggest(tank *Tank, state *GameState, objective *Objectiv
 		Action: ActionLeft,
 		Urgent: 1,
 	}
-	return ret
 
 	source := Pos{
 		x:tank.Pos.X,

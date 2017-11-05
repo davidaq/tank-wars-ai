@@ -63,6 +63,23 @@ func DirectionFromStr (str string) int {
 	}
 }
 
+func ActionFromStr (str string) int {
+	switch (str) {
+	case "move":
+		return ActionMove;
+	case "left":
+		return ActionLeft;
+	case "right":
+		return ActionRight;
+	case "fire":
+		return ActionFire;
+	case "stay":
+		return ActionStay;
+	default:
+		return ActionNone;
+	}
+}
+
 func ParseGameState (bytes []byte) (*GameState, error) {
 	var dat map[string]interface{}
 	if err := json.Unmarshal(bytes, &dat); err != nil {

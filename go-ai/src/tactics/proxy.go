@@ -13,6 +13,7 @@ import (
 type coplan struct {
 	obj f.Objective
 	dodge, attack, travel float64
+	force int
 }
 
 type Proxy struct {
@@ -62,6 +63,7 @@ func (self *Proxy) startServer () {
 				dodge, _ := val["dodge"].(float64)
 				attack, _ := val["attack"].(float64)
 				travel, _ := val["travel"].(float64)
+				force, _ := val["force"].(string)
 				plan[key] = coplan {
 					obj: f.Objective {
 						f.Position {
@@ -73,6 +75,7 @@ func (self *Proxy) startServer () {
 					dodge: dodge,
 					attack: attack,
 					travel: travel,
+					force: f.ActionFromStr(force),
 				}
 			}
 			self.coplan = plan
@@ -135,7 +138,10 @@ func (a citems) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a citems) Less(i, j int) bool { return a[i].urg < a[j].urg }
 
 func (self *Proxy) Decide(tank *f.Tank, state *f.GameState, suggestion f.Suggestion) int {
-	cp := self.coplanp[tank.Id];
+	cp := self.coplanp[tank.Id]
+	if cp.force != f.ActionNone {
+		return cp.force
+	}
 	var candidate citems
 	coef := []float64 { cp.dodge, cp.attack, cp.travel }
 	for i, v := range []f.SuggestionItem { suggestion.Dodge, suggestion.Attack, suggestion.Travel } {
