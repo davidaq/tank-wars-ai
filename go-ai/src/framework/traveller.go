@@ -17,7 +17,59 @@ func path(env [][]int, source Pos, target Pos, ret SuggestionItem) (SuggestionIt
 				a.FillTile(astar.Point{i, j}, -1) 
 			}
 		}
-  }
+  	}
+
+	switch target.direction {
+	case 0: break;
+	case 1: 
+		tmpI := target.y + 1
+		for ;tmpI < target.y + 5; tmpI++ {
+			if tmpI == cols {
+				break;
+			}
+			if env[target.x][tmpI] == 1 {
+				break;
+			}
+		}
+		target.y = tmpI - 1
+		break;
+	case 2:
+		tmpI := target.x + 1
+		for ;tmpI < target.x + 5; tmpI++ {
+			if tmpI == rows {
+				break;
+			}
+			if env[tmpI][target.y] == 1 {
+				break;
+			}
+		}
+		target.x = tmpI - 1
+		break;
+	case 3:
+		tmpI := target.y - 1
+		for ;tmpI > target.y - 5; tmpI-- {
+			if tmpI == -1 {
+				break;
+			}
+			if env[target.x][tmpI] == 1 {
+				break;
+			}
+		}
+		target.y = tmpI + 1
+		break;
+	case 4:
+		tmpI := target.x - 1
+		for ;tmpI > target.x - 5; tmpI-- {
+			if tmpI == -1 {
+				break;
+			}
+			if env[tmpI][target.y] == 1 {
+				break;
+			}
+		}
+		target.x = tmpI + 1
+		break;
+	}
 
 	sourcePoint := []astar.Point{astar.Point{source.x,source.y}}
 	targetPoint := []astar.Point{astar.Point{target.x,target.y}}
@@ -45,10 +97,6 @@ func path(env [][]int, source Pos, target Pos, ret SuggestionItem) (SuggestionIt
 	ret.Action = action
 	ret.Urgent = count
 	return ret
-}
-
-func caculateDirectionWay (target Pos) {
-	
 }
 
 func transDirection (source Pos, target Pos) int {
