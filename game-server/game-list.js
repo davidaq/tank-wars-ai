@@ -93,7 +93,11 @@ class GameList extends EventEmitter {
 
   createGameHost (opt) {
     const settings = {};
-    ['id', 'MaxMoves', 'MapWidth', 'MapHeight', 'Obstacles', 'InitTank', 'StaticMap', 'FriendlyFire'].forEach(f => {
+    [
+      'id', 'StaticMap', 'FriendlyFire',
+      'MapWidth', 'MapHeight', 'InitTank', 'TankHP', 'TankSpeed', 'BulletSpeed', 'FlagTime',
+      'Forests', 'Obstacles', 'MaxMoves', 
+    ].forEach(f => {
       settings[f] = opt[f];
     });
     if (opt.client) {

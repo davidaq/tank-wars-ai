@@ -25,10 +25,20 @@ class GameHost extends EventEmitter {
     this.FriendlyFire = !!this.FriendlyFire;
     this.StaticMap = !!this.StaticMap;
     this.InitTank = Math.max(1, this.InitTank - 0);
-    this.MapHeight = Math.max(5, this.MapHeight - 0);
-    this.MapWidth = Math.max(this.InitTank, this.MapWidth - 0);
+    this.TankHP = Math.max(1, this.TankHP - 0);
     this.MaxMoves = Math.max(1, this.MaxMoves - 0);
-    this.Obstacles = Math.min(this.Obstacles - 0, this.MapWidth * (this.MapHeight - this.InitTank * 2));
+    this.TankSpeed = Math.max(1, this.TankSpeed - 0);
+    this.BulletSpeed = Math.max(this.TankSpeed + 1, this.BulletSpeed - 0);
+    const tankW = Math.ceil(Math.sqrt(this.InitTank));
+    const tankH = Math.ceil(this.InitTank / tankW);
+    this.MapWidth = Math.max(tankW * 2, this.MapWidth - 0);
+    this.MapHeight = Math.max(tankH * 2, this.MapHeight - 0);
+    this.MapWidth += 1 - (this.MapHeight & 1);
+    this.MapHeight += 1 - (this.MapHeight & 1);
+    let remain = this.MapWidth * this.MapHeight - tankW * tankH * 2 - 3;
+    this.Obstacles = Math.min(this.Obstacles - 0, remain);
+    remain -= this.Obstacles - 3;
+    this.Forests = Math.min(this.Forests - 0, remain);
     this.playRounds();
   }
   playRounds () {
@@ -80,6 +90,9 @@ class GameHost extends EventEmitter {
       writer.end(JSON.stringify({
         terain: this.terain,
         history: this.history,
+        rounds: i,
+        bulletSpeed: this.BulletSpeed,
+        tankSpeed: this.TankSpeed,
       }));
       writer.on('error', err => null);
       fwriter.on('error', err => null);
@@ -108,8 +121,10 @@ class GameHost extends EventEmitter {
         line.push(0);
       }
     }
-    let x = Math.floor(this.random.nextFloat() * this.MapWidth);
+    let x = Math.floor(this.random.nextFloat() * this.MapWidth / 2);
     let y = Math.floor(this.random.nextFloat() * this.MapHeight);
+    const tankW = Math.ceil(Math.sqrt(this.InitTank));
+    const tankH = Math.ceil(this.InitTank / tankW);
     for (let i = 0; i < this.Obstacles;) {
       switch (Math.floor(this.random.nextFloat() * 4)) {
         case 0:
@@ -125,17 +140,29 @@ class GameHost extends EventEmitter {
           y--;
           break;
         default:
-          x = Math.floor(this.random.nextFloat() * this.MapWidth);
+          x = Math.floor(this.random.nextFloat() * this.MapWidth / 2);
           y = Math.floor(this.random.nextFloat() * this.MapHeight);
           break;
       }
-      if (x >= 0 && x < this.MapWidth && y >= 0 && y < this.MapHeight && this.terain[y][x] === 0) {
+      if (x >= 0 && x < this.MapWidth && y >= 0 && y < this.MapHeight && this.terain[y][x] === 0 && x >= tankW && y >= tankH) {
         this.terain[y][x] = 1;
         this.terain[this.MapHeight - y - 1][this.MapWidth - x - 1] = 1;
         i += 2;
       } else {
-        x = Math.floor(this.random.nextFloat() * this.MapWidth);
+        x = Math.floor(this.random.nextFloat() * this.MapWidth / 2);
         y = Math.floor(this.random.nextFloat() * this.MapHeight);
+      }
+    }
+    for (let i = 0; i < this.Forests;) {
+      while (true) {
+        const x = Math.floor(this.random.nextFloat() * this.MapWidth / 2);
+        const y = Math.floor(this.random.nextFloat() * this.MapHeight);
+        if (x >= 0 && x < this.MapWidth && y >= 0 && y < this.MapHeight && this.terain[y][x] === 0 && x >= tankW && y >= tankH) {
+          this.terain[y][x] = 2;
+          this.terain[this.MapHeight - y - 1][this.MapWidth - x - 1] = 2;
+          i += 2;
+          break;
+        }
       }
     }
   }
@@ -144,16 +171,12 @@ class GameHost extends EventEmitter {
     this.redTank = [];
     this.blueBullet = [];
     this.redBullet = [];
+    const tankW = Math.ceil(Math.sqrt(this.InitTank));
     for (let i = 0; i < this.InitTank; i++) {
-      while (true) {
-        const x = Math.floor(this.random.nextFloat() * this.MapWidth);
-        const y = Math.floor(this.random.nextFloat() * this.MapHeight);
-        if (this.terain[y][x] === 0) {
-          this.blueTank.push({ color: 'blue', x, y, direction: 'right', id: shortid.generate() });
-          this.redTank.push({ color: 'red', x: this.MapWidth - x - 1, y: this.MapHeight - y - 1, direction: 'left', id: shortid.generate() });
-          break;
-        }
-      }
+      const x = Math.floor(i % tankW);
+      const y = Math.floor(i / tankW);
+      this.blueTank.push({ hp: this.TankHP, color: 'blue', x, y, direction: 'down', id: shortid.generate() });
+      this.redTank.push({ hp: this.TankHP, color: 'red', x: this.MapWidth - x - 1, y: this.MapHeight - y - 1, direction: 'up', id: shortid.generate() });
     }
   }
   calcState () {
@@ -166,28 +189,32 @@ class GameHost extends EventEmitter {
       const tank = this.redTank[i];
       scene[tank.y][tank.x] = { tank: 'red', i };
     }
-    this.calcStateMoveBullet(scene, this.blueBullet);
-    this.calcStateMoveBullet(scene, this.redBullet);
-    this.history.push(clone({
-      blueTank: this.blueTank,
-      blueBullet: this.blueBullet,
-      redTank: this.redTank,
-      redBullet: this.redBullet,
-    }));
-    this.calcStateMoveBullet(scene, this.blueBullet);
-    this.calcStateMoveBullet(scene, this.redBullet);
-    this.calcStateMoveTank(scene, this.blueTank, this.blueResp, this.blueBullet);
-    this.calcStateMoveTank(scene, this.redTank, this.redResp, this.redBullet);
+    this.history.push({
+      blueMove: this.blueResp,
+      redMove: this.redResp,
+    });
+    for (let i = 0; i < this.BulletSpeed; i++) {
+      this.calcStateMoveBullet(scene, this.blueBullet);
+      this.calcStateMoveBullet(scene, this.redBullet);
+      this.history.push(clone({
+        blueTank: this.blueTank,
+        blueBullet: this.blueBullet,
+        redTank: this.redTank,
+        redBullet: this.redBullet,
+      }));
+    }
+    for (let i = 0; i < this.TankSpeed; i++) {
+      this.calcStateMoveTank(scene, this.blueTank, this.blueResp, this.blueBullet);
+      this.calcStateMoveTank(scene, this.redTank, this.redResp, this.redBullet);
+      this.history.push(clone({
+        blueTank: this.blueTank,
+        blueBullet: this.blueBullet,
+        redTank: this.redTank,
+        redBullet: this.redBullet,
+      }));
+    }
     this.blueTank = this.blueTank.filter(v => !!v);
     this.redTank = this.redTank.filter(v => !!v);
-    this.history.push(clone({
-      blueTank: this.blueTank,
-      blueBullet: this.blueBullet,
-      blueMove: this.blueResp,
-      redTank: this.redTank,
-      redBullet: this.redBullet,
-      redMove: this.redResp,
-    }));
   }
   calcStateMoveTank (scene, myTank, myResp, myBullet) {
     if (!myResp) {
@@ -251,10 +278,15 @@ class GameHost extends EventEmitter {
               }
               break;
             case 'fire':
+            case 'fire-up':
+            case 'fire-left':
+            case 'fire-down':
+            case 'fire-right':
+              const direction = move.replace(/^fire-?/, '') || tank.direction;
               myBullet.push({
                 x: tank.x,
                 y: tank.y,
-                direction: tank.direction,
+                direction,
                 id: shortid.generate(),
                 from: tank.id,
                 color: tank.color,
@@ -269,7 +301,7 @@ class GameHost extends EventEmitter {
               });
               continue;
             }
-            if (scene[tank.y][tank.x] !== 0) {
+            if (scene[tank.y][tank.x] !== 0 && scene[tank.y][tank.x] !== 2) {
               this[tank.color + 'Events'].push({
                 type: typeof scene[tank.y][tank.x] == 'number' ? 'collide-obstacle' : 'collide-tank',
                 target: tank.id,
@@ -338,7 +370,6 @@ class GameHost extends EventEmitter {
             }
             scene[bullet.y][bullet.x] = this.terain[bullet.y][bullet.x];
             const hitTank = this[target.tank + 'Tank'][target.i];
-            this[target.tank + 'Tank'][target.i] = null;
             this.redEvents.push({
               type: redEventType,
               from: bullet.from,
@@ -349,6 +380,10 @@ class GameHost extends EventEmitter {
               from: bullet.from,
               target: hitTank.id,
             });
+            hitTank.hp--;
+            if (hitTank.hp == 0) {
+              this[target.tank + 'Tank'][target.i] = null;
+            }
           }
         }
       }
