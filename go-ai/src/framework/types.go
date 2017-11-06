@@ -14,7 +14,11 @@ const (
 	ActionMove = iota
 	ActionLeft = iota
 	ActionRight = iota
-	ActionFire = iota
+	ActionBack = iota
+	ActionFireUp = iota
+	ActionFireLeft = iota
+	ActionFireDown = iota
+	ActionFireRight = iota
 )
 
 // 策略输出，单个坦克的战略目标，作为参考传输给行动系统
@@ -26,8 +30,8 @@ type Objective struct {
 type SuggestionItem struct {
 	Action int				// 建议接下来坦克的行为
 	Urgent int				// 越小越紧急，寻路代表还有多远，
-							// 躲避代表如果不被采纳还有多少步（子弹）就被命中，
-							// 火力系统代表射击目标离自己多远（子弹距离）
+										// 躲避代表如果不被采纳还有多少步（子弹）就被命中，
+										// 火力系统代表射击目标离自己多远（子弹距离）
 }
 type Suggestion struct {
 	Dodge 	SuggestionItem		// 躲避系统建议

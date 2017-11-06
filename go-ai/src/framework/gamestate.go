@@ -7,10 +7,22 @@ import (
 type GameState struct {
 	Raw []byte
 	Ended bool
+	Params Params
+
 	Events []Event
 	Terain Terain
+	FlagWait int
+	FlagPos Position
 	MyTank, EnemyTank []Tank
 	MyBullet, EnemyBullet []Bullet
+}
+
+type Params struct {
+	TankSpeed int
+	BulletSpeed int
+	TankPoint int
+	FlagPoint int
+	Timeout int
 }
 
 type Terain struct {
@@ -18,6 +30,12 @@ type Terain struct {
 	Height int
 	Data [][]int
 }
+
+const (
+	TerainEmpty = iota
+	TerainObstacle = iota
+	TerainForest = iota
+)
 
 func (self Terain) Get(x int, y int) int {
 	if (x < 0 || x >= self.Width || y < 0 || y >= self.Height) {
@@ -28,7 +46,9 @@ func (self Terain) Get(x int, y int) int {
 
 type Tank struct {
 	Id string
+	Hp int
 	Pos Position
+	Bullet string
 }
 
 type Bullet struct {
@@ -65,16 +85,24 @@ func DirectionFromStr (str string) int {
 
 func ActionFromStr (str string) int {
 	switch (str) {
+	case "stay":
+		return ActionStay;
 	case "move":
 		return ActionMove;
 	case "left":
 		return ActionLeft;
 	case "right":
 		return ActionRight;
-	case "fire":
-		return ActionFire;
-	case "stay":
-		return ActionStay;
+	case "back":
+		return ActionBack;
+	case "fire-up":
+		return ActionFireUp;
+	case "fire-left":
+		return ActionFireLeft;
+	case "fire-down":
+		return ActionFireDown;
+	case "fire-right":
+		return ActionFireRight;
 	default:
 		return ActionNone;
 	}
