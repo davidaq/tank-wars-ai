@@ -126,7 +126,7 @@ func (self *Attacker) Suggest(tank *Tank, state *GameState, objective *Objective
 	// 当前火线方向是否有敌军
 	fire, fireUrgent := self.firelineEmeny(tank, state, &fireline)
 	if fire == true {
-		action = ActionFire
+		action = ActionFireUp
 		urgent = int(math.Ceil(float64(fireUrgent / 2)))
 	}
 
@@ -134,7 +134,7 @@ func (self *Attacker) Suggest(tank *Tank, state *GameState, objective *Objective
 	if fire == false {
 		fire, fireUrgent := self.prefire(tank, state, &fireline)
 		if fire == true {
-			action = ActionFire
+			action = ActionFireUp
 			urgent = int(math.Ceil(float64(fireUrgent) / 2))
 		}
 	}

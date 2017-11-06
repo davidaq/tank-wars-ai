@@ -32,9 +32,9 @@ type Terain struct {
 }
 
 const (
-	TerainEmpty = iota
-	TerainObstacle = iota
-	TerainForest = iota
+	TerainEmpty = 0
+	TerainObstacle = 1
+	TerainForest = 2
 )
 
 func (self Terain) Get(x int, y int) int {

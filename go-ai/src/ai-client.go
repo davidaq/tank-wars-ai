@@ -64,8 +64,20 @@ func act(host string, gameid string, side string, move map[string]int) *f.GameSt
 		case f.ActionRight:
 			send[k] = "right"
 			break
-		case f.ActionFire:
-			send[k] = "fire"
+		case f.ActionBack:
+			send[k] = "right"
+			break
+		case f.ActionFireUp:
+			send[k] = "fire-up"
+			break
+		case f.ActionFireLeft:
+			send[k] = "fire-left"
+			break
+		case f.ActionFireDown:
+			send[k] = "fire-down"
+			break
+		case f.ActionFireRight:
+			send[k] = "fire-right"
 			break
 		}
 	}
