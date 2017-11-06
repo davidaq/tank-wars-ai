@@ -27,7 +27,6 @@
             </span>
           </label>
         </div>
-        <br>
         <div class="accept-client-disable">
           <label>
             对战次数： <input name="game-total" type="number" value="1" min="1" step="10">
@@ -44,34 +43,58 @@
         <br>
         <div>
           <label>
-            初始坦克： <input name="game-InitTank" type="number" value="5" min="1" step="1" style="width: 60px">
+            地图宽度： <input name="game-MapWidth" type="number" value="41" min="5" step="1" style="width: 50px">
           </label>
           &nbsp;&nbsp;&nbsp;&nbsp;
           <label>
-            地图宽度： <input name="game-MapWidth" type="number" value="40" min="5" step="1" style="width: 60px">
+            地图高度： <input name="game-MapHeight" type="number" value="21" min="5" step="1" style="width: 50px">
           </label>
           &nbsp;&nbsp;&nbsp;&nbsp;
           <label>
-            地图高度： <input name="game-MapHeight" type="number" value="20" min="5" step="1" style="width: 60px">
+            初始坦克： <input name="game-InitTank" type="number" value="5" min="1" step="1" style="width: 50px">
           </label>
           &nbsp;&nbsp;&nbsp;&nbsp;
           <label>
-            障碍物量： <input name="game-Obstacles" type="number" value="10" min="5" step="1" style="width: 60px">
+            坦克血量： <input name="game-TankHP" type="number" value="10" min="2" step="1" style="width: 50px">
           </label>
           &nbsp;&nbsp;&nbsp;&nbsp;
           <label>
-            最多回合： <input name="game-MaxMoves" type="number" value="500" min="5" step="1" style="width: 60px">
+            坦克移速： <input name="game-TankSpeed" type="number" value="1" min="1" step="1" style="width: 50px">
+          </label>
+          &nbsp;&nbsp;&nbsp;&nbsp;
+          <label>
+            子弹移速： <input name="game-BulletSpeed" type="number" value="2" min="2" step="1" style="width: 50px">
+          </label>
+          &nbsp;&nbsp;&nbsp;&nbsp;
+          <br>
+          <label>
+            森林数量： <input name="game-Forests" type="number" value="20" min="5" step="1" style="width: 50px">
+          </label>
+          &nbsp;&nbsp;&nbsp;&nbsp;
+          <label>
+            障碍物量： <input name="game-Obstacles" type="number" value="100" min="5" step="1" style="width: 50px">
+          </label>
+          &nbsp;&nbsp;&nbsp;&nbsp;
+          <label>
+            旗子恢复： <input name="game-FlagTime" type="number" value="10" min="2" step="1" style="width: 50px">
+          </label>
+          &nbsp;&nbsp;&nbsp;&nbsp;
+          <label>
+            回合上限： <input name="game-MaxMoves" type="number" value="200" min="5" step="1" style="width: 50px">
           </label>
           &nbsp;&nbsp;&nbsp;&nbsp;
           <label>
             <input name="game-StaticMap" type="checkbox" style="vertical-align: top">
             <span style="display: inline-block; vertical-align: top">固定地形</span>
           </label>
+          <input name="game-FriendlyFire" type="checkbox" style="display: none" checked>
+          <!--
           &nbsp;&nbsp;&nbsp;&nbsp;
           <label>
             <input name="game-FriendlyFire" type="checkbox" style="vertical-align: top">
             <span style="display: inline-block; vertical-align: top">友军伤害</span>
           </label>
+          -->
         </div>
         <br>
         <a class="btn btn-primary" href="javascript:createGame();">创建游戏</a>

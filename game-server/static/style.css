@@ -58,7 +58,10 @@ body, html {
   float: left;
 }
 #stage .terain .cell.cell-1 {
-  background: #555;
+  background: #333;
+}
+#stage .terain .cell.cell-2 {
+  background: #888;
 }
 #stage .terain .linebreak {
   clear: both;
@@ -70,6 +73,12 @@ body, html {
   position: absolute;
   z-index: 10;
   opacity: 1;
+}
+#stage .tank .mark {
+  color: #FFF;
+  text-align: center;
+  font-size: 12px;
+  text-shadow: 1px 1px 2px #000;
 }
 #stage .tank-red {
   background-image: url(/static/tank-red.png);

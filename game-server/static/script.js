@@ -81,7 +81,11 @@ function toggleAcceptClient(accept) {
 
 function createGame () {
   const data = {};
-  ['title', 'total', 'red', 'blue', 'MaxMoves', 'MapWidth', 'MapHeight', 'Obstacles', 'InitTank'].forEach(f => {
+  [
+    'title', 'total', 'red', 'blue',
+    'MapWidth', 'MapHeight', 'InitTank', 'TankHP', 'TankSpeed', 'BulletSpeed', 'FlagTime',
+    'Forests', 'Obstacles', 'MaxMoves', 
+  ].forEach(f => {
     data[f] = document.querySelector(`[name="game-${f}"]`).value;
   });
   ['client', 'StaticMap', 'FriendlyFire'].forEach(f => {
@@ -98,7 +102,8 @@ async function setupReplay () {
   const $stage = document.querySelector('#stage');
   $stage.innerHTML = 'Loading...';
   window.replay = await fetch(`/db/${id}.json`).then(r => r.json());
-  const { terain, history } = replay;
+  const { terain, history, bulletSpeed, tankSpeed } = replay;
+  const framesPerRound = bulletSpeed + tankSpeed + 1;
   $stage.innerHTML = '';
   let $style = document.createElement('style');
   document.querySelector('head').appendChild($style);
@@ -155,14 +160,18 @@ async function setupReplay () {
   
   window.resume = () => {
     paused = false;
-    hi = document.querySelector('#pos').value * 2;
+    hi = document.querySelector('#pos').value * framesPerRound;
   };
   
-  document.querySelector('#total').innerHTML = history.length / 2;
-  document.querySelector('#pos').max = history.length / 2;
+  document.querySelector('#total').innerHTML = history.length / framesPerRound;
+  document.querySelector('#pos').max = history.length / framesPerRound;
   while (true) {
     if (paused || hi >= history.length) {
       await new Promise(cb => setTimeout(cb, 1000));
+      continue;
+    }
+    if (hi % framesPerRound === 0) {
+      hi++;
       continue;
     }
     const playInterval = Math.min(2000, Math.max(50, document.querySelector('#interval').value - 0));
@@ -172,19 +181,25 @@ async function setupReplay () {
         return;
       }
       if (!objs[state.id]) {
-        const tank = objs[state.id] = {
+        const obj = objs[state.id] = {
           $el: document.createElement('div'),
+          $mark: document.createElement('div'),
         };
-        $stage.appendChild(tank.$el);
-        tank.$el.title = state.id;
+        $stage.appendChild(obj.$el);
+        obj.$el.appendChild(obj.$mark);
+        obj.$el.title = state.id;
+        obj.$mark.className = 'mark';
       }
-      const tank = objs[state.id];
-      tank.stamp = hi;
-      tank.$el.className = `${type} ${type}-${color} direction-${state.direction} cell-size transition`;
-      Object.assign(tank.$el.style, {
+      const obj = objs[state.id];
+      obj.stamp = hi;
+      obj.$el.className = `${type} ${type}-${color} direction-${state.direction} cell-size transition`;
+      Object.assign(obj.$el.style, {
         top: (cellSize * state.y) + 'px',
         left: (cellSize * state.x) + 'px',
       });
+      if (state.hp) {
+        obj.$mark.innerHTML = state.hp;
+      }
     };
     state.blueTank.forEach(setObj('tank', 'blue'));
     state.redTank.forEach(setObj('tank', 'red'));
@@ -202,8 +217,8 @@ async function setupReplay () {
     });
     await new Promise(cb => setTimeout(cb, playInterval / 2));
     hi++;
-    if ((hi & 1) === 0 && !paused) {
-      document.querySelector('#pos').value = hi / 2;
+    if (hi % framesPerRound === 0 && !paused) {
+      document.querySelector('#pos').value = hi / framesPerRound;
     }
   }
 }

@@ -117,11 +117,14 @@ router.post('/random-player', (req, res) => {
       const resp = {};
       msg.state.myTank.forEach(tank => {
         resp[tank.id] = (() => {
-          switch (Math.floor(Math.random() * 7)) {
-            case 0: return 'fire';
+          switch (Math.floor(Math.random() * 10)) {
             case 1: return 'left';
             case 2: return 'right';
             case 3: return 'stay';
+            case 4: return 'fire-up';
+            case 5: return 'fire-left';
+            case 6: return 'fire-down';
+            case 7: return 'fire-right';
             default: return 'move';
           }
         })();
