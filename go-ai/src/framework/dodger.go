@@ -6,7 +6,6 @@ package framework
 
 import (
 	"math"
-	"fmt"
 )
 
 type Dodger struct {
