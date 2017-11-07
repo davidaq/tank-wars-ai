@@ -97,6 +97,7 @@ class GameList extends EventEmitter {
       'id', 'StaticMap', 'FriendlyFire',
       'MapWidth', 'MapHeight', 'InitTank', 'TankHP', 'TankSpeed', 'BulletSpeed', 'FlagTime',
       'Forests', 'Obstacles', 'MaxMoves', 
+      'TankScore', 'FlagScore',
     ].forEach(f => {
       settings[f] = opt[f];
     });
