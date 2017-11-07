@@ -84,7 +84,8 @@ function createGame () {
   [
     'title', 'total', 'red', 'blue',
     'MapWidth', 'MapHeight', 'InitTank', 'TankHP', 'TankSpeed', 'BulletSpeed', 'FlagTime',
-    'Forests', 'Obstacles', 'MaxMoves', 
+    'Forests', 'Obstacles', 'MaxMoves',
+    'TankScore', 'FlagScore',
   ].forEach(f => {
     data[f] = document.querySelector(`[name="game-${f}"]`).value;
   });
@@ -147,6 +148,9 @@ async function setupReplay () {
     $br.className = 'linebreak';
     $terain.appendChild($br);
   }
+  const $cell = document.createElement('div');
+  $cell.className = 'cell cell-size flag';
+  $terain.appendChild($cell);
   const objs = {};
   let hi = 0;
   let paused = false;
@@ -165,6 +169,13 @@ async function setupReplay () {
       continue;
     }
     const playInterval = Math.min(2000, Math.max(50, document.querySelector('#interval').value - 0));
+    const ext = history[hi];
+    if (ext.flagWait === 0) {
+      document.querySelector('.flag').style.display = 'block';
+    } else {
+      document.querySelector('.flag').style.display = 'none';
+    }
+    document.querySelector('#flags').innerHTML = `蓝：${ext.blueFlag} 红：${ext.redFlag}`;
     const stamp = hi++;
     const setObj = (type, color) => state => {
       if (!state) {

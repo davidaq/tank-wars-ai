@@ -25,6 +25,8 @@ class GameHost extends EventEmitter {
     this.FriendlyFire = !!this.FriendlyFire;
     this.StaticMap = !!this.StaticMap;
     this.InitTank = Math.max(1, this.InitTank - 0);
+    this.TankScore = Math.max(1, this.TankScore - 0);
+    this.FlagScore = Math.max(1, this.FlagScore - 0);
     this.FlagTime = Math.max(1, this.FlagTime - 0);
     this.TankHP = Math.max(1, this.TankHP - 0);
     this.MaxMoves = Math.max(1, this.MaxMoves - 0);
@@ -36,7 +38,7 @@ class GameHost extends EventEmitter {
     this.MapHeight = Math.max(tankH * 2, this.MapHeight - 0);
     this.MapWidth += 1 - (this.MapHeight & 1);
     this.MapHeight += 1 - (this.MapHeight & 1);
-    let remain = this.MapWidth * this.MapHeight - tankW * tankH * 2 - 3;
+    let remain = this.MapWidth * this.MapHeight - tankW * tankH * 2 - 5;
     this.Obstacles = Math.min(this.Obstacles - 0, remain);
     remain -= this.Obstacles - 3;
     this.Forests = Math.min(this.Forests - 0, remain);
@@ -64,6 +66,8 @@ class GameHost extends EventEmitter {
       this.blueEvents = [];
       this.redEvents = [];
       this.flagWait = 0;
+      this.redFlag = 0;
+      this.blueFlag = 0;
       this.random = this.StaticMap ? new Random(this.id) : new Random(this.roundId);
       this.setupTerrain();
       this.spawnTank();
@@ -102,8 +106,8 @@ class GameHost extends EventEmitter {
       yield new Promise(cb => {
         fwriter.on('finish', () => {
           this.emit('round', {
-            blue: this.blueTank.length,
-            red: this.redTank.length,
+            blue: this.blueTank.length * this.TankScore + this.blueFlag * this.FlagScore,
+            red: this.redTank.length * this.TankScore + this.redFlag * this.FlagScore,
             moves: i,
           });
           cb();
@@ -124,6 +128,8 @@ class GameHost extends EventEmitter {
         line.push(0);
       }
     }
+    const flagX = Math.floor(this.MapWidth / 2);
+    const flagY = Math.floor(this.MapHeight / 2);
     let x = Math.floor(this.random.nextFloat() * this.MapWidth / 2);
     let y = Math.floor(this.random.nextFloat() * this.MapHeight);
     const tankW = Math.ceil(Math.sqrt(this.InitTank));
@@ -147,7 +153,7 @@ class GameHost extends EventEmitter {
           y = Math.floor(this.random.nextFloat() * this.MapHeight);
           break;
       }
-      if (x >= 0 && x < this.MapWidth && y >= 0 && y < this.MapHeight && this.terain[y][x] === 0 && x >= tankW && y >= tankH) {
+      if (x >= 0 && x < this.MapWidth && y >= 0 && y < this.MapHeight && this.terain[y][x] === 0 && x >= tankW && y >= tankH && x !== flagX && y != flagY) {
         this.terain[y][x] = 1;
         this.terain[this.MapHeight - y - 1][this.MapWidth - x - 1] = 1;
         i += 2;
@@ -160,7 +166,7 @@ class GameHost extends EventEmitter {
       while (true) {
         const x = Math.floor(this.random.nextFloat() * this.MapWidth / 2);
         const y = Math.floor(this.random.nextFloat() * this.MapHeight);
-        if (x >= 0 && x < this.MapWidth && y >= 0 && y < this.MapHeight && this.terain[y][x] === 0 && x >= tankW && y >= tankH) {
+        if (x >= 0 && x < this.MapWidth && y >= 0 && y < this.MapHeight && this.terain[y][x] === 0 && x >= tankW && y >= tankH && x !== flagX && y != flagY) {
           this.terain[y][x] = 2;
           this.terain[this.MapHeight - y - 1][this.MapWidth - x - 1] = 2;
           i += 2;
@@ -199,6 +205,8 @@ class GameHost extends EventEmitter {
       blueMove: this.blueResp,
       redMove: this.redResp,
       flagWait: this.flagWait,
+      blueFlag: this.blueFlag,
+      redFlag: this.redFlag,
     });
     for (let i = 0; i < this.BulletSpeed; i++) {
       this.calcStateMoveBullet(scene, this.blueBullet);
@@ -209,6 +217,8 @@ class GameHost extends EventEmitter {
       }));
     }
 
+    const flagX = Math.floor(this.MapWidth / 2);
+    const flagY = Math.floor(this.MapHeight / 2);
     for (let i = 0; i < this.TankSpeed; i++) {
       let advances = [];
       const forbid = {};
@@ -287,6 +297,37 @@ class GameHost extends EventEmitter {
         blueTank: this.blueTank,
         redTank: this.redTank,
       }));
+      if (this.flagWait === 0) {
+        for (const tank of this.blueTank) {
+          if (tank && tank.x === flagX && tank.y === flagY) {
+            this.flagWait = this.FlagTime;
+            this.blueFlag++;
+            this.blueEvents.push({
+              type: 'my-flag',
+              target: tank.id,
+            });
+            this.redEvents.push({
+              type: 'enemy-flag',
+              target: tank.id,
+            });
+          }
+        }
+        for (const tank of this.redTank) {
+          if (tank && tank.x === flagX && tank.y === flagY) {
+            console.log('flag');
+            this.flagWait = this.FlagTime;
+            this.redFlag++;
+            this.redEvents.push({
+              type: 'my-flag',
+              target: tank.id,
+            });
+            this.blueEvents.push({
+              type: 'enemy-flag',
+              target: tank.id,
+            });
+          }
+        }
+      }
     }
     this.blueTank = this.blueTank.filter(v => !!v);
     this.redTank = this.redTank.filter(v => !!v);
@@ -508,6 +549,10 @@ class GameHost extends EventEmitter {
         enemyBullet: this.redBullet.filter(obj => this.terain[obj.y][obj.x] !== 2),
         events: this.blueEvents,
         flagWait: this.flagWait,
+        myFlag: this.blueFlag,
+        enemyFlag: this.redFlag,
+        tankScore: this.TankScore,
+        flagScore: this.FlagScore,
         ended,
       };
     } else {
@@ -519,6 +564,10 @@ class GameHost extends EventEmitter {
         enemyBullet: this.blueBullet.filter(obj => this.terain[obj.y][obj.x] !== 2),
         events: this.redEvents,
         flagWait: this.flagWait,
+        myFlag: this.redFlag,
+        enemyFlag: this.blueFlag,
+        tankScore: this.TankScore,
+        flagScore: this.FlagScore,
         ended,
       };
     }

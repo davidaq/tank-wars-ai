@@ -76,7 +76,7 @@
           </label>
           &nbsp;&nbsp;&nbsp;&nbsp;
           <label>
-            旗子恢复： <input name="game-FlagTime" type="number" value="10" min="2" step="1" style="width: 50px">
+            旗子恢复： <input name="game-FlagTime" type="number" value="50" min="2" step="1" style="width: 50px">
           </label>
           &nbsp;&nbsp;&nbsp;&nbsp;
           <label>
@@ -87,7 +87,6 @@
             <input name="game-StaticMap" type="checkbox" style="vertical-align: top">
             <span style="display: inline-block; vertical-align: top">固定地形</span>
           </label>
-          <input name="game-FriendlyFire" type="checkbox" style="display: none" checked>
           <!--
           &nbsp;&nbsp;&nbsp;&nbsp;
           <label>
@@ -95,6 +94,16 @@
             <span style="display: inline-block; vertical-align: top">友军伤害</span>
           </label>
           -->
+          <input name="game-FriendlyFire" type="checkbox" style="display: none" checked>
+          <br>
+          <label>
+            坦克分数： <input name="game-TankScore" type="number" value="1" min="0" step="1" style="width: 50px">
+          </label>
+          &nbsp;&nbsp;&nbsp;&nbsp;
+          <label>
+            旗子分数： <input name="game-FlagScore" type="number" value="1" min="0" step="1" style="width: 50px">
+          </label>
+          &nbsp;&nbsp;&nbsp;&nbsp;
         </div>
         <br>
         <a class="btn btn-primary" href="javascript:createGame();">创建游戏</a>
