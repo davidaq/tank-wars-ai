@@ -25,6 +25,7 @@ class GameHost extends EventEmitter {
     this.FriendlyFire = !!this.FriendlyFire;
     this.StaticMap = !!this.StaticMap;
     this.InitTank = Math.max(1, this.InitTank - 0);
+    this.FlagTime = Math.max(1, this.FlagTime - 0);
     this.TankHP = Math.max(1, this.TankHP - 0);
     this.MaxMoves = Math.max(1, this.MaxMoves - 0);
     this.TankSpeed = Math.max(1, this.TankSpeed - 0);
@@ -62,9 +63,11 @@ class GameHost extends EventEmitter {
       this.stepsMoved = 0;
       this.blueEvents = [];
       this.redEvents = [];
+      this.flagWait = 0;
       this.random = this.StaticMap ? new Random(this.id) : new Random(this.roundId);
       this.setupTerrain();
       this.spawnTank();
+      yield* this.calcState();
       yield this.callApi('setup');
       let i = 0;
       for (; i < this.MaxMoves; i++) {
@@ -75,7 +78,7 @@ class GameHost extends EventEmitter {
         yield this.callApi('move');
         this.blueEvents = [];
         this.redEvents = [];
-        this.calcState();
+        yield* this.calcState();
         if (i % 10 === 0) {
           console.log('GAME', this.roundId, i, {
             blueTank: this.blueTank.length,
@@ -175,11 +178,14 @@ class GameHost extends EventEmitter {
     for (let i = 0; i < this.InitTank; i++) {
       const x = Math.floor(i % tankW);
       const y = Math.floor(i / tankW);
-      this.blueTank.push({ hp: this.TankHP, color: 'blue', x, y, direction: 'down', id: shortid.generate() });
-      this.redTank.push({ hp: this.TankHP, color: 'red', x: this.MapWidth - x - 1, y: this.MapHeight - y - 1, direction: 'up', id: shortid.generate() });
+      this.blueTank.push({ bullet: '', hp: this.TankHP, color: 'blue', x, y, direction: 'down', id: shortid.generate() });
+      this.redTank.push({ bullet: '', hp: this.TankHP, color: 'red', x: this.MapWidth - x - 1, y: this.MapHeight - y - 1, direction: 'up', id: shortid.generate() });
     }
   }
-  calcState () {
+  *calcState () {
+    if (this.flagWait > 0) {
+      this.flagWait--;
+    }
     const scene = clone(this.terain);
     for (let i = 0; i < this.blueTank.length; i++) {
       const tank = this.blueTank[i];
@@ -192,6 +198,7 @@ class GameHost extends EventEmitter {
     this.history.push({
       blueMove: this.blueResp,
       redMove: this.redResp,
+      flagWait: this.flagWait,
     });
     for (let i = 0; i < this.BulletSpeed; i++) {
       this.calcStateMoveBullet(scene, this.blueBullet);
@@ -201,164 +208,213 @@ class GameHost extends EventEmitter {
         redBullet: this.redBullet,
       }));
     }
-    this.blueTank = this.blueTank.filter(v => !!v);
-    this.redTank = this.redTank.filter(v => !!v);
+
     for (let i = 0; i < this.TankSpeed; i++) {
-      this.calcStateMoveTank(scene, this.blueTank, this.blueResp, this.blueBullet, i > 0);
-      this.calcStateMoveTank(scene, this.redTank, this.redResp, this.redBullet, i > 0);
+      let advances = [];
+      const forbid = {};
+      this.calcStateMoveTank(scene, 'blue', advances, forbid, i > 0);
+      this.calcStateMoveTank(scene, 'red', advances, forbid, i > 0);
+      let taken = {};
+      const take = (index, val) => {
+        if (!taken[index]) {
+          taken[index] = [];
+        }
+        taken[index].push(val);
+      };
+      advances = advances.filter(item => {
+        const { oTank, tank } = item;
+        const posIndex = `${tank.x},${tank.y}`;
+        const oPosIndex = `${oTank.x},${oTank.y}`
+        const forbidState = forbid[posIndex];
+        if (forbidState && (!forbidState.direction || forbidState.direction === tank.direction)) {
+          this[tank.color + 'Events'].push({
+            type: 'collide-tank',
+            target: tank.id,
+          });
+          take(oPosIndex);
+          return false;
+        } else if (tank.x < 0 || tank.x >= this.MapWidth || tank.y < 0 || tank.y >= this.MapHeight) {
+          this[tank.color + 'Events'].push({
+            type: 'collide-wall',
+            target: tank.id,
+          });
+          take(oPosIndex);
+          return false;
+        } else if (this.terain[tank.y][tank.x] === 1) {
+          this[tank.color + 'Events'].push({
+            type: 'collide-obstacle',
+            target: tank.id,
+          });
+          take(oPosIndex);
+          return false;
+        } else {
+          take(posIndex, item);
+          return true;
+        }
+      });
+      let chaining = true;
+      while (chaining) {
+        chaining = false;
+        for (const posIndex of Object.keys(taken)) {
+          const takev = taken[posIndex];
+          if (takev.length > 1) {
+            taken[posIndex] = [];
+            chaining = true;
+            for (const item of takev) {
+              if (item) {
+                this[item.tank.color + 'Events'].push({
+                  type: 'collide-tank',
+                  target: item.tank.id,
+                });
+                item.invalid = true;
+                take(`${item.oTank.x},${item.oTank.y}`);
+              } else {
+                if (taken[posIndex].length && !taken[posIndex][0]) {
+                  throw new Error('Tank movement system error');
+                }
+                take(posIndex);
+              }
+            }
+          }
+        }
+      }
+      advances = advances.filter(v => !v.invalid);
+      advances.forEach(item => {
+        const { oTank, tank } = item;
+        Object.assign(oTank, tank);
+      });
       this.history.push(clone({
         blueTank: this.blueTank,
         redTank: this.redTank,
       }));
     }
+    this.blueTank = this.blueTank.filter(v => !!v);
+    this.redTank = this.redTank.filter(v => !!v);
     this.history.push(clone({
       blueBullet: this.blueBullet,
       redBullet: this.redBullet,
+      blueTank: this.blueTank,
+      redTank: this.redTank,
     }));
   }
-  calcStateMoveTank (scene, myTank, myResp, myBullet, moveOnly) {
-    if (!myResp) {
-      myResp = {};
-    }
+  calcStateMoveTank (scene, color, advances, forbid, moveOnly) {
+    const myResp = this[color + 'Resp'] || {};
+    const myTank = this[color + 'Tank'];
     try {
-      const advances = [];
-      const taken = {};
       for (let i = 0; i < myTank.length; i++) {
         let tank = myTank[i];
         if (!tank) {
           continue;
         }
-        const move = myResp[tank.id];
-        if (move) {
-          if (move !== 'move') {
-            taken[tank.x + tank.y * this.MapWidth] = {};
-            if (moveOnly) {
-              continue;
-            }
+        const move = myResp[tank.id] || 'stay';
+        if (move !== 'move') {
+          forbid[`${tank.x},${tank.y}`] = { tank };
+          if (moveOnly) {
+            continue;
           }
-          switch (move) {
-            case 'move': {
-              const oTank = tank;
-              tank = clone(tank);
+        } else {
+          forbid[`${tank.x},${tank.y}`] = {
+            tank,
+            direction: (() => {
               switch (tank.direction) {
-                case 'up':
-                  tank.y--;
-                  break;
-                case 'down':
-                  tank.y++;
-                  break;
-                case 'left':
-                  tank.x--;
-                  break;
-                case 'right':
-                  tank.x++;
-                  break;
+                case 'up': return 'down';
+                case 'down': return 'up';
+                case 'left': return 'right';
+                case 'right': return 'left';
+                default: return 'all';
               }
-              advances.push({ oTank, tank, i });
-              break;
+            })(),
+          };
+        }
+        switch (move) {
+          case 'move': {
+            const oTank = tank;
+            tank = clone(tank);
+            switch (tank.direction) {
+              case 'up':
+                tank.y--;
+                break;
+              case 'down':
+                tank.y++;
+                break;
+              case 'left':
+                tank.x--;
+                break;
+              case 'right':
+                tank.x++;
+                break;
             }
-            case 'left':
-              switch (tank.direction) {
-                case 'up':
-                  tank.direction = 'left';
-                  break;
-                case 'down':
-                  tank.direction = 'right';
-                  break;
-                case 'left':
-                  tank.direction = 'down';
-                  break;
-                case 'right':
-                  tank.direction = 'up';
-                  break;
-              }
-              break;
-            case 'right':
-              switch (tank.direction) {
-                case 'up':
-                  tank.direction = 'right';
-                  break;
-                case 'down':
-                  tank.direction = 'left';
-                  break;
-                case 'left':
-                  tank.direction = 'up';
-                  break;
-                case 'right':
-                  tank.direction = 'down';
-                  break;
-              }
-              break;
-            case 'back':
-              switch (tank.direction) {
-                case 'up':
-                  tank.direction = 'down';
-                  break;
-                case 'down':
-                  tank.direction = 'up';
-                  break;
-                case 'left':
-                  tank.direction = 'right';
-                  break;
-                case 'right':
-                  tank.direction = 'left';
-                  break;
-              }
-              break;
-            case 'fire':
-            case 'fire-up':
-            case 'fire-left':
-            case 'fire-down':
-            case 'fire-right':
+            advances.push({ oTank, tank });
+            break;
+          }
+          case 'left':
+            switch (tank.direction) {
+              case 'up':
+                tank.direction = 'left';
+                break;
+              case 'down':
+                tank.direction = 'right';
+                break;
+              case 'left':
+                tank.direction = 'down';
+                break;
+              case 'right':
+                tank.direction = 'up';
+                break;
+            }
+            break;
+          case 'right':
+            switch (tank.direction) {
+              case 'up':
+                tank.direction = 'right';
+                break;
+              case 'down':
+                tank.direction = 'left';
+                break;
+              case 'left':
+                tank.direction = 'up';
+                break;
+              case 'right':
+                tank.direction = 'down';
+                break;
+            }
+            break;
+          case 'back':
+            switch (tank.direction) {
+              case 'up':
+                tank.direction = 'down';
+                break;
+              case 'down':
+                tank.direction = 'up';
+                break;
+              case 'left':
+                tank.direction = 'right';
+                break;
+              case 'right':
+                tank.direction = 'left';
+                break;
+            }
+            break;
+          case 'fire':
+          case 'fire-up':
+          case 'fire-left':
+          case 'fire-down':
+          case 'fire-right':
+            if (!tank.bullet) {
               const direction = move.replace(/^fire-?/, '') || tank.direction;
-              myBullet.push({
+              tank.bullet = shortid.generate();
+              this[tank.color + 'Bullet'].push({
                 x: tank.x,
                 y: tank.y,
                 direction,
-                id: shortid.generate(),
+                id: tank.bullet,
                 from: tank.id,
                 color: tank.color,
               });
-              break;
-          }
+            }
+            break;
         }
       }
-      advances.forEach(item => {
-        const { oTank, tank } = item;
-        if (tank.x < 0 || tank.x >= this.MapWidth || tank.y < 0 || tank.y >= this.MapHeight) {
-          this[tank.color + 'Events'].push({
-            type: 'collide-wall',
-            target: tank.id,
-          });
-          if (taken[oTank.x + oTank.y * this.MapWidth]) {
-            taken[oTank.x + oTank.y * this.MapWidth].valid = false;
-          } else {
-            taken[oTank.x + oTank.y * this.MapWidth] = {};
-          }
-        } else if (scene[tank.y][tank.x] === 1) {
-          this[tank.color + 'Events'].push({
-            type: 'collide-obstacle',
-            target: tank.id,
-          });
-          if (taken[oTank.x + oTank.y * this.MapWidth]) {
-            taken[oTank.x + oTank.y * this.MapWidth].valid = false;
-          } else {
-            taken[oTank.x + oTank.y * this.MapWidth] = {};
-          }
-        } else if (taken[tank.x + tank.y * this.MapWidth]) {
-          taken[tank.x + tank.y * this.MapWidth].valid = false;
-          item.valid = false;
-        } else {
-          taken[tank.x + tank.y * this.MapWidth] = item;
-          item.valid = true;
-        }
-      });
-      advances.forEach(item => {
-        const { tank, i, valid } = item;
-        if (valid) {
-          Object.assign(myTank[i], tank);
-        }
-      });
     } catch (err) {
       console.error(err.stack);
     }
@@ -432,6 +488,10 @@ class GameHost extends EventEmitter {
         }
       }
       if (removeBullet) {
+        const fromTank = this[bullet.color + 'Tank'].filter(v => v && v.id === bullet.from)[0];
+        if (fromTank) {
+          fromTank.bullet = '';
+        }
         myBullet.splice(i, 1);
         i--;
       }
@@ -444,9 +504,10 @@ class GameHost extends EventEmitter {
         terain: this.terain,
         myTank: this.blueTank,
         myBullet: this.blueBullet,
-        enemyTank: this.redTank,
-        enemyBullet: this.redBullet,
+        enemyTank: this.redTank.filter(obj => this.terain[obj.y][obj.x] !== 2),
+        enemyBullet: this.redBullet.filter(obj => this.terain[obj.y][obj.x] !== 2),
         events: this.blueEvents,
+        flagWait: this.flagWait,
         ended,
       };
     } else {
@@ -454,9 +515,10 @@ class GameHost extends EventEmitter {
         terain: this.terain,
         myTank: this.redTank,
         myBullet: this.redBullet,
-        enemyTank: this.blueTank,
-        enemyBullet: this.blueBullet,
+        enemyTank: this.blueTank.filter(obj => this.terain[obj.y][obj.x] !== 2),
+        enemyBullet: this.blueBullet.filter(obj => this.terain[obj.y][obj.x] !== 2),
         events: this.redEvents,
+        flagWait: this.flagWait,
         ended,
       };
     }
