@@ -258,7 +258,7 @@ func (self *Dodger) oldAvoidBullet(tank *Tank, state *GameState) (bulletApproach
 }
 
 func (self *Dodger) threat(tank *Tank, state *GameState) (threat bool, enemyThreat []EnemyThreat) {
-	radius := 4	//雷达半径
+	radius := 5	//雷达半径
 
 	// 计算敌军在自己的什么方位 墙无视，防止LYB苟在墙里
 	var tmpEnemyThreat []EnemyThreat
@@ -386,6 +386,17 @@ func (self *Dodger) determine(tank *Tank, state *GameState, bulletApproach bool,
 	// 象限旋转（假定为上，然后旋转）
 	quadrant := make(map[int]int)
 	switch tank.Pos.Direction {
+	case DirectionUp:
+		quadrant[0] = 0
+		quadrant[1] = 1
+		quadrant[2] = 2
+		quadrant[3] = 3
+		quadrant[4] = 4
+		quadrant[-1] = -1
+		quadrant[-2] = -2
+		quadrant[-3] = -3
+		quadrant[-4] = -4
+
 	case DirectionLeft:
 		quadrant[0] = 0
 		quadrant[2] = 1
@@ -421,14 +432,13 @@ func (self *Dodger) determine(tank *Tank, state *GameState, bulletApproach bool,
 	}
 
 	// 最后收敛到几个方向上，直接在方向上标出最小的紧急度，最后走方向中紧急度排名第一，但是方向中不紧急的
-	BulletMoveUrgent := make(map[int]int)
+	BulletMoveUrgent := [6]int{}
 	BulletMoveUrgent[ActionMove] = math.MaxInt32
 	BulletMoveUrgent[ActionBack] = math.MaxInt32
 	BulletMoveUrgent[ActionLeft] = math.MaxInt32
 	BulletMoveUrgent[ActionRight] = math.MaxInt32
 
 	BulletMoveUrgent[ActionStay] = math.MaxInt32
-	BulletMoveUrgent[ActionNone] = math.MaxInt32
 
 
 	// 炮弹为第一优先级
@@ -517,7 +527,7 @@ func (self *Dodger) determine(tank *Tank, state *GameState, bulletApproach bool,
 	//EnemyMoveUrgent[ActionBack] = math.MaxInt32
 	//EnemyMoveUrgent[ActionLeft] = math.MaxInt32
 	//EnemyMoveUrgent[ActionRight] = math.MaxInt32
-    //
+	//
 	//EnemyMoveUrgent[ActionStay] = math.MaxInt32
 	//EnemyMoveUrgent[ActionNone] = math.MaxInt32
 
@@ -609,24 +619,34 @@ func (self *Dodger) determine(tank *Tank, state *GameState, bulletApproach bool,
 	bulletMaxAction	 := -1
 	bulletMaxUrgent  := -1
 	bulletMinUrgent  := math.MaxInt32
-	for action, urgent := range BulletMoveUrgent {
-		if bulletMaxAction == -1 {
-			bulletMaxAction = action
-		}
-		if bulletMaxUrgent == -1 {
-			bulletMaxUrgent = urgent
-		}
-		if bulletMinUrgent > urgent {
-			bulletMinUrgent = urgent
+	for i := 1; i < len(BulletMoveUrgent); i++ {
+		if bulletMinUrgent > BulletMoveUrgent[i] {
+			bulletMinUrgent = BulletMoveUrgent[i]
 		}
 		// 行动优先
-		if bulletMaxUrgent < urgent && (action == ActionMove || action == ActionRight || action == ActionLeft || action == ActionBack){
-			bulletMaxAction = action
-			bulletMaxUrgent = urgent
+		if bulletMaxUrgent < BulletMoveUrgent[i] && (i == ActionMove || i == ActionRight || i == ActionLeft || i == ActionBack){
+			bulletMaxAction = i
+			bulletMaxUrgent = BulletMoveUrgent[i]
 		}
 	}
-	if bulletMaxUrgent == 1 {
-		return ActionStay, 1
+
+	// 遵从本来的方向(2号行动)，如果原来的方向不为MAX，则顺序去找第一个大的行动。
+	if BulletMoveUrgent[ActionMove] == math.MaxInt32 {
+		// 继续行进
+		return ActionMove, bulletMinUrgent
+	}
+
+	// 已经有了行动推荐
+	if bulletMaxAction != -1 {
+		return bulletMaxAction, bulletMinUrgent
+	} else {
+		// 行动推荐失败，除非停留绝对安全，否则进行其他判断
+		if BulletMoveUrgent[ActionStay] == math.MaxInt32 {
+			return ActionStay, bulletMinUrgent
+		} else {
+			// 此处光荣弹策略需要添加
+			return bulletMaxAction, bulletMinUrgent
+		}
 	}
 
 	return bulletMaxAction, bulletMinUrgent
@@ -645,6 +665,15 @@ func (self *Dodger) Suggest(tank *Tank, state *GameState, objective *Objective) 
 	// 最终决定往哪里躲
 	if bulletApproach == true || enemyApproach == true{
 		action, urgent := self.determine(tank, state, bulletApproach, &enemyBullets, enemyApproach, &enemyThreat)
+		//fmt.Println("########")
+		//fmt.Println(tank)
+		//fmt.Println("--------")
+		//fmt.Println(enemyBullets)
+		//fmt.Println(enemyThreat)
+		//fmt.Println("--------")
+		//fmt.Println(action)
+		//fmt.Println(urgent)
+		//fmt.Println("########")
 		return SuggestionItem {
 			Action: action,
 			Urgent: urgent,
