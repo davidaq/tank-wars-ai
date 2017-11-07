@@ -110,7 +110,7 @@ func path(env [][]int, source Pos, target Pos, ret SuggestionItem) (SuggestionIt
 
 	pathoutput := a.FindPath(p2p, sourcePoint, targetPoint)
 
-	firstPoint := Pos{
+	nextPoint := Pos{
 		x: source.x,
 		y: source.y,
 	}
@@ -119,13 +119,13 @@ func path(env [][]int, source Pos, target Pos, ret SuggestionItem) (SuggestionIt
 	for pathoutput != nil {
 			count++
 			if count == 2 {
-				firstPoint.x = pathoutput.Col
-				firstPoint.y = pathoutput.Row
+				nextPoint.x = pathoutput.Col
+				nextPoint.y = pathoutput.Row
 			}
 			pathoutput = pathoutput.Parent
 	}
 
-	action := transDirection(source, firstPoint)
+	action := transDirection(source, nextPoint)
 
 	ret.Action = action
 	ret.Urgent = count
@@ -153,6 +153,8 @@ func transDirection (source Pos, target Pos) int {
 	}
 	if ((targetDirection - 1) - (source.direction - 1) + 4) % 4 == 1 {
 		return ActionLeft
+	} else if ((targetDirection - 1) - (source.direction - 1) + 4) % 4 == 2 {
+		return ActionBack
 	} else {
 		return ActionRight
 	}
