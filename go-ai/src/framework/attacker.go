@@ -1,4 +1,7 @@
-// 开火攻击行动子系统
+/**
+ * 开火攻击行动子系统
+ * author: linxingchen
+ */
 package framework
 
 import (
