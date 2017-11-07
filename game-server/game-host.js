@@ -197,39 +197,49 @@ class GameHost extends EventEmitter {
       this.calcStateMoveBullet(scene, this.blueBullet);
       this.calcStateMoveBullet(scene, this.redBullet);
       this.history.push(clone({
-        blueTank: this.blueTank,
         blueBullet: this.blueBullet,
-        redTank: this.redTank,
-        redBullet: this.redBullet,
-      }));
-    }
-    for (let i = 0; i < this.TankSpeed; i++) {
-      this.calcStateMoveTank(scene, this.blueTank, this.blueResp, this.blueBullet);
-      this.calcStateMoveTank(scene, this.redTank, this.redResp, this.redBullet);
-      this.history.push(clone({
-        blueTank: this.blueTank,
-        blueBullet: this.blueBullet,
-        redTank: this.redTank,
         redBullet: this.redBullet,
       }));
     }
     this.blueTank = this.blueTank.filter(v => !!v);
     this.redTank = this.redTank.filter(v => !!v);
+    for (let i = 0; i < this.TankSpeed; i++) {
+      this.calcStateMoveTank(scene, this.blueTank, this.blueResp, this.blueBullet, i > 0);
+      this.calcStateMoveTank(scene, this.redTank, this.redResp, this.redBullet, i > 0);
+      this.history.push(clone({
+        blueTank: this.blueTank,
+        redTank: this.redTank,
+      }));
+    }
+    this.history.push(clone({
+      blueBullet: this.blueBullet,
+      redBullet: this.redBullet,
+    }));
   }
-  calcStateMoveTank (scene, myTank, myResp, myBullet) {
+  calcStateMoveTank (scene, myTank, myResp, myBullet, moveOnly) {
     if (!myResp) {
       myResp = {};
     }
     try {
+      const advances = [];
+      const taken = {};
       for (let i = 0; i < myTank.length; i++) {
-        if (!myTank[i]) {
+        let tank = myTank[i];
+        if (!tank) {
           continue;
         }
-        const tank = clone(myTank[i]);
         const move = myResp[tank.id];
         if (move) {
+          if (move !== 'move') {
+            taken[tank.x + tank.y * this.MapWidth] = {};
+            if (moveOnly) {
+              continue;
+            }
+          }
           switch (move) {
-            case 'move':
+            case 'move': {
+              const oTank = tank;
+              tank = clone(tank);
               switch (tank.direction) {
                 case 'up':
                   tank.y--;
@@ -244,7 +254,9 @@ class GameHost extends EventEmitter {
                   tank.x++;
                   break;
               }
+              advances.push({ oTank, tank, i });
               break;
+            }
             case 'left':
               switch (tank.direction) {
                 case 'up':
@@ -277,6 +289,22 @@ class GameHost extends EventEmitter {
                   break;
               }
               break;
+            case 'back':
+              switch (tank.direction) {
+                case 'up':
+                  tank.direction = 'down';
+                  break;
+                case 'down':
+                  tank.direction = 'up';
+                  break;
+                case 'left':
+                  tank.direction = 'right';
+                  break;
+                case 'right':
+                  tank.direction = 'left';
+                  break;
+              }
+              break;
             case 'fire':
             case 'fire-up':
             case 'fire-left':
@@ -293,28 +321,44 @@ class GameHost extends EventEmitter {
               });
               break;
           }
-          if (move === 'move') {
-            if (tank.x < 0 || tank.x >= this.MapWidth || tank.y < 0 || tank.y >= this.MapHeight) {
-              this[tank.color + 'Events'].push({
-                type: 'collide-wall',
-                target: tank.id,
-              });
-              continue;
-            }
-            if (scene[tank.y][tank.x] !== 0 && scene[tank.y][tank.x] !== 2) {
-              this[tank.color + 'Events'].push({
-                type: typeof scene[tank.y][tank.x] == 'number' ? 'collide-obstacle' : 'collide-tank',
-                target: tank.id,
-              });
-              continue;
-            }
-            const oTank = myTank[i];
-            scene[tank.y][tank.x] = scene[oTank.y][oTank.x];
-            scene[oTank.y][oTank.x] = this.terain[oTank.y][oTank.x];
-          }
-          Object.assign(myTank[i], tank);
         }
       }
+      advances.forEach(item => {
+        const { oTank, tank } = item;
+        if (tank.x < 0 || tank.x >= this.MapWidth || tank.y < 0 || tank.y >= this.MapHeight) {
+          this[tank.color + 'Events'].push({
+            type: 'collide-wall',
+            target: tank.id,
+          });
+          if (taken[oTank.x + oTank.y * this.MapWidth]) {
+            taken[oTank.x + oTank.y * this.MapWidth].valid = false;
+          } else {
+            taken[oTank.x + oTank.y * this.MapWidth] = {};
+          }
+        } else if (scene[tank.y][tank.x] === 1) {
+          this[tank.color + 'Events'].push({
+            type: 'collide-obstacle',
+            target: tank.id,
+          });
+          if (taken[oTank.x + oTank.y * this.MapWidth]) {
+            taken[oTank.x + oTank.y * this.MapWidth].valid = false;
+          } else {
+            taken[oTank.x + oTank.y * this.MapWidth] = {};
+          }
+        } else if (taken[tank.x + tank.y * this.MapWidth]) {
+          taken[tank.x + tank.y * this.MapWidth].valid = false;
+          item.valid = false;
+        } else {
+          taken[tank.x + tank.y * this.MapWidth] = item;
+          item.valid = true;
+        }
+      });
+      advances.forEach(item => {
+        const { tank, i, valid } = item;
+        if (valid) {
+          Object.assign(myTank[i], tank);
+        }
+      });
     } catch (err) {
       console.error(err.stack);
     }

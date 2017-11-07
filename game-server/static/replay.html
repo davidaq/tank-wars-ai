@@ -16,7 +16,12 @@
     <center>
       动作间隔 (毫秒)：<input id="interval" type="number" value="200" max="2000" min="50" step="50">
       &nbsp;&nbsp;&nbsp;&nbsp;
-      播放进度 (回合)：<input id="pos" type="number" min="0" step="10" onfocus="pause()" onblur="resume()" value="0"> / <span id="total"></span>
+      播放进度 (回合)：<input id="pos" type="number" min="0" step="10" onfocus="pause()" onblur="pause(false)" value="0"> / <span id="total"></span>
+      &nbsp;&nbsp;&nbsp;&nbsp;
+      <label style="display: inline-block; vertical-align: middle">
+        <input id="paused" type="checkbox" onclick="pause(this.checked)" style="vertical-align: top">
+        <span style="display: inline-block; vertical-align: top">暂停</span>
+      </label>
     </center>
     <script>
       setupReplay();

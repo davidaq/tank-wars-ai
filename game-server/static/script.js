@@ -103,7 +103,7 @@ async function setupReplay () {
   $stage.innerHTML = 'Loading...';
   window.replay = await fetch(`/db/${id}.json`).then(r => r.json());
   const { terain, history, bulletSpeed, tankSpeed } = replay;
-  const framesPerRound = bulletSpeed + tankSpeed + 1;
+  const framesPerRound = bulletSpeed + tankSpeed + 2;
   $stage.innerHTML = '';
   let $style = document.createElement('style');
   document.querySelector('head').appendChild($style);
@@ -126,9 +126,6 @@ async function setupReplay () {
     }
     .transition {
       transition: all ${playInterval / 1000}s linear;
-    }
-    .transition.bullet {
-      transition: all ${playInterval / 2000}s linear;
     }
     `));
     document.querySelector('head').appendChild($style);
@@ -154,13 +151,10 @@ async function setupReplay () {
   let hi = 0;
   let paused = false;
   
-  window.pause = () => {
-    paused = true;
-  };
-  
-  window.resume = () => {
-    paused = false;
+  window.pause = (isPause = true) => {
+    paused = isPause;
     hi = document.querySelector('#pos').value * framesPerRound;
+    document.querySelector('#paused').checked = isPause;
   };
   
   document.querySelector('#total').innerHTML = history.length / framesPerRound;
@@ -170,12 +164,8 @@ async function setupReplay () {
       await new Promise(cb => setTimeout(cb, 1000));
       continue;
     }
-    if (hi % framesPerRound === 0) {
-      hi++;
-      continue;
-    }
     const playInterval = Math.min(2000, Math.max(50, document.querySelector('#interval').value - 0));
-    const state = history[hi];
+    const stamp = hi++;
     const setObj = (type, color) => state => {
       if (!state) {
         return;
@@ -191,7 +181,7 @@ async function setupReplay () {
         obj.$mark.className = 'mark';
       }
       const obj = objs[state.id];
-      obj.stamp = hi;
+      obj.stamp = stamp;
       obj.$el.className = `${type} ${type}-${color} direction-${state.direction} cell-size transition`;
       Object.assign(obj.$el.style, {
         top: (cellSize * state.y) + 'px',
@@ -201,24 +191,30 @@ async function setupReplay () {
         obj.$mark.innerHTML = state.hp;
       }
     };
-    state.blueTank.forEach(setObj('tank', 'blue'));
-    state.redTank.forEach(setObj('tank', 'red'));
+    for (let j = 0; j < bulletSpeed; j++) {
+      const state = history[hi++];
+      state.blueBullet.forEach(setObj('bullet', 'blue'));
+      state.redBullet.forEach(setObj('bullet', 'red'));
+    }
+    for (let j = 0; j < tankSpeed; j++) {
+      const state = history[hi++];
+      state.blueTank.forEach(setObj('tank', 'blue'));
+      state.redTank.forEach(setObj('tank', 'red'));
+    }
+    const state = history[hi++];
     state.blueBullet.forEach(setObj('bullet', 'blue'));
     state.redBullet.forEach(setObj('bullet', 'red'));
     Object.keys(objs).forEach(id => {
-      if (objs[id].stamp !== hi) {
+      if (objs[id].stamp !== stamp) {
         const obj = objs[id];
         delete objs[id];
         obj.$el.className += ' destroyed';
         setTimeout(() => {
           obj.$el.parentElement.removeChild(obj.$el);
-        }, playInterval);
+        }, 500);
       }
     });
-    await new Promise(cb => setTimeout(cb, playInterval / 2));
-    hi++;
-    if (hi % framesPerRound === 0 && !paused) {
-      document.querySelector('#pos').value = hi / framesPerRound;
-    }
+    await new Promise(cb => setTimeout(cb, playInterval));
+    document.querySelector('#pos').value = hi / framesPerRound;
   }
 }
