@@ -47,16 +47,18 @@ class GameHost extends EventEmitter {
   playRounds () {
     return co.wrap(function * () {
       for (let i = this.beginRound; i < this.total; i++) {
-        yield this.playRound(i);
+        try {
+          yield this.playRound(i);
+        } catch (err) {
+          console.error(err.stack);
+        }
+        this.emit('round', {
+          blue: this.blueTank.length,
+          red: this.redTank.length,
+          moves: this.stepsMoved,
+        });
       }
-    }).call(this).then(() => null, err => {
-      console.error(err.stack);
-      this.emit('round', {
-        blue: this.blueTank.length,
-        red: this.redTank.length,
-        moves: i,
-      });
-    });
+    }).call(this);
   }
   playRound (roundNum) {
     return co.wrap(function * () {
@@ -103,16 +105,7 @@ class GameHost extends EventEmitter {
       }));
       writer.on('error', err => null);
       fwriter.on('error', err => null);
-      yield new Promise(cb => {
-        fwriter.on('finish', () => {
-          this.emit('round', {
-            blue: this.blueTank.length * this.TankScore + this.blueFlag * this.FlagScore,
-            red: this.redTank.length * this.TankScore + this.redFlag * this.FlagScore,
-            moves: i,
-          });
-          cb();
-        });
-      });
+      yield new Promise(cb => fwriter.on('finish', () => cb()));
       yield this.callApi('end');
     }).call(this);
   }
