@@ -172,21 +172,23 @@ func NewTraveller() *Traveller {
 	return inst
 }
 
-// 每一回合第一个坦克寻路前调用
-func (self *Traveller) BeforeSearch(state* GameState) {
-}
-
-// 对于每一个坦克依次调用
-func (self *Traveller) Search(tank *Tank, state *GameState, target *Position) int {
-	source := Pos {
-		x: tank.Pos.X,
-		y: tank.Pos.Y,
-		direction: tank.Pos.Direction,
+func (self *Traveller) Search(tanks map[string]*Position, state *GameState, movements map[string]int) {
+	tankMap := make(map[string]*Tank)
+	for _, tank := range state.MyTank {
+		tankMap[tank.Id] = &tank;
 	}
-	ntarget := Pos {
-		x: target.X,
-		y: target.Y,
-		direction: target.Direction,
+	for tankId, target := range tanks {
+		tank := tankMap[tankId]
+		source := Pos {
+			x: tank.Pos.X,
+			y: tank.Pos.Y,
+			direction: tank.Pos.Direction,
+		}
+		ntarget := Pos {
+			x: target.X,
+			y: target.Y,
+			direction: target.Direction,
+		}
+		movements[tankId] = path(state.Terain.Data, source, ntarget)
 	}
-	return path(state.Terain.Data, source, ntarget)
 }

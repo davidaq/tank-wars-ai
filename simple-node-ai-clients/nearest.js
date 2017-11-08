@@ -14,9 +14,7 @@ frame((state, obj) => {
     obj[tank.id] = {
       x: target.x,
       y: target.y,
-      attack: 0,
-      travel: 1,
-      dodge: 10000,
+      action: 'travel-with-dodge',
       // force: 'fire',
     };
   });

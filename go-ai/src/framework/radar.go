@@ -11,10 +11,18 @@ func NewRadar() *Radar {
 }
 
 // 检查自己当前的位置以及面朝方向前进的位置周围是否安全
-// 如果当前位置受到威胁，给出所有可行躲避步骤
-// 如果面朝方向受到威胁，给出标记即可
-func (self *Radar) ScanThreat(tank *Tank, state *GameState) {
-}
-
-func (self *Radar) ScanAttack(tank *Tank, state *GameState) {
+// 检查每个坦克四周开火命中率与代价
+func (self *Radar) Scan(state *GameState) *RadarResult {
+	ret := &RadarResult {
+		Dodge: make(map[string]RadarDodge),
+		Fire: make(map[string]RadarFire),
+	}
+	for _, tank := range state.MyTank {
+		ret.Fire[tank.Id] = RadarFire {
+			Faith: 1.,
+			Action: ActionFireUp,
+			Cost: 10,
+		}
+	}
+	return ret
 }

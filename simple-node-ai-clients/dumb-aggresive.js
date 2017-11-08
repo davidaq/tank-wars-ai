@@ -13,6 +13,7 @@ const frustrate = {};
 const cool = {};
 
 frame((state, moves) => {
+  console.log(state.radar);
   if (init) {
     init = false;
     state.myTank.forEach(my => {

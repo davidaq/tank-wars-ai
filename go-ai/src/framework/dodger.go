@@ -652,7 +652,7 @@ func (self *Dodger) determine(tank *Tank, state *GameState, bulletApproach bool,
 	return bulletMaxAction, bulletMinUrgent
 }
 
-func (self *Dodger) Suggest(tank *Tank, state *GameState, objective *Objective) SuggestionItem {
+func (self *Dodger) Suggest(tank *Tank, state *GameState, objective *Objective) {
 	// 如果采纳，计算几步被干掉
 	//self.calcObjectiveUrgent(tank, state, objective)
 
@@ -663,8 +663,9 @@ func (self *Dodger) Suggest(tank *Tank, state *GameState, objective *Objective) 
 	enemyApproach, enemyThreat := self.threat(tank, state)
 
 	// 最终决定往哪里躲
-	if bulletApproach == true || enemyApproach == true{
+	if bulletApproach == true || enemyApproach == true {
 		action, urgent := self.determine(tank, state, bulletApproach, &enemyBullets, enemyApproach, &enemyThreat)
+		_, _ = action, urgent
 		//fmt.Println("########")
 		//fmt.Println(tank)
 		//fmt.Println("--------")
@@ -674,15 +675,15 @@ func (self *Dodger) Suggest(tank *Tank, state *GameState, objective *Objective) 
 		//fmt.Println(action)
 		//fmt.Println(urgent)
 		//fmt.Println("########")
-		return SuggestionItem {
-			Action: action,
-			Urgent: urgent,
-		}
+		// return SuggestionItem {
+		// 	Action: action,
+		// 	Urgent: urgent,
+		// }
 	}
 
-	ret := SuggestionItem {
-		Action: ActionNone,
-		Urgent: 0,
-	}
-	return ret
+	// ret := SuggestionItem {
+	// 	Action: ActionNone,
+	// 	Urgent: 0,
+	// }
+	// return ret
 }

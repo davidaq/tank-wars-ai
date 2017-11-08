@@ -104,8 +104,39 @@ func ActionFromStr (str string) int {
 		return ActionFireDown;
 	case "fire-right":
 		return ActionFireRight;
+	case "travel":
+		return ActionTravel;
+	case "travel-with-dodge":
+		return ActionTravelWithDodge;
 	default:
 		return ActionNone;
+	}
+}
+
+func ActionToStr (action int) string {
+	switch action {
+	case ActionMove:
+		return "move"
+	case ActionLeft:
+		return "left"
+	case ActionRight:
+		return "right"
+	case ActionBack:
+		return "right"
+	case ActionFireUp:
+		return "fire-up"
+	case ActionFireLeft:
+		return "fire-left"
+	case ActionFireDown:
+		return "fire-down"
+	case ActionFireRight:
+		return "fire-right"
+	case ActionTravel:
+		return "travel"
+	case ActionTravelWithDodge:
+		return "travel-with-dodge"
+	default:
+		return "stay"
 	}
 }
 

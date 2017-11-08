@@ -26,23 +26,37 @@ func (self *Player) Play(state *GameState) map[string]int {
 		self.radar = NewRadar()
 		self.traveller = NewTraveller()
 	}
-	for _, tank := range state.MyTank {
-		self.radar.ScanThreat(&tank, state)
-	}
-	self.tactics.Plan(state, &self.objectives)
-	
+	radarResult := self.radar.Scan(state)
+	self.tactics.Plan(state, radarResult, self.objectives)
+
 	movement := make(map[string]int)
-	callBeforeSearch := true
+	travellingTank := make(map[string]*Position)
+	var noForward []string
 	for _, tank  := range state.MyTank {
 		objective := self.objectives[tank.Id]
 		if objective.Action == ActionTravel {
-			if callBeforeSearch {
-				callBeforeSearch = false
-				self.traveller.BeforeSearch(state)
+			travellingTank[tank.Id] = &objective.Target
+		} else if objective.Action == ActionTravelWithDodge {
+			dodge, ok := radarResult.Dodge[tank.Id]
+			if ok {
+				if dodge.SafePos.X == tank.Pos.X && dodge.SafePos.Y == tank.Pos.Y {
+					noForward = append(noForward, tank.Id)
+					travellingTank[tank.Id] = &objective.Target
+				} else {
+					travellingTank[tank.Id] = &dodge.SafePos
+				}
+			} else {
+				travellingTank[tank.Id] = &objective.Target
 			}
-			movement[tank.Id] = self.traveller.Search(&tank, state, &objective.Target)
 		} else {
 			movement[tank.Id] = objective.Action
+		}
+	}
+	self.traveller.Search(travellingTank, state, movement)
+	for _, tankId := range noForward {
+		action, _ := movement[tankId]
+		if action == ActionMove {
+			movement[tankId] = ActionStay
 		}
 	}
 	return movement

@@ -117,7 +117,7 @@ func (self *Attacker) prefire(tank *Tank, state *GameState, fireline *[]Position
 	return fire, urgent
 }
 
-func (self *Attacker) Suggest(tank *Tank, state *GameState, objective *Objective) SuggestionItem {
+func (self *Attacker) Suggest(tank *Tank, state *GameState, objective *Objective) {
 	// 定义默认值
 	fire	:= false
 	action 	:= ActionNone
@@ -142,9 +142,10 @@ func (self *Attacker) Suggest(tank *Tank, state *GameState, objective *Objective
 		}
 	}
 
-	ret := SuggestionItem {
-		Action: action,
-		Urgent: urgent,
-	}
-	return ret
+	_, _ = action, urgent
+	// ret := SuggestionItem {
+	// 	Action: action,
+	// 	Urgent: urgent,
+	// }
+	// return ret
 }
