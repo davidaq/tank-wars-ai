@@ -172,6 +172,11 @@ func NewTraveller() *Traveller {
 	return inst
 }
 
+// 每一回合第一个坦克寻路前调用
+func (self *Traveller) BeforeSearch(state* GameState) {
+}
+
+// 对于每一个坦克依次调用
 func (self *Traveller) Search(tank *Tank, state *GameState, target *Position) int {
 	source := Pos {
 		x: tank.Pos.X,

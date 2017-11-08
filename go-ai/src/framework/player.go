@@ -27,14 +27,19 @@ func (self *Player) Play(state *GameState) map[string]int {
 		self.traveller = NewTraveller()
 	}
 	for _, tank := range state.MyTank {
-		self.radar.Scan(&tank, state)
+		self.radar.ScanThreat(&tank, state)
 	}
 	self.tactics.Plan(state, &self.objectives)
 	
 	movement := make(map[string]int)
+	callBeforeSearch := true
 	for _, tank  := range state.MyTank {
 		objective := self.objectives[tank.Id]
 		if objective.Action == ActionTravel {
+			if callBeforeSearch {
+				callBeforeSearch = false
+				self.traveller.BeforeSearch(state)
+			}
 			movement[tank.Id] = self.traveller.Search(&tank, state, &objective.Target)
 		} else {
 			movement[tank.Id] = objective.Action
