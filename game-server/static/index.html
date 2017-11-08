@@ -14,7 +14,7 @@
       <form class="well form-inline">
         <div>
           <label>
-            游戏名称： <input name="game-title" type="text" value="随意的一次游戏">
+            房间名称： <input name="game-title" type="text" value="">
           </label>
           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           <label>
@@ -106,19 +106,19 @@
           &nbsp;&nbsp;&nbsp;&nbsp;
         </div>
         <br>
-        <a class="btn btn-primary" href="javascript:createGame();">创建游戏</a>
+        <a class="btn btn-primary" href="javascript:createGame();">创建房间</a>
         <a class="btn btn-default" href="/static/doc.html" target="_blank">文档</a>
       </form>
       <div>
         <form class="form-inline">
-          游戏名称：<input id="gameNameInput" type="text" placeholder="" oninput="filterGame()">
+          房间名称：<input id="gameNameInput" type="text" placeholder="" oninput="filterGame()">
           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           页面：<input id="gamePageInput" type="number" value="1" min="1" step="1" oninput="filterGame()">
         </form>
         <table class="table table-striped table-hover">
           <thead>
             <tr>
-              <th width="30%">游戏名称</th>
+              <th width="30%">房间名称</th>
               <th width="15%">创建时间</th>
               <th width="5%"><center>局数</center></th>
               <th width="50%">对局</th>

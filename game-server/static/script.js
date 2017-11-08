@@ -1,6 +1,17 @@
 function receiveGameList () {
   document.querySelector('[name="game-red"]').value = location.origin + '/random-player';
   document.querySelector('[name="game-blue"]').value = location.origin + '/random-player';
+  document.querySelector('[name="game-title"]').value = (() => {
+    const candidates = [
+      '宇宙的答案',
+      '世界的尽头',
+      '无主之地',
+      '孤岛惊魂',
+      '世界之门',
+      '死胡同',
+    ];
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  })();
   const gameList = [];
   const gameMap = {};
   let filteredList = false;

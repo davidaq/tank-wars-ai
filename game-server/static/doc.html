@@ -75,12 +75,7 @@ AI以HTTP服务的型式存在，只需要提供一个接口链接，创建游�
     "myBullet":[
       {"x":91,"y":8,"direction":"right","id":"a5b03d87-3845-4d9b-a3fc-2e7d5b426c05","from":"abf5d8ae-8a45-4611-b93e-296f501202e3"}
     ],
-    "enemyTank":[
-      {"x":73,"y":19,"direction":"left","id":"14df412a-c1d5-433b-8f2a-e9776a799f64"}
-    ],
-    "enemyBullet":[],
-    "events": [],
-    "ended": false
+    ...
   }
 }
 ```
@@ -137,12 +132,7 @@ AI以HTTP服务的型式存在，只需要提供一个接口链接，创建游�
   "myBullet":[
     {"x":91,"y":8,"direction":"right","id":"a5b03d87-3845-4d9b-a3fc-2e7d5b426c05","from":"abf5d8ae-8a45-4611-b93e-296f501202e3"}
   ],
-  "enemyTank":[
-    {"x":73,"y":19,"direction":"left","id":"14df412a-c1d5-433b-8f2a-e9776a799f64"}
-  ],
-  "enemyBullet":[],
-  "events": [],
-  "ended": false
+  ...
 }
 ```
 
@@ -166,11 +156,21 @@ AI以HTTP服务的型式存在，只需要提供一个接口链接，创建游�
   "myBullet":[
     {"x":91,"y":8,"direction":"right","id":"a5b03d87-3845-4d9b-a3fc-2e7d5b426c05","from":"abf5d8ae-8a45-4611-b93e-296f501202e3"}
   ],
+  "myFlag": 1,
   "enemyTank":[
     {"x":73,"y":19,"direction":"left","id":"14df412a-c1d5-433b-8f2a-e9776a799f64"}
   ],
   "enemyBullet":[],
+  "enemyFlag": 1,
   "events": [],
+  "flagWait": 5,
+  "params": {
+    "tankScore": 2,
+    "flagScore": 1,
+    "flagTime": 50,
+    "tankSpeed": 1,
+    "bulletSpeed": 2
+  },
   "ended": false
 }
 ```
@@ -178,9 +178,12 @@ AI以HTTP服务的型式存在，只需要提供一个接口链接，创建游�
 - **terain -** 当前游戏的[地形](#地形)
 - **myTank -** 我方（还活着的）[坦克](#坦克信息)
 - **myBullet -** 我方坦克发射的子弹[子弹](#子弹信息)
+- **myFlag -** 我方已夺得的旗子数量
 - **enemyTank -** 敌方（还活着的）[坦克](#坦克信息)
 - **enemyBullet -** 敌方坦克发射的子弹[子弹](#子弹信息)
+- **myFlag -** 敌方已夺得的旗子数量
 - **events -** 最后一次行动后产生的[事件](#事件)
+- **params -** [游戏基本参数](#游戏参数)
 
 #### 地形
 
@@ -197,6 +200,7 @@ AI以HTTP服务的型式存在，只需要提供一个接口链接，创建游�
 获取某个位置的地形如terain[y][x]，目前有：
 - 0 空地（不对坦克、子弹有任何影响）
 - 1 无敌障碍物（不可通行、阻挡子弹、不可毁灭）
+- 2 森林（无法获知森林内是否有敌方坦克）
 
 #### 坦克信息
 
@@ -252,6 +256,26 @@ AI可获得游戏状态的时候会得到一个事件数组，表示上一次行
 
 - **type -** 事件类型，有collide-wall（撞击边缘），collide-obstacle（撞击障碍物），collide-tank（撞击坦克）
 - **target -** 发生撞击的坦克id
+
+#### 游戏参数
+
+本局游戏的一些基本参数，游戏过程中不会变化。
+
+```
+{
+  "tankScore": 2,
+  "flagScore": 1,
+  "flagTime": 50,
+  "tankSpeed": 1,
+  "bulletSpeed": 2
+}
+```
+
+- **tankScore -** 每个剩余坦克分数
+- **flagScore -** 每个夺得的旗子分数
+- **flagTime -** 旗子被夺走后，再次出现的回合数
+- **tankSpeed -** 坦克每回合可前进的格子
+- **bulletSpeed -** 子弹每回合前进的格子
 
 ### 行动指令
 

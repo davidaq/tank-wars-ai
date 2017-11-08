@@ -540,6 +540,13 @@ class GameHost extends EventEmitter {
   }
   getState (side) {
     const ended = this.blueTank.length === 0 || this.redTank.length === 0 || this.stepsMoved + 1 >= this.MaxMoves;
+    const params = {
+      tankScore: this.TankScore,
+      flagScore: this.FlagScore,
+      flagTime: this.FlagTime,
+      tankSpeed: this.TankSpeed,
+      bulletSpeed: this.BulletSpeed,
+    };
     if (side === 'blue') {
       return {
         terain: this.terain,
@@ -551,8 +558,7 @@ class GameHost extends EventEmitter {
         flagWait: this.flagWait,
         myFlag: this.blueFlag,
         enemyFlag: this.redFlag,
-        tankScore: this.TankScore,
-        flagScore: this.FlagScore,
+        params,
         ended,
       };
     } else {
@@ -566,8 +572,7 @@ class GameHost extends EventEmitter {
         flagWait: this.flagWait,
         myFlag: this.redFlag,
         enemyFlag: this.blueFlag,
-        tankScore: this.TankScore,
-        flagScore: this.FlagScore,
+        params,
         ended,
       };
     }

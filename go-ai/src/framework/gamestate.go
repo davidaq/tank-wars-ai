@@ -15,6 +15,7 @@ type GameState struct {
 	FlagPos Position
 	MyTank, EnemyTank []Tank
 	MyBullet, EnemyBullet []Bullet
+	MyFlag, EnemyFlag int
 }
 
 type Params struct {
@@ -22,7 +23,8 @@ type Params struct {
 	BulletSpeed int
 	TankPoint int
 	FlagPoint int
-	Timeout int
+	FlagTime int
+	// Timeout int
 }
 
 type Terain struct {
@@ -115,32 +117,29 @@ func ParseGameState (bytes []byte) (*GameState, error) {
 	}
 	ret := &GameState {
 		Raw: bytes,
-		Ended: dat["ended"].(bool),
-		Events: nil,
-		MyTank: nil,
-		EnemyTank: nil,
-		MyBullet: nil,
-		EnemyBullet: nil,
 		Terain: Terain {
 			Width: 0,
 			Height: 0,
 			Data: nil,
 		},
+		MyTank: nil,
+		EnemyTank: nil,
+		MyBullet: nil,
+		EnemyBullet: nil,
+		MyFlag: 0,
+		EnemyFlag: 0,
+		Params: Params {
+			TankSpeed: 0,
+			BulletSpeed: 0,
+			TankPoint: 0,
+			FlagPoint: 0,
+			FlagTime: 0,
+			// Timeout: 1000,
+		},
+		Events: nil,
+		Ended: dat["ended"].(bool),
 	}
-	for _, ievent := range dat["events"].([]interface{}) {
-		event := ievent.(map[string]interface{})
-		from, _ := event["from"].(string)
-		ret.Events = append(ret.Events, Event {
-			Typ: event["type"].(string),
-			Target: event["target"].(string),
-			From: from,
-		})
-	}
-	parseTank(dat["myTank"].([]interface{}), &ret.MyTank)
-	parseTank(dat["enemyTank"].([]interface{}), &ret.EnemyTank)
-	parseBullet(dat["myBullet"].([]interface{}), &ret.MyBullet)
-	parseBullet(dat["enemyBullet"].([]interface{}), &ret.EnemyBullet)
-
+	// parse terain
 	for _, iline := range dat["terain"].([]interface{}) {
 		line := iline.([]interface{})
 		ret.Terain.Width = len(line)
@@ -151,6 +150,30 @@ func ParseGameState (bytes []byte) (*GameState, error) {
 		ret.Terain.Data = append(ret.Terain.Data, oline)
 	}
 	ret.Terain.Height = len(ret.Terain.Data)
+	// parse my/enemy game status
+	parseTank(dat["myTank"].([]interface{}), &ret.MyTank)
+	parseTank(dat["enemyTank"].([]interface{}), &ret.EnemyTank)
+	parseBullet(dat["myBullet"].([]interface{}), &ret.MyBullet)
+	parseBullet(dat["enemyBullet"].([]interface{}), &ret.EnemyBullet)
+	ret.MyFlag = dat["myFlag"].(int)
+	ret.EnemyFlag = dat["enemyFlag"].(int)
+	// parse params
+	params := dat["params"].(map[string]interface{});
+	ret.Params.TankSpeed = params["tankSpeed"].(int)
+	ret.Params.BulletSpeed = params["bulletSpeed"].(int)
+	ret.Params.TankPoint = params["tankPoint"].(int)
+	ret.Params.FlagPoint = params["flagPoint"].(int)
+	ret.Params.FlagTime = params["flagTime"].(int)
+	// parse events
+	for _, ievent := range dat["events"].([]interface{}) {
+		event := ievent.(map[string]interface{})
+		from, _ := event["from"].(string)
+		ret.Events = append(ret.Events, Event {
+			Typ: event["type"].(string),
+			Target: event["target"].(string),
+			From: from,
+		})
+	}
 	return ret, nil
 }
 
