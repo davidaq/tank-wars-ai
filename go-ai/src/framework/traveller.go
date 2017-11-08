@@ -5,7 +5,7 @@ import (
 	"lib/go-astar";
 )
 
-func path(env [][]int, source Pos, target Pos, ret SuggestionItem) (SuggestionItem) {
+func path(env [][]int, source Pos, target Pos) int {
 	rows := len(env)
 	cols := len(env[0])
 
@@ -121,15 +121,12 @@ func path(env [][]int, source Pos, target Pos, ret SuggestionItem) (SuggestionIt
 			if count == 2 {
 				nextPoint.x = pathoutput.Col
 				nextPoint.y = pathoutput.Row
+				break
 			}
 			pathoutput = pathoutput.Parent
 	}
 
-	action := transDirection(source, nextPoint)
-
-	ret.Action = action
-	ret.Urgent = count
-	return ret
+	return transDirection(source, nextPoint)
 }
 
 func transDirection (source Pos, target Pos) int {
@@ -174,22 +171,17 @@ func NewTraveller() *Traveller {
 	}
 	return inst
 }
-func (self *Traveller) Suggest(tank *Tank, state *GameState, objective *Objective) SuggestionItem {
-	ret := SuggestionItem {
-		Action: ActionLeft,
-		Urgent: 1,
-	}
 
-	source := Pos{
-		x:tank.Pos.X,
-		y:tank.Pos.Y,
-		direction:tank.Pos.Direction,
+func (self *Traveller) Search(tank *Tank, state *GameState, target *Position) int {
+	source := Pos {
+		x: tank.Pos.X,
+		y: tank.Pos.Y,
+		direction: tank.Pos.Direction,
 	}
-	target := Pos{
-		x:objective.Target.X,
-		y:objective.Target.Y,
-		direction:objective.Target.Direction,
+	ntarget := Pos {
+		x: target.X,
+		y: target.Y,
+		direction: target.Direction,
 	}
-
-	return path(state.Terain.Data, source, target, ret)
+	return path(state.Terain.Data, source, ntarget)
 }

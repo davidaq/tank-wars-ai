@@ -1,14 +1,11 @@
 package framework
 
-type reactors struct {
-	dodger, attacker, traveller reactor
-}
-
 type Player struct {
 	inited bool
 	tactics Tactics
 	objectives map[string]Objective
-	reactors map[string]reactors
+	radar *Radar
+	traveller *Traveller
 }
 
 func NewPlayer(tactics Tactics) *Player {
@@ -16,7 +13,8 @@ func NewPlayer(tactics Tactics) *Player {
 		tactics: tactics,
 		objectives: make(map[string]Objective),
 		inited: false,
-		reactors: make(map[string]reactors),
+		radar: nil,
+		traveller: nil,
 	}
 	return inst
 }
@@ -25,26 +23,22 @@ func (self *Player) Play(state *GameState) map[string]int {
 	if !self.inited {
 		self.inited = true
 		self.tactics.Init(state)
-		for _, tank  := range state.MyTank {
-			self.reactors[tank.Id] = reactors {
-				dodger: NewDodger(),
-				attacker: NewAttacker(),
-				traveller: NewTraveller(),
-			}
-		}
+		self.radar = NewRadar()
+		self.traveller = NewTraveller()
+	}
+	for _, tank := range state.MyTank {
+		self.radar.Scan(&tank, state)
 	}
 	self.tactics.Plan(state, &self.objectives)
 	
 	movement := make(map[string]int)
 	for _, tank  := range state.MyTank {
 		objective := self.objectives[tank.Id]
-		reactors := self.reactors[tank.Id]
-		suggestion := Suggestion {
-			Dodge: reactors.dodger.Suggest(&tank, state, &objective),
-			Attack: reactors.attacker.Suggest(&tank, state, &objective),
-			Travel: reactors.traveller.Suggest(&tank, state, &objective),
+		if objective.Action == ActionTravel {
+			movement[tank.Id] = self.traveller.Search(&tank, state, &objective.Target)
+		} else {
+			movement[tank.Id] = objective.Action
 		}
-		movement[tank.Id] = self.tactics.Decide(&tank, state, suggestion)
 	}
 	return movement
 }

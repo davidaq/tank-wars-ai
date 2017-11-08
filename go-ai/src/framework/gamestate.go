@@ -19,11 +19,10 @@ type GameState struct {
 }
 
 type Params struct {
-	TankSpeed int
-	BulletSpeed int
-	TankPoint int
-	FlagPoint int
+	TankSpeed, BulletSpeed int
+	TankScore, FlagScore int
 	FlagTime int
+	FlagX, FlagY int
 	// Timeout int
 }
 
@@ -131,9 +130,11 @@ func ParseGameState (bytes []byte) (*GameState, error) {
 		Params: Params {
 			TankSpeed: 0,
 			BulletSpeed: 0,
-			TankPoint: 0,
-			FlagPoint: 0,
+			TankScore: 0,
+			FlagScore: 0,
 			FlagTime: 0,
+			FlagX: 0,
+			FlagY: 0,
 			// Timeout: 1000,
 		},
 		Events: nil,
@@ -155,15 +156,17 @@ func ParseGameState (bytes []byte) (*GameState, error) {
 	parseTank(dat["enemyTank"].([]interface{}), &ret.EnemyTank)
 	parseBullet(dat["myBullet"].([]interface{}), &ret.MyBullet)
 	parseBullet(dat["enemyBullet"].([]interface{}), &ret.EnemyBullet)
-	ret.MyFlag = dat["myFlag"].(int)
-	ret.EnemyFlag = dat["enemyFlag"].(int)
+	ret.MyFlag = int(dat["myFlag"].(float64))
+	ret.EnemyFlag = int(dat["enemyFlag"].(float64))
 	// parse params
 	params := dat["params"].(map[string]interface{});
-	ret.Params.TankSpeed = params["tankSpeed"].(int)
-	ret.Params.BulletSpeed = params["bulletSpeed"].(int)
-	ret.Params.TankPoint = params["tankPoint"].(int)
-	ret.Params.FlagPoint = params["flagPoint"].(int)
-	ret.Params.FlagTime = params["flagTime"].(int)
+	ret.Params.TankSpeed = int(params["tankSpeed"].(float64))
+	ret.Params.BulletSpeed = int(params["bulletSpeed"].(float64))
+	ret.Params.TankScore = int(params["tankScore"].(float64))
+	ret.Params.FlagScore = int(params["flagScore"].(float64))
+	ret.Params.FlagTime = int(params["flagTime"].(float64))
+	ret.Params.FlagX = int(params["flagX"].(float64))
+	ret.Params.FlagY = int(params["flagY"].(float64))
 	// parse events
 	for _, ievent := range dat["events"].([]interface{}) {
 		event := ievent.(map[string]interface{})

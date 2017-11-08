@@ -128,8 +128,8 @@ class GameHost extends EventEmitter {
         line.push(0);
       }
     }
-    const flagX = Math.floor(this.MapWidth / 2);
-    const flagY = Math.floor(this.MapHeight / 2);
+    this.flagX = Math.floor(this.MapWidth / 2);
+    this.flagY = Math.floor(this.MapHeight / 2);
     let x = Math.floor(this.random.nextFloat() * this.MapWidth / 2);
     let y = Math.floor(this.random.nextFloat() * this.MapHeight);
     const tankW = Math.ceil(Math.sqrt(this.InitTank));
@@ -153,7 +153,7 @@ class GameHost extends EventEmitter {
           y = Math.floor(this.random.nextFloat() * this.MapHeight);
           break;
       }
-      if (x >= 0 && x < this.MapWidth && y >= 0 && y < this.MapHeight && this.terain[y][x] === 0 && x >= tankW && y >= tankH && x !== flagX && y != flagY) {
+      if (x >= 0 && x < this.MapWidth && y >= 0 && y < this.MapHeight && this.terain[y][x] === 0 && x >= tankW && y >= tankH && x !== this.flagX && y != this.flagY) {
         this.terain[y][x] = 1;
         this.terain[this.MapHeight - y - 1][this.MapWidth - x - 1] = 1;
         i += 2;
@@ -166,7 +166,7 @@ class GameHost extends EventEmitter {
       while (true) {
         const x = Math.floor(this.random.nextFloat() * this.MapWidth / 2);
         const y = Math.floor(this.random.nextFloat() * this.MapHeight);
-        if (x >= 0 && x < this.MapWidth && y >= 0 && y < this.MapHeight && this.terain[y][x] === 0 && x >= tankW && y >= tankH && x !== flagX && y != flagY) {
+        if (x >= 0 && x < this.MapWidth && y >= 0 && y < this.MapHeight && this.terain[y][x] === 0 && x >= tankW && y >= tankH && x !== this.flagX && y != this.flagY) {
           this.terain[y][x] = 2;
           this.terain[this.MapHeight - y - 1][this.MapWidth - x - 1] = 2;
           i += 2;
@@ -217,8 +217,6 @@ class GameHost extends EventEmitter {
       }));
     }
 
-    const flagX = Math.floor(this.MapWidth / 2);
-    const flagY = Math.floor(this.MapHeight / 2);
     for (let i = 0; i < this.TankSpeed; i++) {
       let advances = [];
       const forbid = {};
@@ -299,7 +297,7 @@ class GameHost extends EventEmitter {
       }));
       if (this.flagWait === 0) {
         for (const tank of this.blueTank) {
-          if (tank && tank.x === flagX && tank.y === flagY) {
+          if (tank && tank.x === this.flagX && tank.y === this.flagY) {
             this.flagWait = this.FlagTime;
             this.blueFlag++;
             this.blueEvents.push({
@@ -313,7 +311,7 @@ class GameHost extends EventEmitter {
           }
         }
         for (const tank of this.redTank) {
-          if (tank && tank.x === flagX && tank.y === flagY) {
+          if (tank && tank.x === this.flagX && tank.y === this.flagY) {
             console.log('flag');
             this.flagWait = this.FlagTime;
             this.redFlag++;
@@ -546,6 +544,8 @@ class GameHost extends EventEmitter {
       flagTime: this.FlagTime,
       tankSpeed: this.TankSpeed,
       bulletSpeed: this.BulletSpeed,
+      flagX: this.flagX,
+      flagY: this.flagY,
     };
     if (side === 'blue') {
       return {
