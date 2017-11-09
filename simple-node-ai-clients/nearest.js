@@ -12,10 +12,9 @@ frame((state, obj) => {
       }
     })
     obj[tank.id] = {
-      x: 0,//target.x,
-      y: 0,//target.y,
+      x: target.x,
+      y: target.y,
       action: 'travel-with-dodge',
     };
   });
-  console.log(obj);
 });

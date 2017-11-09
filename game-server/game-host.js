@@ -53,8 +53,8 @@ class GameHost extends EventEmitter {
           console.error(err.stack);
         }
         this.emit('round', {
-          blue: this.blueTank.length,
-          red: this.redTank.length,
+          blue: this.blueTank.length * this.TankScore + this.blueFlag * this.FlagScore,
+          red: this.redTank.length * this.TankScore + this.redFlag * this.FlagScore,
           moves: this.stepsMoved,
         });
       }
