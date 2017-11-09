@@ -38,9 +38,9 @@ class GameHost extends EventEmitter {
     this.MapHeight = Math.max(tankH * 2, this.MapHeight - 0);
     this.MapWidth += 1 - (this.MapHeight & 1);
     this.MapHeight += 1 - (this.MapHeight & 1);
-    let remain = this.MapWidth * this.MapHeight - tankW * tankH * 2 - 5;
+    let remain = (this.MapWidth - 3) * (this.MapHeight - 3) - (tankW + 1) * (tankH + 1) * 3 - 5;
     this.Obstacles = Math.min(this.Obstacles - 0, remain);
-    remain -= this.Obstacles - 3;
+    remain -= this.Obstacles - 5;
     this.Forests = Math.min(this.Forests - 0, remain);
     this.playRounds();
   }
@@ -305,7 +305,6 @@ class GameHost extends EventEmitter {
         }
         for (const tank of this.redTank) {
           if (tank && tank.x === this.flagX && tank.y === this.flagY) {
-            console.log('flag');
             this.flagWait = this.FlagTime;
             this.redFlag++;
             this.redEvents.push({

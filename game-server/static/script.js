@@ -119,9 +119,9 @@ async function setupReplay () {
   $stage.innerHTML = '';
   let $style = document.createElement('style');
   document.querySelector('head').appendChild($style);
-  let cellSize = 0;
+  const cellSize = 50;
   const setDisplaySize = _.throttle(() => {
-    cellSize = Math.floor(Math.min((window.innerWidth - 50) / terain[0].length, (window.innerHeight - 200) / terain.length));
+    const prefCellSize = Math.floor(Math.min((window.innerWidth - 50) / terain[0].length, (window.innerHeight - 200) / terain.length));
     $style.parentElement.removeChild($style);
     $style = document.createElement('style');
     const playInterval = Math.min(2000, Math.max(50, document.querySelector('#interval').value - 0));
@@ -130,11 +130,17 @@ async function setupReplay () {
       width: ${cellSize}px;
       height: ${cellSize}px;
     }
+    #stagewrap {
+      width: ${prefCellSize * terain[0].length}px;
+      height: ${prefCellSize * terain.length}px;
+      margin-top: ${Math.floor((window.innerHeight - prefCellSize * terain.length) / 3)}px;
+      margin-left: ${Math.floor((window.innerWidth - prefCellSize * terain[0].length) / 2)}px;
+    }
     #stage {
       width: ${cellSize * terain[0].length}px;
       height: ${cellSize * terain.length}px;
-      margin-top: ${Math.floor((window.innerHeight - cellSize * terain.length) / 3)}px;
-      margin-left: ${Math.floor((window.innerWidth - cellSize * terain[0].length) / 2)}px;
+      transform: scale(${prefCellSize / cellSize});
+      transform-origin: top left;
     }
     .transition {
       transition: all ${playInterval / 1000}s linear;
@@ -204,7 +210,14 @@ async function setupReplay () {
       }
       const obj = objs[state.id];
       obj.stamp = stamp;
-      obj.$el.className = `${type} ${type}-${color} direction-${state.direction} cell-size transition`;
+      let direction = state.direction;
+      if (direction === 'down' && obj.$el.className.indexOf('direction-left') > -1) {
+        direction = 'pre-down-left';
+        setTimeout(() => {
+          obj.$el.className = `${type} ${type}-${color} direction-${state.direction} cell-size transition`;
+        }, 10);
+      }
+      obj.$el.className = `${type} ${type}-${color} direction-${direction} cell-size transition`;
       Object.assign(obj.$el.style, {
         top: (cellSize * state.y) + 'px',
         left: (cellSize * state.x) + 'px',
