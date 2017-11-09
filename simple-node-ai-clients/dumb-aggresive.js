@@ -13,7 +13,6 @@ const frustrate = {};
 const cool = {};
 
 frame((state, moves) => {
-  console.log(state.radar);
   if (init) {
     init = false;
     state.myTank.forEach(my => {
@@ -108,7 +107,7 @@ frame((state, moves) => {
         cool[my.id] = 0;
       }
       if (shoot) {
-        moves[my.id] = 'fire';
+        moves[my.id] = 'fire-' + my.direction;
         frustrate[my.id] -= 4;
       } else {
         moves[my.id] = 'move';

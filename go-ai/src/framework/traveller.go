@@ -2,7 +2,7 @@
 package framework
 
 import (
-	"lib/go-astar";
+	"lib/go-astar"
 )
 
 func path(env [][]int, source Pos, target Pos) int {
@@ -172,23 +172,20 @@ func NewTraveller() *Traveller {
 	return inst
 }
 
-func (self *Traveller) Search(tanks map[string]*Position, state *GameState, movements map[string]int) {
-	tankMap := make(map[string]*Tank)
+func (self *Traveller) Search(travel map[string]*Position, state *GameState, movements map[string]int) {
 	for _, tank := range state.MyTank {
-		tankMap[tank.Id] = &tank;
-	}
-	for tankId, target := range tanks {
-		tank := tankMap[tankId]
-		source := Pos {
-			x: tank.Pos.X,
-			y: tank.Pos.Y,
-			direction: tank.Pos.Direction,
+		if target, exists := travel[tank.Id]; exists {
+			source := Pos {
+				x: tank.Pos.X,
+				y: tank.Pos.Y,
+				direction: tank.Pos.Direction,
+			}
+			ntarget := Pos {
+				x: target.X,
+				y: target.Y,
+				direction: target.Direction,
+			}
+			movements[tank.Id] = path(state.Terain.Data, source, ntarget)
 		}
-		ntarget := Pos {
-			x: target.X,
-			y: target.Y,
-			direction: target.Direction,
-		}
-		movements[tankId] = path(state.Terain.Data, source, ntarget)
 	}
 }
