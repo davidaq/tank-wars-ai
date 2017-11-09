@@ -216,6 +216,11 @@ async function setupReplay () {
         setTimeout(() => {
           obj.$el.className = `${type} ${type}-${color} direction-${state.direction} cell-size transition`;
         }, 10);
+      } else if (direction === 'left' && obj.$el.className.indexOf('direction-down') > -1) {
+        direction = 'pre-left-down';
+        setTimeout(() => {
+          obj.$el.className = `${type} ${type}-${color} direction-${state.direction} cell-size transition`;
+        }, 10);
       }
       obj.$el.className = `${type} ${type}-${color} direction-${direction} cell-size transition`;
       Object.assign(obj.$el.style, {

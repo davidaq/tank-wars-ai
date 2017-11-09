@@ -131,6 +131,10 @@ body, html {
   transform: rotate(270deg);
   transition: none;
 }
+#stage .direction-pre-left-down {
+  transform: rotate(-180deg);
+  transition: none;
+}
 #stage .destroyed {
   transition: all 0.5s linear;
   transform: scale(10);
