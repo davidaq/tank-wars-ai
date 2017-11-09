@@ -36,7 +36,7 @@ func path(env [][]int, source Pos, target Pos) int {
 	for i := 0; i < rows; i++ {
 		for j := 0; j < cols; j++ {
 			if env[i][j]!=0 {
-				a.FillTile(astar.Point{ Row: i, Col: j }, -1) 
+				a.FillTile(astar.Point{ Row: i, Col: j }, -1)
 			}
 		}
 	}

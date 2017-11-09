@@ -16,9 +16,14 @@
     <center>
       旗子：<span id="flags"></span>
       &nbsp;&nbsp;&nbsp;&nbsp;
-      动作间隔 (毫秒)：<input id="interval" type="number" value="200" max="2000" min="50" step="50">
+      动作间隔 (毫秒)：<input id="interval" type="number" value="250" max="2000" min="50" step="200" style="width: 100px">
       &nbsp;&nbsp;&nbsp;&nbsp;
-      播放进度 (回合)：<input id="pos" type="number" min="0" step="10" onfocus="pause()" onblur="pause(false)" value="0"> / <span id="total"></span>
+      <label style="display: inline-block; vertical-align: middle">
+        <input id="lag" type="checkbox" style="vertical-align: top">
+        <span style="display: inline-block; vertical-align: top">卡顿</span>
+      </label>
+      &nbsp;&nbsp;&nbsp;&nbsp;
+      播放进度 (回合)：<input id="pos" type="number" min="0" step="10" onfocus="pause()" onblur="pause(false)" value="0" style="width: 100px"> / <span id="total"></span>
       &nbsp;&nbsp;&nbsp;&nbsp;
       <label style="display: inline-block; vertical-align: middle">
         <input id="paused" type="checkbox" onclick="pause(this.checked)" style="vertical-align: top">

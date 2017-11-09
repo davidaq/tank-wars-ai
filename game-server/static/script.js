@@ -251,10 +251,10 @@ async function setupReplay () {
         obj.$el.className += ' destroyed';
         setTimeout(() => {
           obj.$el.parentElement.removeChild(obj.$el);
-        }, 500);
+        }, 600);
       }
     });
-    await new Promise(cb => setTimeout(cb, playInterval));
+    await new Promise(cb => setTimeout(cb, playInterval * (document.querySelector('#lag').checked ? 2 : 1)));
     document.querySelector('#pos').value = hi / framesPerRound;
   }
 }

@@ -209,6 +209,13 @@ class GameHost extends EventEmitter {
         redBullet: this.redBullet,
       }));
     }
+    const bullets = {};
+    this.blueBullet.forEach((bullet, i) => {
+      bullets[`${bullet.x},${bullet.y}`] = { set: this.blueBullet, i };
+    });
+    this.redBullet.forEach((bullet, i) => {
+      bullets[`${bullet.x},${bullet.y}`] = { set: this.redBullet, i };
+    });
 
     for (let i = 0; i < this.TankSpeed; i++) {
       let advances = [];
@@ -283,6 +290,26 @@ class GameHost extends EventEmitter {
       advances.forEach(item => {
         const { oTank, tank } = item;
         Object.assign(oTank, tank);
+      });
+      this.blueTank.forEach((tank, i) => {
+        if (tank) {
+          const bullet = bullets[`${tank.x},${tank.y}`];
+          if (bullet) {
+            console.log('MH');
+            this.hitTank(scene, bullet.set[bullet.i], this.blueTank, i);
+            bullet.set.splice(bullet.i);
+          }
+        }
+      });
+      this.redTank.forEach((tank, i) => {
+        if (tank) {
+          const bullet = bullets[`${tank.x},${tank.y}`];
+          if (bullet) {
+            console.log('MH');
+            this.hitTank(scene, bullet.set[bullet.i], this.redTank, i);
+            bullet.set.splice(bullet.i);
+          }
+        }
       });
       this.history.push(clone({
         blueTank: this.blueTank,
@@ -476,46 +503,7 @@ class GameHost extends EventEmitter {
           removeBullet = true;
         } else if (target.tank) {
           removeBullet = true;
-          const isFriendlyFire = bullet.color === target.tank;
-          if (!this.FriendlyFire && isFriendlyFire) {
-            removeBullet = false;
-          } else {
-            let blueEventType;
-            let redEventType;
-            if (isFriendlyFire) {
-              if (bullet.color === 'red') {
-                redEventType = 'me-hit-me';
-                blueEventType = 'enemy-hit-enemy';
-              } else {
-                blueEventType = 'me-hit-me';
-                redEventType = 'enemy-hit-enemy';
-              }
-            } else {
-              if (bullet.color === 'red') {
-                redEventType = 'me-hit-enemy';
-                blueEventType = 'enemy-hit-me';
-              } else {
-                blueEventType = 'me-hit-enemy';
-                redEventType = 'enemy-hit-me';
-              }
-            }
-            scene[bullet.y][bullet.x] = this.terain[bullet.y][bullet.x];
-            const hitTank = this[target.tank + 'Tank'][target.i];
-            this.redEvents.push({
-              type: redEventType,
-              from: bullet.from,
-              target: hitTank.id,
-            });
-            this.blueEvents.push({
-              type: blueEventType,
-              from: bullet.from,
-              target: hitTank.id,
-            });
-            hitTank.hp--;
-            if (hitTank.hp == 0) {
-              this[target.tank + 'Tank'][target.i] = null;
-            }
-          }
+          this.hitTank(scene, bullet, this[target.tank + 'Tank'], target.i);
         }
       }
       if (removeBullet) {
@@ -526,6 +514,44 @@ class GameHost extends EventEmitter {
         myBullet.splice(i, 1);
         i--;
       }
+    }
+  }
+  hitTank (scene, bullet, tankSet, tankI) {
+    const hitTank = tankSet[tankI];
+    const isFriendlyFire = bullet.color === hitTank.color;
+    let blueEventType;
+    let redEventType;
+    if (isFriendlyFire) {
+      if (bullet.color === 'red') {
+        redEventType = 'me-hit-me';
+        blueEventType = 'enemy-hit-enemy';
+      } else {
+        blueEventType = 'me-hit-me';
+        redEventType = 'enemy-hit-enemy';
+      }
+    } else {
+      if (bullet.color === 'red') {
+        redEventType = 'me-hit-enemy';
+        blueEventType = 'enemy-hit-me';
+      } else {
+        blueEventType = 'me-hit-enemy';
+        redEventType = 'enemy-hit-me';
+      }
+    }
+    scene[bullet.y][bullet.x] = this.terain[bullet.y][bullet.x];
+    this.redEvents.push({
+      type: redEventType,
+      from: bullet.from,
+      target: hitTank.id,
+    });
+    this.blueEvents.push({
+      type: blueEventType,
+      from: bullet.from,
+      target: hitTank.id,
+    });
+    hitTank.hp--;
+    if (hitTank.hp == 0) {
+      tankSet[tankI] = null;
     }
   }
   getState (side) {

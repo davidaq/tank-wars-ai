@@ -140,3 +140,6 @@ body, html {
   transform: scale(10);
   opacity: 0;
 }
+#stage .tank.destroyed {
+  transition: all 0.3s linear 0.3s;
+}
