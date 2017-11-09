@@ -62,5 +62,6 @@ func (self *Player) Play(state *GameState) map[string]int {
 	return movement
 }
 
-func (self *Player) Reset() {
+func (self *Player) End(state *GameState) {
+	self.tactics.End(state)
 }

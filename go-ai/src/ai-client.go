@@ -25,7 +25,7 @@ func main() {
 		i++
 		fmt.Print(i, "\tmy:", len(state.MyTank), "\tenemy:", len(state.EnemyTank), "\t\t\r")
 	}
-	player.Reset()
+	player.End(state)
 }
 
 func setup(host string, gameid string, side string) *f.GameState {
