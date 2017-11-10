@@ -33,7 +33,7 @@ type DiffResult struct {
 
 // 雷达输出
 type RadarResult struct {
-	Dodge map[string]RadarDodge		`json:"dodge"`
+	Dodge map[string]RadarDodge				`json:"dodge"`
 	Fire map[string]RadarFireAll			`json:"fire"`
 }
 

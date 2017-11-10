@@ -160,6 +160,9 @@ async function setupReplay () {
       const $cell = document.createElement('div');
       $cell.className = 'cell cell-size cell-' + line[x];
       $terain.appendChild($cell);
+      $cell.onmouseover = () => {
+        document.title = `(${x},${y})`;
+      };
     }
     const $br = document.createElement('div');
     $br.className = 'linebreak';
