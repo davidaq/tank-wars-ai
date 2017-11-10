@@ -3,189 +3,186 @@ package framework
 
 import (
 	"lib/go-astar"
+	"sync"
 )
 
-func path(env [][]int, source Pos, target Pos) int {
-	rows := len(env)
-	cols := len(env[0])
-
-	a := astar.NewAStar(rows, cols)
-	p2p := astar.NewPointToPoint()
-
-	
-	a.FillTile(astar.Point{ Row: source.y, Col: source.x + 1}, 1);
-	a.FillTile(astar.Point{ Row: source.y, Col: source.x - 1}, 1);
-	a.FillTile(astar.Point{ Row: source.y + 1, Col: source.x}, 1);
-	a.FillTile(astar.Point{ Row: source.y - 1, Col: source.x}, 1);
-
-	switch source.direction {
-	case DirectionLeft: 
-		a.FillTile(astar.Point{ Row: source.y, Col: source.x - 1}, 0);
-		break;
-	case DirectionRight: 
-		a.FillTile(astar.Point{ Row: source.y, Col: source.x + 1}, 0);
-		break;
-	case DirectionUp: 
-		a.FillTile(astar.Point{ Row: source.y - 1, Col: source.x}, 0);
-		break;
-	case DirectionDown: 
-		a.FillTile(astar.Point{ Row: source.y + 1, Col: source.x}, 0);
-		break;
-	}
-
-	for i := 0; i < rows; i++ {
-		for j := 0; j < cols; j++ {
-			if env[i][j]!=0 {
-				a.FillTile(astar.Point{ Row: i, Col: j }, -1)
-			}
-		}
-	}
-
-	switch target.direction {
-	case 0: break;
-	case 1: 
-		tmpI := target.y + 1
-		for ;tmpI < target.y + 5; tmpI++ {
-			if tmpI == cols {
-				break;
-			}
-			if env[tmpI][target.x] == 1 {
-				break;
-			}
-		}
-		if source.x == target.x && source.y > target.y {
-			break;
-		}
-		target.y = tmpI - 1
-		break;
-	case 2:
-		tmpI := target.x + 1
-		for ;tmpI < target.x + 5; tmpI++ {
-			if tmpI == rows {
-				break;
-			}
-			if env[target.y][tmpI] == 1 {
-				break;
-			}
-		}
-		if source.y == target.y && source.x > target.x {
-			break;
-		}
-		target.x = tmpI - 1
-		break;
-	case 3:
-		tmpI := target.y - 1
-		for ;tmpI > target.y - 5; tmpI-- {
-			if tmpI == -1 {
-				break;
-			}
-			if env[tmpI][target.x] == 1 {
-				break;
-			}
-		}
-		if source.x == target.x && source.y < target.y {
-			break;
-		}
-		target.y = tmpI + 1
-		break;
-	case 4:
-		tmpI := target.x - 1
-		for ;tmpI > target.x - 5; tmpI-- {
-			if tmpI == -1 {
-				break;
-			}
-			if env[target.y][tmpI] == 1 {
-				break;
-			}
-		}
-		if source.y == target.y && source.x < target.x {
-			break;
-		}
-		target.x = tmpI + 1
-		break;
-	}
-
-	sourcePoint := []astar.Point{astar.Point{Row: source.y, Col: source.x}}
-	targetPoint := []astar.Point{astar.Point{Row: target.y, Col: target.x}}
-
-	pathoutput := a.FindPath(p2p, sourcePoint, targetPoint)
-
-	nextPoint := Pos{
-		x: source.x,
-		y: source.y,
-	}
-
-	count := 0
-	for pathoutput != nil {
-			count++
-			if count == 2 {
-				nextPoint.x = pathoutput.Col
-				nextPoint.y = pathoutput.Row
-				break
-			}
-			pathoutput = pathoutput.Parent
-	}
-
-	return transDirection(source, nextPoint)
-}
-
-func transDirection (source Pos, target Pos) int {
+func toAction (source Position, target Position) int {
 	targetDirection := DirectionNone
-	if source.x < target.x {
+	if source.X < target.X {
 		targetDirection = DirectionRight
-	} else if source.x > target.x {
+	} else if source.X > target.X {
 		targetDirection = DirectionLeft
-	} else if source.y < target.y {
+	} else if source.Y < target.Y {
 		targetDirection = DirectionDown
-	} else if source.y > target.y {
+	} else if source.Y > target.Y {
 		targetDirection = DirectionUp
 	} else {
-		targetDirection = target.direction
-		if targetDirection == DirectionNone || source.direction == target.direction {
+		targetDirection = target.Direction
+		if targetDirection == DirectionNone || source.Direction == target.Direction {
 			return ActionStay	
 		} 
 	}
-	if targetDirection == source.direction {
+	if targetDirection == source.Direction {
 		return ActionMove
 	}
-	if ((targetDirection - 1) - (source.direction - 1) + 4) % 4 == 1 {
+	if ((targetDirection - 1) - (source.Direction - 1) + 4) % 4 == 1 {
 		return ActionLeft
-	} else if ((targetDirection - 1) - (source.direction - 1) + 4) % 4 == 2 {
+	} else if ((targetDirection - 1) - (source.Direction - 1) + 4) % 4 == 2 {
 		return ActionBack
 	} else {
 		return ActionRight
 	}
 }
 
-type Pos struct {
-	x int
-	y int
-	direction int
+type PathCache struct {
+	path *astar.PathPoint
+	target Position
 }
 
 type Traveller struct {
+	astar astar.AStar
+	cache map[string]*PathCache
 }
 
 func NewTraveller() *Traveller {
 	inst := &Traveller {
+		astar: nil,
+		cache: make(map[string]*PathCache),
 	}
 	return inst
 }
 
 func (self *Traveller) Search(travel map[string]*Position, state *GameState, movements map[string]int) {
-	for _, tank := range state.MyTank {
-		if target, exists := travel[tank.Id]; exists {
-			source := Pos {
-				x: tank.Pos.X,
-				y: tank.Pos.Y,
-				direction: tank.Pos.Direction,
+	if self.astar == nil {
+		self.astar = astar.NewAStar(state.Terain.Height, state.Terain.Width)
+		for y := 0; y < state.Terain.Height; y++ {
+			for x := 0; x < state.Terain.Width; x++ {
+				if state.Terain.Get(x, y) != 0 {
+					self.astar.FillTile(astar.Point{ Col: x, Row :y }, -1)
+				}
 			}
-			ntarget := Pos {
-				x: target.X,
-				y: target.Y,
-				direction: target.Direction,
-			}
-			movements[tank.Id] = path(state.Terain.Data, source, ntarget)
 		}
 	}
+	waits := 0
+	waitchan := make(chan bool)
+	var lock sync.Mutex
+
+	for _, tank := range state.MyTank {
+		if target, exists := travel[tank.Id]; exists {
+			waits += 1
+			id := tank.Id
+			from := tank.Pos
+			to := *target
+			go (func () {
+				nextPoint := from
+				if from.X != to.X || from.Y != to.Y {
+					lock.Lock()
+					cache, hasCache := self.cache[id]
+					lock.Unlock()
+					if !hasCache || cache.target.X != to.X || cache.target.Y != to.Y {
+						cache = &PathCache {
+							path: self.path(self.astar.Clone(), from, to, state.Params.TankSpeed, &state.Terain),
+							target: to,
+						}
+						lock.Lock()
+						self.cache[id] = cache
+						lock.Unlock()
+					}
+					for cache.path != nil {
+						if cache.path.Col == from.X && cache.path.Row == from.Y {
+							cache.path = cache.path.Parent
+						} else {
+							break
+						}
+					}
+					if cache.path == nil {
+						to.Direction = DirectionNone
+						cache.path = self.path(self.astar.Clone(), from, to, state.Params.TankSpeed, &state.Terain)
+					}
+					nextPoint.X = cache.path.Col
+					nextPoint.Y = cache.path.Row
+				}
+				lock.Lock()
+				movements[id] = toAction(from, nextPoint)
+				lock.Unlock()
+				waitchan <- true
+			})()
+		}
+	}
+	for i := 0; i < waits; i++ {
+		_ = <- waitchan
+	}
+}
+
+func (self *Traveller) path(a astar.AStar, source Position, target Position, movelen int, terain *Terain) *astar.PathPoint {
+	p2p := astar.NewPointToPoint()
+	cols := terain.Width
+	rows := terain.Height
+	switch target.Direction {
+	case DirectionUp: 
+		tmpI := target.Y + 1
+		for ; tmpI < target.Y + 5; tmpI++ {
+			if tmpI == cols {
+				break;
+			}
+			if terain.Get(target.X, tmpI) == 1 {
+				break;
+			}
+		}
+		if source.X == target.X && source.Y > target.Y {
+			break;
+		}
+		target.Y = tmpI - 1
+		break;
+	case DirectionLeft:
+		tmpI := target.X + 1
+		for ;tmpI < target.X + 5; tmpI++ {
+			if tmpI == rows {
+				break;
+			}
+			if terain.Get(tmpI, target.Y) == 1 {
+				break;
+			}
+		}
+		if source.Y == target.Y && source.X > target.X {
+			break;
+		}
+		target.X = tmpI - 1
+		break;
+	case DirectionDown:
+		tmpI := target.Y - 1
+		for ;tmpI > target.Y - 5; tmpI-- {
+			if tmpI == -1 {
+				break;
+			}
+			if terain.Get(target.X, tmpI) == 1 {
+				break;
+			}
+		}
+		if source.X == target.X && source.Y < target.Y {
+			break;
+		}
+		target.Y = tmpI + 1
+		break;
+	case DirectionRight:
+		tmpI := target.X - 1
+		for ;tmpI > target.X - 5; tmpI-- {
+			if tmpI == -1 {
+				break;
+			}
+			if terain.Get(tmpI, target.Y) == 1 {
+				break;
+			}
+		}
+		if source.Y == target.Y && source.X < target.X {
+			break;
+		}
+		target.X = tmpI + 1
+		break;
+	}
+
+	sourcePoint := []astar.Point{ astar.Point{ Row: source.Y, Col: source.X } }
+	targetPoint := []astar.Point{ astar.Point{ Row: target.Y, Col: target.X } }
+
+	return a.FindPath(p2p, sourcePoint, targetPoint, movelen)
 }

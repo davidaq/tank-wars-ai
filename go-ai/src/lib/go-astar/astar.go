@@ -2,7 +2,7 @@ package astar
 
 import (
     "math"
-    "sync"
+    "fmt"
 )
 
 type AStar interface {
@@ -20,7 +20,10 @@ type AStar interface {
     // enforces it).
     // The start of the path is returned to you. If no path exists then the function will
     // return nil as the path.
-    FindPath(config AStarConfig, source, target []Point) *PathPoint
+    FindPath(config AStarConfig, source, target []Point, movelen int) *PathPoint
+
+    // Clone a new instance
+    Clone() AStar
 }
 
 // The user built configuration that determines how weights are calculated and
@@ -43,7 +46,6 @@ type AStarConfig interface {
 
 type gridStruct struct {
     // A list of filled tiles and their weight
-    tileLock    sync.Mutex
     filledTiles map[Point]int
 
     rows int
@@ -54,26 +56,34 @@ func NewAStar(rows, cols int) AStar {
     return &gridStruct{
         rows: rows,
         cols: cols,
-
         filledTiles: make(map[Point]int),
     }
 }
 
-func (a *gridStruct) FillTile(p Point, weight int) {
-    a.tileLock.Lock()
-    defer a.tileLock.Unlock()
+func (a *gridStruct) Clone() AStar {
+    tiles := make(map[Point]int, len(a.filledTiles))
+    for k, v := range a.filledTiles {
+        tiles[k] = v
+    }
+    return &gridStruct {
+        rows: a.rows,
+        cols: a.cols,
+        filledTiles: tiles,
+    }
+}
 
+func (a *gridStruct) FillTile(p Point, weight int) {
+    if existing, ok := a.filledTiles[p]; ok && existing == -1 {
+        return
+    }
     a.filledTiles[p] = weight
 }
 
 func (a *gridStruct) ClearTile(p Point) {
-    a.tileLock.Lock()
-    defer a.tileLock.Unlock()
-
     delete(a.filledTiles, p)
 }
 
-func (a *gridStruct) FindPath(config AStarConfig, source, target []Point) *PathPoint {
+func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movelen int) *PathPoint {
     var openList = make(map[Point]*PathPoint)
     var closeList = make(map[Point]*PathPoint)
 
@@ -82,7 +92,6 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point) *PathP
         source_map[p] = true
     }
 
-    a.tileLock.Lock()
     for _, p := range target {
         fill_weight := a.filledTiles[p]
         path_point := &PathPoint{
@@ -98,23 +107,32 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point) *PathP
         }
     }
 
-    a.tileLock.Unlock()
-
     var current *PathPoint
     for {
         current = a.getMinWeight(openList)
 
-        a.tileLock.Lock()
         if current == nil || config.IsEnd(current.Point, source, source_map) {
-            a.tileLock.Unlock()
             break
         }
-        a.tileLock.Unlock()
 
         delete(openList, current.Point)
         closeList[current.Point] = current
 
-        surrounding := a.getSurrounding(current.Point)
+        pdirection := 0
+        prev := current.Parent
+        if prev != nil {
+            if current.Row > prev.Row {
+                pdirection = 1
+            } else if current.Row < prev.Row {
+                pdirection = 2
+            } else if current.Col > prev.Col {
+                pdirection = 3
+            } else if current.Col < prev.Col {
+                pdirection = 4
+            }
+        }
+
+        surrounding := a.getSurrounding(current.Point, movelen)
 
         for _, p := range surrounding {
             _, ok := closeList[p]
@@ -122,9 +140,43 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point) *PathP
                 continue
             }
 
-            a.tileLock.Lock()
             fill_weight := a.filledTiles[p]
-            a.tileLock.Unlock()
+            if current.Point.Row == p.Row {
+                step := -1
+                if p.Col > current.Point.Col {
+                    step = 1
+                }
+                for t := current.Point.Col + step; t != p.Col; t += step {
+                    fill_weight += a.filledTiles[Point{Row: p.Row, Col:t}]
+                    if fill_weight > 0 {
+                        fmt.Println(fill_weight)
+                    }
+                }
+            } else {
+                step := -1
+                if p.Row > current.Point.Row {
+                    step = 1
+                }
+                for t := current.Point.Row + step; t != p.Row; t += step {
+                    fill_weight += a.filledTiles[Point{Row: t, Col:p.Col}]
+                    if fill_weight > 0 {
+                        fmt.Println(fill_weight)
+                    }
+                }
+            }
+            cdirection := 0
+            if p.Row > current.Row {
+                cdirection = 1
+            } else if p.Row < current.Row {
+                cdirection = 2
+            } else if p.Col > current.Col {
+                cdirection = 3
+            } else if p.Col < current.Col {
+                cdirection = 4
+            }
+            if pdirection != cdirection {
+                fill_weight += movelen
+            }
 
             path_point := &PathPoint{
                 Point:        p,
@@ -133,9 +185,7 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point) *PathP
                 DistTraveled: current.DistTraveled + 1,
             }
 
-            a.tileLock.Lock()
             allowed := config.SetWeight(path_point, fill_weight, source, source_map)
-            a.tileLock.Unlock()
 
             if !allowed {
                 continue
@@ -152,9 +202,7 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point) *PathP
         }
     }
 
-    a.tileLock.Lock()
     current = config.PostProcess(current, a.rows, a.cols, a.filledTiles)
-    a.tileLock.Unlock()
 
     return current
 }
@@ -172,23 +220,57 @@ func (a *gridStruct) getMinWeight(openList map[Point]*PathPoint) *PathPoint {
     return min
 }
 
-func (a *gridStruct) getSurrounding(p Point) []Point {
+func (a *gridStruct) getSurrounding(p Point, movelen int) []Point {
     var surrounding []Point
 
-    row, col := p.Row, p.Col
+    row, col, v := p.Row, p.Col, -1
 
-    if row > 0 {
-        surrounding = append(surrounding, Point{row - 1, col})
+    v = -1
+    for i := 1; i <= movelen; i++ {
+        trow := row - i
+        if trow < 0 || a.filledTiles[Point{trow, col}] == -1 {
+            break
+        }
+        v = trow
     }
-    if row < a.rows-1 {
-        surrounding = append(surrounding, Point{row + 1, col})
+    if v >= 0 {
+        surrounding = append(surrounding, Point{v, col})
     }
 
-    if col > 0 {
-        surrounding = append(surrounding, Point{row, col - 1})
+    v = -1
+    for i := 1; i <= movelen; i++ {
+        trow := row + i
+        if trow >= a.rows || a.filledTiles[Point{trow, col}] == -1 {
+            break
+        }
+        v = trow
     }
-    if col < a.cols-1 {
-        surrounding = append(surrounding, Point{row, col + 1})
+    if v >= 0 {
+        surrounding = append(surrounding, Point{v, col})
+    }
+
+    v = -1
+    for i := 1; i <= movelen; i++ {
+        tcol := col - i
+        if tcol < 0 || a.filledTiles[Point{row, tcol}] == -1 {
+            break
+        }
+        v = tcol
+    }
+    if v >= 0 {
+        surrounding = append(surrounding, Point{row, v})
+    }
+
+    v = -1
+    for i := 1; i <= movelen; i++ {
+        tcol := col + i
+        if tcol >= a.cols || a.filledTiles[Point{row, tcol}] == -1 {
+            break
+        }
+        v = tcol
+    }
+    if v >= 0 {
+        surrounding = append(surrounding, Point{row, v})
     }
 
     return surrounding
