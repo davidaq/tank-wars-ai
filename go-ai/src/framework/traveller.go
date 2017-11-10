@@ -60,8 +60,8 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 		self.astar = astar.NewAStar(state.Terain.Height, state.Terain.Width)
 		for y := 0; y < state.Terain.Height; y++ {
 			for x := 0; x < state.Terain.Width; x++ {
-				if state.Terain.Get(x, y) != 0 {
-					self.astar.FillTile(astar.Point{ Col: x, Row :y }, -1)
+				if state.Terain.Get(x, y) == 1 {
+					self.astar.FillTile(astar.Point{ Col: x, Row: y }, -1)
 				}
 			}
 		}
