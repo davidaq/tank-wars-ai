@@ -5,9 +5,9 @@ type Diff struct {
 	prevState *GameState
 }
 
-func NewDiff() &Diff {
+func NewDiff() *Diff {
 	return &Diff {
-		prevState: nil
+		prevState: nil,
 	}
 }
 
