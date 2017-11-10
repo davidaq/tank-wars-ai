@@ -39,10 +39,10 @@ type RadarDodge struct {
 }
 
 type RadarFireAll struct {
-	Up RadarFire			`json:"up"`
-	Down RadarFire		`json:"down"`
-	Left RadarFire		`json:"left"`
-	Right RadarFire		`json:"right"`
+	Up *RadarFire			`json:"up"`
+	Down *RadarFire		`json:"down"`
+	Left *RadarFire		`json:"left"`
+	Right *RadarFire		`json:"right"`
 }
 
 type RadarFire struct {

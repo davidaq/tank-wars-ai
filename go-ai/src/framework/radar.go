@@ -15,13 +15,15 @@ func NewRadar() *Radar {
 func (self *Radar) Scan(state *GameState) *RadarResult {
 	ret := &RadarResult {
 		Dodge: make(map[string]RadarDodge),
-		Fire: make(map[string]RadarFire),
+		Fire: make(map[string]RadarFireAll),
 	}
 	for _, tank := range state.MyTank {
-		ret.Fire[tank.Id] = RadarFire {
-			Faith: 1.,
-			Action: ActionFireUp,
-			Cost: 10,
+		ret.Fire[tank.Id] = RadarFireAll {
+			Up: &RadarFire {
+				Faith: 1.,
+				Action: ActionFireUp,
+				Cost: 10,
+			},
 		}
 	}
 	return ret

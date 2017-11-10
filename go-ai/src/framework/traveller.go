@@ -66,7 +66,8 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 	waits := 0
 	waitchan := make(chan bool)
 	var lock sync.Mutex
-
+	occupy := make(map[astar.Point]bool)
+	lock.Lock()
 	for _, tank := range state.MyTank {
 		if target, exists := travel[tank.Id]; exists {
 			waits += 1
@@ -105,14 +106,25 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 				action := toAction(from, nextPoint)
 				lock.Lock()
 				if action == ActionMove {
-					
+					p := astar.Point{ Row: nextPoint.Y, Col: nextPoint.X }
+					if _, exists = occupy[p]; exists {
+						action = ActionStay
+					} else {
+						occupy[p] = true
+					}
+				} else {
+					p := astar.Point{ Row: from.Y, Col: from.X }
+					occupy[p] = true
 				}
 				movements[id] = action
 				lock.Unlock()
 				waitchan <- true
 			})()
+		} else {
+			occupy[astar.Point{ Row: tank.Pos.Y, Col: tank.Pos.X }] = true
 		}
 	}
+	lock.Unlock()
 	for i := 0; i < waits; i++ {
 		_ = <- waitchan
 	}
