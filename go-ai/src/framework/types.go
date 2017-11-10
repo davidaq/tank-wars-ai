@@ -30,7 +30,7 @@ const (
 // 雷达输出
 type RadarResult struct {
 	Dodge map[string]RadarDodge		`json:"dodge"`
-	Fire map[string]RadarFire			`json:"fire"`
+	Fire map[string]RadarFireAll			`json:"fire"`
 }
 
 type RadarDodge struct {
