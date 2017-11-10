@@ -135,8 +135,7 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movele
         surrounding := a.getSurrounding(current.Point, movelen)
 
         for _, p := range surrounding {
-            _, ok := closeList[p]
-            if ok {
+            if _, ok := closeList[p]; ok {
                 continue
             }
 
@@ -222,7 +221,6 @@ func (a *gridStruct) getMinWeight(openList map[Point]*PathPoint) *PathPoint {
 
 func (a *gridStruct) getSurrounding(p Point, movelen int) []Point {
     var surrounding []Point
-
     row, col, v := p.Row, p.Col, -1
 
     v = -1

@@ -26,6 +26,7 @@ func main() {
 		fmt.Print(i, "\tmy:", len(state.MyTank), "\tenemy:", len(state.EnemyTank), "\t\t\r")
 	}
 	player.End(state)
+	fmt.Println("\nEnd")
 }
 
 func setup(host string, gameid string, side string) *f.GameState {

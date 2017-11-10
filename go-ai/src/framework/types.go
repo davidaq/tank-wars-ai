@@ -27,6 +27,10 @@ const (
 	ActionTravelWithDodge = iota		 	// 仅用作策略的返回
 )
 
+type DiffResult struct {
+	ForestThreat map[Position]float64			// 草丛里有敌人的可能性，0到1
+}
+
 // 雷达输出
 type RadarResult struct {
 	Dodge map[string]RadarDodge		`json:"dodge"`
