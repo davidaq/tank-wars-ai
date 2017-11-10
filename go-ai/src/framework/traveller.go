@@ -102,8 +102,12 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 					nextPoint.X = cache.path.Col
 					nextPoint.Y = cache.path.Row
 				}
+				action := toAction(from, nextPoint)
 				lock.Lock()
-				movements[id] = toAction(from, nextPoint)
+				if action == ActionMove {
+					
+				}
+				movements[id] = action
 				lock.Unlock()
 				waitchan <- true
 			})()

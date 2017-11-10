@@ -38,6 +38,13 @@ type RadarDodge struct {
 	SafePos Position	`json:"safePos"`  // 建议躲避位置，可以直接设定为坦克当前位置表示原地不动（前进方向受威胁）
 }
 
+type RadarFireAll struct {
+	Up RadarFire			`json:"up"`
+	Down RadarFire		`json:"down"`
+	Left RadarFire		`json:"left"`
+	Right RadarFire		`json:"right"`
+}
+
 type RadarFire struct {
 	Faith float64			// 命中信仰，0到1，1就是如果采纳肯定会命中
 	Sin float64				// 友伤罪恶，0到1，1就是如果采纳肯定会命中
@@ -48,6 +55,7 @@ type RadarFire struct {
 func (self RadarFire) MarshalJSON() ([]byte, error) {
 	fmap := make(map[string]interface{})
 	fmap["faith"] = self.Faith
+	fmap["sin"] = self.Sin
 	fmap["cost"] = self.Cost
 	fmap["action"] = ActionToStr(self.Action)
 	return json.Marshal(fmap)
