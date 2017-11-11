@@ -5,14 +5,74 @@
 package framework
 
 import (
-	//"math"
+	"fmt"
 )
 
 type Dodger struct {
 }
 
-//func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *[]BulletThreat, enemyApproach bool, enemys *[]EnemyThreat) (map[string]RadarDodge) {
-    //
+/**
+ * 躲避系统
+ *
+ * 火线为威胁判断
+ * 其他象限的威胁为躲避判断参考
+ * 同时参考墙、草、队友阻挡调度	队友在一格范围内，同步协调
+ */
+func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[string][]BulletThreat, enemyApproach bool, enemys *map[string][]EnemyThreat) (map[string]RadarDodge) {
+	radarDodge := make(map[string]RadarDodge)
+
+	// 约定紧急程度为击中回合数倒数
+	firelineThreat := make(map[string]interface{})
+	for _, tank := range state.MyTank {
+		// STEP1 计算火线上的威胁
+		// 先算最紧急的火线威胁步数
+		tmpFirelineThreat := make(map[int]int)
+		if bulletApproach == true && len((*bullets)[tank.Id]) > 0 {
+			for _, b := range (*bullets)[tank.Id] {
+				if b.Quadrant == QUADRANT_U || b.Quadrant == QUADRANT_L || b.Quadrant == QUADRANT_D || b.Quadrant == QUADRANT_R {
+					if tmpFirelineThreat[b.Quadrant] == 0 || tmpFirelineThreat[b.Quadrant] > b.Distance {
+						tmpFirelineThreat[b.Quadrant] = b.Distance
+					}
+				}
+			}
+		}
+
+		if enemyApproach == true && len((*enemys)[tank.Id]) > 0 {
+			for _, e := range ((*enemys)[tank.Id]) {
+				if e.Quadrant == QUADRANT_U || e.Quadrant == QUADRANT_L || e.Quadrant == QUADRANT_D || e.Quadrant == QUADRANT_R {
+					if tmpFirelineThreat[e.Quadrant] == 0 || tmpFirelineThreat[e.Quadrant] > e.Distance {
+						tmpFirelineThreat[e.Quadrant] = e.Distance
+					}
+				}
+			}
+		}
+
+		if len(tmpFirelineThreat) != 0 {
+			firelineThreat[tank.Id] = tmpFirelineThreat
+			fmt.Println("#############")
+			fmt.Println(tank.Id)
+			fmt.Println("-------")
+			fmt.Println(firelineThreat[tank.Id])
+			fmt.Println("#############")
+		}
+
+
+		// STEP2 观察除火线外四个象限
+
+		// STEP3 闪避策略
+
+		// STEP4 综合调度
+
+		// 威胁指数判断
+		// 子弹已经在火线上，找最近的距离那一个（威胁最大）
+
+		// 如果小于
+
+		// 再算次要紧急四象限
+	}
+
+	return radarDodge
+
 	//// 最后收敛到几个方向上，直接在方向上标出最小的紧急度，最后走方向中紧急度排名第一，但是方向中不紧急的
 	//BulletMoveUrgent := [6]int{}
 	//BulletMoveUrgent[ActionMove] = math.MaxInt32
@@ -232,6 +292,6 @@ type Dodger struct {
 	//}
     //
 	//return bulletMaxAction, bulletMinUrgent
-//}
+}
 
 

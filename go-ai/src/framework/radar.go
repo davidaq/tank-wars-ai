@@ -6,7 +6,6 @@ package framework;
 
 import (
 	"math"
-	"fmt"
 )
 
 type Radar struct {
@@ -465,12 +464,8 @@ func (self *Radar) Scan(state *GameState) *RadarResult {
 			radarDodge[tank.Id] = RadarDodge{}
 		}
 	} else {
-		//fmt.Println("####")
-		//fmt.Println(bullets)
-		//fmt.Println(enemy)
-		//fmt.Println("####")
 		// 躲避系统（撞墙、友军、草丛警戒）
-		//radarDodge = self.dodge(state, bulletApproach, &bullets, enemyApproach, &enemy)
+		radarDodge = self.dodge(state, bulletApproach, &bullets, enemyApproach, &enemy)
 	}
 
 	// 开火系统
