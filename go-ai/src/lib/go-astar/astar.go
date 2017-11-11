@@ -2,7 +2,6 @@ package astar
 
 import (
     "math"
-    "fmt"
 )
 
 type AStar interface {
@@ -147,9 +146,6 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movele
                 }
                 for t := current.Point.Col + step; t != p.Col; t += step {
                     fill_weight += a.filledTiles[Point{Row: p.Row, Col:t}]
-                    if fill_weight > 0 {
-                        fmt.Println(fill_weight)
-                    }
                 }
             } else {
                 step := -1
@@ -158,9 +154,6 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movele
                 }
                 for t := current.Point.Row + step; t != p.Row; t += step {
                     fill_weight += a.filledTiles[Point{Row: t, Col:p.Col}]
-                    if fill_weight > 0 {
-                        fmt.Println(fill_weight)
-                    }
                 }
             }
             cdirection := 0
@@ -173,7 +166,7 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movele
             } else if p.Col < current.Col {
                 cdirection = 4
             }
-            if pdirection != cdirection {
+            if pdirection > 0 && pdirection != cdirection {
                 fill_weight += movelen
             }
 
@@ -270,7 +263,6 @@ func (a *gridStruct) getSurrounding(p Point, movelen int) []Point {
     if v >= 0 {
         surrounding = append(surrounding, Point{row, v})
     }
-
     return surrounding
 }
 

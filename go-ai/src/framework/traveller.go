@@ -4,42 +4,12 @@ package framework
 import (
 	"lib/go-astar"
 	"sync"
-	"fmt"
 )
 
-func toAction (source Position, target Position) int {
-	targetDirection := DirectionNone
-	if source.X < target.X {
-		targetDirection = DirectionRight
-	} else if source.X > target.X {
-		targetDirection = DirectionLeft
-	} else if source.Y < target.Y {
-		targetDirection = DirectionDown
-	} else if source.Y > target.Y {
-		targetDirection = DirectionUp
-	} else {
-		targetDirection = target.Direction
-		if targetDirection == DirectionNone || source.Direction == target.Direction {
-			return ActionStay	
-		} 
-	}
-	if targetDirection == source.Direction {
-		return ActionMove
-	}
-	switch ((targetDirection - 1) - (source.Direction - 1) + 4) % 4 {
-	case 1:
-		return ActionLeft
-	case 2:
-		return ActionBack
-	default:
-		return ActionRight
-	}
-}
-
 type PathCache struct {
-	path *astar.PathPoint
+	path []Position
 	target Position
-	expect *astar.Point
+	expect *Position
 }
 
 type Traveller struct {
@@ -69,7 +39,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 	waits := 0
 	waitchan := make(chan bool)
 	var lock sync.Mutex
-	occupy := make(map[astar.Point]bool)
+	occupy := make(map[Position]bool)
 	lock.Lock()
 	for _, tank := range state.MyTank {
 		if target, exists := travel[tank.Id]; exists {
@@ -85,7 +55,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 				if from.X != to.X || from.Y != to.Y {
 					if !hasCache || cache.target.X != to.X || cache.target.Y != to.Y {
 						cache = &PathCache {
-							path: self.path(self.astar.Clone(), from, to, state.Params.TankSpeed, &state.Terain),
+							path: self.path(self.astar, from, to, state.Params.TankSpeed, &state.Terain),
 							target: to,
 						}
 						hasCache = true
@@ -93,25 +63,29 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 						self.cache[id] = cache
 						lock.Unlock()
 					}
-					if cache.expect != nil && (cache.expect.Row != from.Y || cache.expect.Col != from.X) {
-						cache.path = nil
+					if cache.expect != nil && (cache.expect.Y != from.Y || cache.expect.X != from.X) {
+						if abs(from.X - to.X) + abs(from.Y - to.Y) > state.Params.TankSpeed {
+							cache.path = nil
+						} else {
+							cache.path = []Position { *cache.expect }
+						}
 					}
-					for cache.path != nil {
-						if cache.path.Col == from.X && cache.path.Row == from.Y {
-							cache.path = cache.path.Parent
+					for len(cache.path) > 0 {
+						p := cache.path[0]
+						if p.X == from.X && p.Y == from.Y {
+							cache.path = cache.path[1:]
 						} else {
 							break
 						}
 					}
-					if cache.path == nil {
-						fmt.Println("Recalc")
-						cache.path = self.path(self.astar.Clone(), from, to, state.Params.TankSpeed, &state.Terain)
+					if len(cache.path) == 0 {
+						cache.path = self.path(self.astar, from, to, state.Params.TankSpeed, &state.Terain)
 					}
-					nextPoint.X = cache.path.Col
-					nextPoint.Y = cache.path.Row
-				}
-				if id == state.MyTank[0].Id {
-					fmt.Println(from, nextPoint)
+					if len(cache.path) == 0 {
+						nextPoint = to
+					} else {
+						nextPoint = cache.path[0]
+					}
 				}
 				action := toAction(from, nextPoint)
 				if hasCache {
@@ -119,16 +93,25 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 				}
 				lock.Lock()
 				if action == ActionMove {
-					p := astar.Point{ Row: nextPoint.Y, Col: nextPoint.X }
+					p := Position { Y: from.Y, X: from.X }
+					if nextPoint.Y > from.Y {
+						p.Y++
+					} else if nextPoint.Y < from.Y {
+						p.Y--
+					} else if nextPoint.X > from.X {
+						p.X++
+					} else if nextPoint.X < from.X {
+						p.X--
+					}
 					if _, exists = occupy[p]; exists {
 						action = ActionStay
-						p = astar.Point{ Row: from.Y, Col: from.X }
+						p = Position { Y: from.Y, X: from.X }
 					} else if hasCache {
-						cache.expect = &p
+						cache.expect = &nextPoint
 					}
 					occupy[p] = true
 				} else {
-					p := astar.Point{ Row: from.Y, Col: from.X }
+					p := Position { Y: from.Y, X: from.X }
 					occupy[p] = true
 				}
 				movements[id] = action
@@ -136,7 +119,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 				waitchan <- true
 			})()
 		} else {
-			occupy[astar.Point{ Row: tank.Pos.Y, Col: tank.Pos.X }] = true
+			occupy[Position{ Y: tank.Pos.Y, X: tank.Pos.X }] = true
 		}
 	}
 	lock.Unlock()
@@ -145,75 +128,63 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 	}
 }
 
-func (self *Traveller) path(a astar.AStar, source Position, target Position, movelen int, terain *Terain) *astar.PathPoint {
+func (self *Traveller) path(a astar.AStar, source Position, target Position, movelen int, terain *Terain) []Position {
 	p2p := astar.NewPointToPoint()
-	// cols := terain.Width
-	// rows := terain.Height
-	// switch target.Direction {
-	// case DirectionUp: 
-	// 	tmpI := target.Y + 1
-	// 	for ; tmpI < target.Y + 5; tmpI++ {
-	// 		if tmpI == cols {
-	// 			break;
-	// 		}
-	// 		if terain.Get(target.X, tmpI) == 1 {
-	// 			break;
-	// 		}
-	// 	}
-	// 	if source.X == target.X && source.Y > target.Y {
-	// 		break;
-	// 	}
-	// 	target.Y = tmpI - 1
-	// 	break;
-	// case DirectionLeft:
-	// 	tmpI := target.X + 1
-	// 	for ;tmpI < target.X + 5; tmpI++ {
-	// 		if tmpI == rows {
-	// 			break;
-	// 		}
-	// 		if terain.Get(tmpI, target.Y) == 1 {
-	// 			break;
-	// 		}
-	// 	}
-	// 	if source.Y == target.Y && source.X > target.X {
-	// 		break;
-	// 	}
-	// 	target.X = tmpI - 1
-	// 	break;
-	// case DirectionDown:
-	// 	tmpI := target.Y - 1
-	// 	for ;tmpI > target.Y - 5; tmpI-- {
-	// 		if tmpI == -1 {
-	// 			break;
-	// 		}
-	// 		if terain.Get(target.X, tmpI) == 1 {
-	// 			break;
-	// 		}
-	// 	}
-	// 	if source.X == target.X && source.Y < target.Y {
-	// 		break;
-	// 	}
-	// 	target.Y = tmpI + 1
-	// 	break;
-	// case DirectionRight:
-	// 	tmpI := target.X - 1
-	// 	for ;tmpI > target.X - 5; tmpI-- {
-	// 		if tmpI == -1 {
-	// 			break;
-	// 		}
-	// 		if terain.Get(tmpI, target.Y) == 1 {
-	// 			break;
-	// 		}
-	// 	}
-	// 	if source.Y == target.Y && source.X < target.X {
-	// 		break;
-	// 	}
-	// 	target.X = tmpI + 1
-	// 	break;
-	// }
 
 	sourcePoint := []astar.Point{ astar.Point{ Row: source.Y, Col: source.X } }
 	targetPoint := []astar.Point{ astar.Point{ Row: target.Y, Col: target.X } }
 
-	return a.FindPath(p2p, sourcePoint, targetPoint, movelen)
+	p := a.FindPath(p2p, targetPoint, sourcePoint, movelen)
+	
+	var ret []Position
+	for p != nil {
+		ret = append(ret, Position {
+			X: p.Col,
+			Y: p.Row,
+		})
+		p = p.Parent
+	}
+	c := len(ret)
+	for i, n := 0, c / 2; i < n; i++ {
+		j := c - i - 1
+		ret[i], ret[j] = ret[j], ret[i]
+	}
+	return ret
+}
+
+func abs (val int) int {
+	if val < 0 {
+		return -val
+	} else {
+		return val
+	}
+}
+
+func toAction (source Position, target Position) int {
+	targetDirection := DirectionNone
+	if source.X < target.X {
+		targetDirection = DirectionRight
+	} else if source.X > target.X {
+		targetDirection = DirectionLeft
+	} else if source.Y < target.Y {
+		targetDirection = DirectionDown
+	} else if source.Y > target.Y {
+		targetDirection = DirectionUp
+	} else {
+		targetDirection = target.Direction
+		if targetDirection == DirectionNone || source.Direction == target.Direction {
+			return ActionStay	
+		} 
+	}
+	if targetDirection == source.Direction {
+		return ActionMove
+	}
+	switch ((targetDirection - 1) - (source.Direction - 1) + 4) % 4 {
+	case 1:
+		return ActionLeft
+	case 2:
+		return ActionBack
+	default:
+		return ActionRight
+	}
 }
