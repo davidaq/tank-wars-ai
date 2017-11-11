@@ -14,10 +14,10 @@ type Radar struct {
 // 8象限系统
 const (
 	QUADRANT_NONE = 0
-	QUADRANT_Y_U = -1	// Y轴上方
-	QUADRANT_X_L = -2	// X轴左侧
-	QUADRANT_Y_D = -3	// Y轴下方
-	QUADRANT_X_R = -4	// X轴右侧
+	QUADRANT_U = -1		// 上方
+	QUADRANT_L = -2		// 左侧
+	QUADRANT_D = -3		// 下方
+	QUADRANT_R = -4		// 右侧
 	QUADRANT_R_U = 1	// 第一象限 右上角
 	QUADRANT_L_U = 2	// 第二象限 左上角
 	QUADRANT_L_D = 3	// 第三象限 左下角
@@ -157,7 +157,7 @@ func (self *Radar) avoidBullet(state *GameState) (bulletApproach bool, bulletThr
 				if bullet.Pos.X == tank.Pos.X {
 					//在Y火线上
 					if bullet.Pos.Y < tank.Pos.Y && bullet.Pos.Direction == DirectionDown {
-						tmpQuadrant = QUADRANT_Y_U
+						tmpQuadrant = QUADRANT_U
 						for w := bullet.Pos.Y; w <= tank.Pos.Y; w++ {
 							if 1 == state.Terain.Get(tank.Pos.X, w) {
 								tmpQuadrant = QUADRANT_NONE
@@ -167,7 +167,7 @@ func (self *Radar) avoidBullet(state *GameState) (bulletApproach bool, bulletThr
 						}
 					}
 					if bullet.Pos.Y > tank.Pos.Y && bullet.Pos.Direction == DirectionUp {
-						tmpQuadrant = QUADRANT_Y_D
+						tmpQuadrant = QUADRANT_D
 						for w := bullet.Pos.Y; w >= tank.Pos.Y; w-- {
 							if 1 == state.Terain.Get(tank.Pos.X, w) {
 								tmpQuadrant = QUADRANT_NONE
@@ -180,7 +180,7 @@ func (self *Radar) avoidBullet(state *GameState) (bulletApproach bool, bulletThr
 				if bullet.Pos.Y == tank.Pos.Y {
 					//在X火线上
 					if bullet.Pos.X < tank.Pos.X && bullet.Pos.Direction == DirectionRight {
-						tmpQuadrant = QUADRANT_X_L
+						tmpQuadrant = QUADRANT_L
 						for w := bullet.Pos.X; w <= tank.Pos.X; w++ {
 							if 1 == state.Terain.Get(w, tank.Pos.Y) {
 								tmpQuadrant = QUADRANT_NONE
@@ -190,7 +190,7 @@ func (self *Radar) avoidBullet(state *GameState) (bulletApproach bool, bulletThr
 						}
 					}
 					if bullet.Pos.X > tank.Pos.X && bullet.Pos.Direction == DirectionLeft {
-						tmpQuadrant = QUADRANT_X_R
+						tmpQuadrant = QUADRANT_R
 						for w := bullet.Pos.X; w >= tank.Pos.X; w-- {
 							if 1 == state.Terain.Get(w, tank.Pos.Y) {
 								tmpQuadrant = QUADRANT_NONE
@@ -303,7 +303,7 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 
 			if enemy.Enemy.X == tank.Pos.X {
 				if enemy.Enemy.Y < tank.Pos.Y {
-					tmpEnemyThreat[k].Quadrant = QUADRANT_Y_U
+					tmpEnemyThreat[k].Quadrant = QUADRANT_U
 					tmpEnemyThreat[k].Distance = tank.Pos.Y - enemy.Enemy.Y
 					if enemy.Enemy.Direction == DirectionLeft || enemy.Enemy.Direction == DirectionRight {
 						tmpEnemyThreat[k].Distance++
@@ -314,7 +314,7 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 					}
 				}
 				if enemy.Enemy.Y > tank.Pos.Y {
-					tmpEnemyThreat[k].Quadrant = QUADRANT_Y_D
+					tmpEnemyThreat[k].Quadrant = QUADRANT_D
 					tmpEnemyThreat[k].Distance = enemy.Enemy.Y - tank.Pos.Y
 					if enemy.Enemy.Direction == DirectionLeft || enemy.Enemy.Direction == DirectionRight {
 						tmpEnemyThreat[k].Distance++
@@ -327,7 +327,7 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 
 			if enemy.Enemy.Y == tank.Pos.Y {
 				if enemy.Enemy.X < tank.Pos.X {
-					tmpEnemyThreat[k].Quadrant = QUADRANT_X_L
+					tmpEnemyThreat[k].Quadrant = QUADRANT_L
 					tmpEnemyThreat[k].Distance = tank.Pos.X - enemy.Enemy.X
 					if enemy.Enemy.Direction == DirectionUp || enemy.Enemy.Direction == DirectionDown {
 						tmpEnemyThreat[k].Distance++
@@ -337,7 +337,7 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 					}
 				}
 				if enemy.Enemy.X > tank.Pos.X {
-					tmpEnemyThreat[k].Quadrant = QUADRANT_X_R
+					tmpEnemyThreat[k].Quadrant = QUADRANT_R
 					tmpEnemyThreat[k].Distance = enemy.Enemy.X - tank.Pos.X
 					if enemy.Enemy.Direction == DirectionUp || enemy.Enemy.Direction == DirectionDown {
 						tmpEnemyThreat[k].Distance++

@@ -1,5 +1,5 @@
 /**
- * 子弹躲避行动子系统
+ * 高性能躲避行动子系统
  * author: linxingchen
  */
 package framework
