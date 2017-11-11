@@ -5,7 +5,7 @@
 package framework
 
 import (
-	"fmt"
+	//"fmt"
 )
 
 type Dodger struct {
@@ -22,6 +22,10 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
 
 	radarDodge := make(map[string]RadarDodge)
 	if (bulletApproach == true || enemyApproach == true) {
+		//fmt.Println("####")
+		//fmt.Println(bullets)
+		//fmt.Println(enemys)
+		//fmt.Println("####")
 	}
     //
 	//// 约定紧急程度为击中回合数倒数
