@@ -5,7 +5,7 @@
 package framework
 
 import (
-	//"fmt"
+	"fmt"
 )
 
 type Dodger struct {
@@ -19,54 +19,65 @@ type Dodger struct {
  * 同时参考墙、草、队友阻挡调度	队友在一格范围内，同步协调
  */
 func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[string][]BulletThreat, enemyApproach bool, enemys *map[string][]EnemyThreat) (map[string]RadarDodge) {
+
 	radarDodge := make(map[string]RadarDodge)
-
-	// 约定紧急程度为击中回合数倒数
-	firelineThreat := make(map[string]interface{})
-	quadrantThreat := make(map[string]interface{})
-	for _, tank := range state.MyTank {
-		// STEP1 计算火线上的威胁
-		// 先算最紧急的火线威胁步数
-		tmpFirelineThreat := make(map[int]int)
-		// STEP2 观察除火线外四个象限
-		// 再看非火线象限上的威胁步数
-		tmpQuadrantThreat := make(map[int]int)
-		if bulletApproach == true && len((*bullets)[tank.Id]) > 0 {
-			for _, b := range (*bullets)[tank.Id] {
-				if b.Quadrant == QUADRANT_U || b.Quadrant == QUADRANT_L || b.Quadrant == QUADRANT_D || b.Quadrant == QUADRANT_R {
-					if tmpFirelineThreat[b.Quadrant] == 0 || tmpFirelineThreat[b.Quadrant] > b.Distance {
-						tmpFirelineThreat[b.Quadrant] = b.Distance
-					}
-				} else {
-					if tmpQuadrantThreat[b.Quadrant] == 0 || tmpQuadrantThreat[b.Quadrant] > b.Distance {
-						tmpQuadrantThreat[b.Quadrant] = b.Distance
-					}
-				}
-			}
-		}
-
-		if enemyApproach == true && len((*enemys)[tank.Id]) > 0 {
-			for _, e := range ((*enemys)[tank.Id]) {
-				if e.Quadrant == QUADRANT_U || e.Quadrant == QUADRANT_L || e.Quadrant == QUADRANT_D || e.Quadrant == QUADRANT_R {
-					if tmpFirelineThreat[e.Quadrant] == 0 || tmpFirelineThreat[e.Quadrant] > e.Distance {
-						tmpFirelineThreat[e.Quadrant] = e.Distance
-					}
-				} else {
-					if tmpQuadrantThreat[e.Quadrant] == 0 || tmpQuadrantThreat[e.Quadrant] > e.Distance {
-						tmpQuadrantThreat[e.Quadrant] = e.Distance
-					}
-				}
-			}
-		}
-
-		firelineThreat[tank.Id] = tmpFirelineThreat
-		quadrantThreat[tank.Id] = tmpQuadrantThreat
+	if (bulletApproach == true || enemyApproach == true) {
+		fmt.Println("####")
+		fmt.Println(bullets)
+		fmt.Println(enemys)
+		fmt.Println("####")
 	}
-
-	if bulletApproach == true || enemyApproach == true {
-	}
-
-
+    //
+	//// 约定紧急程度为击中回合数倒数
+	//firelineThreat := make(map[string]interface{})
+	//quadrantThreat := make(map[string]interface{})
+	//for _, tank := range state.MyTank {
+	//	// STEP1 计算火线上的威胁
+	//	// 先算最紧急的火线威胁步数
+	//	tmpFirelineThreat := make(map[int]int)
+	//	// STEP2 观察除火线外四个象限
+	//	// 再看非火线象限上的威胁步数
+	//	tmpQuadrantThreat := make(map[int]int)
+	//	if bulletApproach == true && len((*bullets)[tank.Id]) > 0 {
+	//		for _, b := range (*bullets)[tank.Id] {
+	//			if b.Quadrant == QUADRANT_U || b.Quadrant == QUADRANT_L || b.Quadrant == QUADRANT_D || b.Quadrant == QUADRANT_R {
+	//				if tmpFirelineThreat[b.Quadrant] == 0 || tmpFirelineThreat[b.Quadrant] > b.Distance {
+	//					tmpFirelineThreat[b.Quadrant] = b.Distance
+	//				}
+	//			} else {
+	//				if tmpQuadrantThreat[b.Quadrant] == 0 || tmpQuadrantThreat[b.Quadrant] > b.Distance {
+	//					tmpQuadrantThreat[b.Quadrant] = b.Distance
+	//				}
+	//			}
+	//		}
+	//	}
+    //
+	//	if enemyApproach == true && len((*enemys)[tank.Id]) > 0 {
+	//		for _, e := range ((*enemys)[tank.Id]) {
+	//			if e.Quadrant == QUADRANT_U || e.Quadrant == QUADRANT_L || e.Quadrant == QUADRANT_D || e.Quadrant == QUADRANT_R {
+	//				if tmpFirelineThreat[e.Quadrant] == 0 || tmpFirelineThreat[e.Quadrant] > e.Distance {
+	//					tmpFirelineThreat[e.Quadrant] = e.Distance
+	//				}
+	//			} else {
+	//				if tmpQuadrantThreat[e.Quadrant] == 0 || tmpQuadrantThreat[e.Quadrant] > e.Distance {
+	//					tmpQuadrantThreat[e.Quadrant] = e.Distance
+	//				}
+	//			}
+	//		}
+	//	}
+    //
+	//	firelineThreat[tank.Id] = tmpFirelineThreat
+	//	quadrantThreat[tank.Id] = tmpQuadrantThreat
+	//}
+    //
+	//// STEP3 对威胁程度进行分析
+	//if bulletApproach == true || enemyApproach == true {
+    //
+	//}
+    //
+	//// STEP4 综合场上局势进行协同调度
+    //
+    //
 	return radarDodge
 
 	//// 最后收敛到几个方向上，直接在方向上标出最小的紧急度，最后走方向中紧急度排名第一，但是方向中不紧急的

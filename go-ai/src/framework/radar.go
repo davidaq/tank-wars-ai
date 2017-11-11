@@ -36,10 +36,15 @@ type BulletThreat struct {
 	Quadrant	int	// 相对于坦克的第几象限
 }
 
+type EnemyFirelineDistance struct {
+    Distance         int	// 垂直坦克火线的距离，如果敌军在坦克火线上，则为水平距离
+    FirelineQuadrant int    // 坦克火线象限
+}
+
 type EnemyThreat struct {
 	Enemy 		Position
-	Distance	int
-	Quadrant	int
+    Quadrant    int // 敌军坦克所在的象限
+    Distances   []EnemyFirelineDistance
 }
 
 // 侦测几回合的威胁
@@ -238,7 +243,6 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 			if math.Pow(float64(enemyTank.Pos.X - tank.Pos.X), 2) + math.Pow(float64(enemyTank.Pos.Y - tank.Pos.Y), 2) <= float64(radius * radius) {
 				tmpEnemyThreat = append(tmpEnemyThreat, EnemyThreat{
 					Enemy: enemyTank.Pos,
-					//Distance: int(math.Sqrt(math.Pow(float64(enemyTank.Pos.X - tank.Pos.X), 2) + math.Pow(float64(enemyTank.Pos.Y - tank.Pos.Y), 2))),
 				})
 			}
 		}
@@ -250,95 +254,100 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 
 		// 计算方位和象限
 		for k, enemy := range tmpEnemyThreat {
+            var tmpEnemyFirelineDistance []EnemyFirelineDistance
 			if enemy.Enemy.Y < tank.Pos.Y {
 				if enemy.Enemy.X > tank.Pos.X {
 					// 计算象限
-					tmpEnemyThreat[k].Quadrant = QUADRANT_R_U
-					// 计算distance
-					if enemy.Enemy.Direction == DirectionLeft {
-						tmpEnemyThreat[k].Distance = enemy.Enemy.X - tank.Pos.X
-					} else if enemy.Enemy.Direction == DirectionDown {
-						tmpEnemyThreat[k].Distance = tank.Pos.Y - enemy.Enemy.Y
-					} else {
-						// 非面向火线的距离为 距离火线最短距离 因为能直接向后开炮，所以不用另加 下同
-						if enemy.Enemy.X - tank.Pos.X > tank.Pos.Y - enemy.Enemy.Y {
-							tmpEnemyThreat[k].Distance = tank.Pos.Y - enemy.Enemy.Y
-						} else {
-							tmpEnemyThreat[k].Distance = enemy.Enemy.X - tank.Pos.X
-						}
-					}
+                    tmpEnemyThreat[k].Quadrant = QUADRANT_R_U
+
+                    // 计算相对火线的distances
+                    tmpEnemyFirelineDistance = append(tmpEnemyFirelineDistance, EnemyFirelineDistance{
+                        FirelineQuadrant: QUADRANT_U,
+                        Distance: enemy.Enemy.X - tank.Pos.X,
+                    }, EnemyFirelineDistance{
+                        FirelineQuadrant: QUADRANT_R,
+                        Distance: tank.Pos.Y - enemy.Enemy.Y,
+                    })
 				}
 				if enemy.Enemy.X < tank.Pos.X {
 					tmpEnemyThreat[k].Quadrant = QUADRANT_L_U
-					// 计算distance
-					if enemy.Enemy.Direction == DirectionRight {
-						tmpEnemyThreat[k].Distance = tank.Pos.X - enemy.Enemy.X
-					} else if enemy.Enemy.Direction == DirectionDown {
-						tmpEnemyThreat[k].Distance = tank.Pos.Y - enemy.Enemy.Y
-					} else {
-						if tank.Pos.X - enemy.Enemy.X > tank.Pos.Y - enemy.Enemy.Y {
-							tmpEnemyThreat[k].Distance = tank.Pos.Y - enemy.Enemy.Y
-						} else {
-							tmpEnemyThreat[k].Distance = tank.Pos.X - enemy.Enemy.X
-						}
-					}
+
+                    // 计算相对火线的distances
+                    tmpEnemyFirelineDistance = append(tmpEnemyFirelineDistance, EnemyFirelineDistance{
+                        FirelineQuadrant: QUADRANT_U,
+                        Distance: tank.Pos.X - enemy.Enemy.X,
+                    }, EnemyFirelineDistance{
+                        FirelineQuadrant: QUADRANT_L,
+                        Distance: tank.Pos.Y - enemy.Enemy.Y,
+                    })
 				}
 			}
 
 			if enemy.Enemy.Y > tank.Pos.Y {
 				if enemy.Enemy.X < tank.Pos.X {
 					tmpEnemyThreat[k].Quadrant = QUADRANT_L_D
-					// 计算distance
-					if enemy.Enemy.Direction == DirectionUp {
-						tmpEnemyThreat[k].Distance = enemy.Enemy.Y - tank.Pos.Y
-					} else if enemy.Enemy.Direction == DirectionRight {
-						tmpEnemyThreat[k].Distance = tank.Pos.X - enemy.Enemy.X
-					} else {
-						if enemy.Enemy.Y - tank.Pos.Y > tank.Pos.X - enemy.Enemy.X {
-							tmpEnemyThreat[k].Distance = tank.Pos.X - enemy.Enemy.X
-						} else {
-							tmpEnemyThreat[k].Distance = enemy.Enemy.Y - tank.Pos.Y
-						}
-					}
+
+                    // 计算相对火线的distances
+                    tmpEnemyFirelineDistance = append(tmpEnemyFirelineDistance, EnemyFirelineDistance{
+                        FirelineQuadrant: QUADRANT_L,
+                        Distance: enemy.Enemy.Y - tank.Pos.Y,
+                    }, EnemyFirelineDistance{
+                        FirelineQuadrant: QUADRANT_D,
+                        Distance: tank.Pos.X - enemy.Enemy.X,
+                    })
 				}
 				if enemy.Enemy.X > tank.Pos.X {
 					tmpEnemyThreat[k].Quadrant = QUADRANT_R_D
-					// 计算distance
-					if enemy.Enemy.Direction == DirectionUp {
-						tmpEnemyThreat[k].Distance = enemy.Enemy.Y - tank.Pos.Y
-					} else if enemy.Enemy.Direction == DirectionLeft {
-						tmpEnemyThreat[k].Distance = enemy.Enemy.X - tank.Pos.X
-					} else {
-						if enemy.Enemy.Y - tank.Pos.Y > enemy.Enemy.X - tank.Pos.X {
-							tmpEnemyThreat[k].Distance = enemy.Enemy.X - tank.Pos.X
-						} else {
-							tmpEnemyThreat[k].Distance = enemy.Enemy.Y - tank.Pos.Y
-						}
-					}
+
+                    // 计算相对火线的distances
+                    tmpEnemyFirelineDistance = append(tmpEnemyFirelineDistance, EnemyFirelineDistance{
+                        FirelineQuadrant: QUADRANT_R,
+                        Distance: enemy.Enemy.Y - tank.Pos.Y,
+                    }, EnemyFirelineDistance{
+                        FirelineQuadrant: QUADRANT_D,
+                        Distance: enemy.Enemy.X - tank.Pos.X,
+                    })
 				}
 			}
 
 			if enemy.Enemy.X == tank.Pos.X {
 				if enemy.Enemy.Y < tank.Pos.Y {
 					tmpEnemyThreat[k].Quadrant = QUADRANT_U
-					tmpEnemyThreat[k].Distance = tank.Pos.Y - enemy.Enemy.Y
+
+                    tmpEnemyFirelineDistance = append(tmpEnemyFirelineDistance, EnemyFirelineDistance{
+                        FirelineQuadrant: QUADRANT_U,   // 当在火线上时由垂直距离改为水平距离
+                        Distance: tank.Pos.Y - enemy.Enemy.Y,
+                    })
 				}
 				if enemy.Enemy.Y > tank.Pos.Y {
 					tmpEnemyThreat[k].Quadrant = QUADRANT_D
-					tmpEnemyThreat[k].Distance = enemy.Enemy.Y - tank.Pos.Y
+
+                    tmpEnemyFirelineDistance = append(tmpEnemyFirelineDistance, EnemyFirelineDistance{
+                        FirelineQuadrant: QUADRANT_D,
+                        Distance: enemy.Enemy.Y - tank.Pos.Y,
+                    })
 				}
 			}
 
 			if enemy.Enemy.Y == tank.Pos.Y {
 				if enemy.Enemy.X < tank.Pos.X {
 					tmpEnemyThreat[k].Quadrant = QUADRANT_L
-					tmpEnemyThreat[k].Distance = tank.Pos.X - enemy.Enemy.X
+
+                    tmpEnemyFirelineDistance = append(tmpEnemyFirelineDistance, EnemyFirelineDistance{
+                        FirelineQuadrant: QUADRANT_L,
+                        Distance: tank.Pos.X - enemy.Enemy.X,
+                    })
 				}
 				if enemy.Enemy.X > tank.Pos.X {
 					tmpEnemyThreat[k].Quadrant = QUADRANT_R
-					tmpEnemyThreat[k].Distance = enemy.Enemy.X - tank.Pos.X
+
+                    tmpEnemyFirelineDistance = append(tmpEnemyFirelineDistance, EnemyFirelineDistance{
+                        FirelineQuadrant: QUADRANT_R,
+                        Distance: enemy.Enemy.X - tank.Pos.X,
+                    })
 				}
 			}
+            tmpEnemyThreat[k].Distances = tmpEnemyFirelineDistance
 		}
 		enemyRadar[tank.Id] = tmpEnemyThreat
 	}
@@ -422,6 +431,9 @@ func (self *Radar) convertQuadrant(state *GameState, bulletApproach bool, bullet
 			if len((*enemy)[tank.Id]) > 0 {
 				for k := range (*enemy)[tank.Id] {
 					(*enemy)[tank.Id][k].Quadrant = quadrant[(*enemy)[tank.Id][k].Quadrant]
+                    for kds := range (*enemy)[tank.Id][k].Distances {
+                        (*enemy)[tank.Id][k].Distances[kds].FirelineQuadrant = quadrant[(*enemy)[tank.Id][k].Distances[kds].FirelineQuadrant]
+                    }
 				}
 			}
 		}
