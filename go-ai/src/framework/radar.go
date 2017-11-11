@@ -260,13 +260,12 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 					} else if enemy.Enemy.Direction == DirectionDown {
 						tmpEnemyThreat[k].Distance = tank.Pos.Y - enemy.Enemy.Y
 					} else {
-						// 非面向火线的距离为 距离火线最短距离 + 子弹单回合距离 * 1（坦克一次操作） 下同
+						// 非面向火线的距离为 距离火线最短距离 因为能直接向后开炮，所以不用另加 下同
 						if enemy.Enemy.X - tank.Pos.X > tank.Pos.Y - enemy.Enemy.Y {
 							tmpEnemyThreat[k].Distance = tank.Pos.Y - enemy.Enemy.Y
 						} else {
 							tmpEnemyThreat[k].Distance = enemy.Enemy.X - tank.Pos.X
 						}
-						tmpEnemyThreat[k].Distance += state.Params.BulletSpeed
 					}
 				}
 				if enemy.Enemy.X < tank.Pos.X {
@@ -282,7 +281,6 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 						} else {
 							tmpEnemyThreat[k].Distance = tank.Pos.X - enemy.Enemy.X
 						}
-						tmpEnemyThreat[k].Distance += state.Params.BulletSpeed
 					}
 				}
 			}
@@ -301,7 +299,6 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 						} else {
 							tmpEnemyThreat[k].Distance = enemy.Enemy.Y - tank.Pos.Y
 						}
-						tmpEnemyThreat[k].Distance += state.Params.BulletSpeed
 					}
 				}
 				if enemy.Enemy.X > tank.Pos.X {
@@ -317,7 +314,6 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 						} else {
 							tmpEnemyThreat[k].Distance = enemy.Enemy.Y - tank.Pos.Y
 						}
-						tmpEnemyThreat[k].Distance += state.Params.BulletSpeed
 					}
 				}
 			}
@@ -326,16 +322,10 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 				if enemy.Enemy.Y < tank.Pos.Y {
 					tmpEnemyThreat[k].Quadrant = QUADRANT_U
 					tmpEnemyThreat[k].Distance = tank.Pos.Y - enemy.Enemy.Y
-					if enemy.Enemy.Direction == DirectionLeft || enemy.Enemy.Direction == DirectionRight || enemy.Enemy.Direction == DirectionUp{
-						tmpEnemyThreat[k].Distance += state.Params.BulletSpeed	// 加炮弹速度，因为把敌军视为炮弹 下同
-					}
 				}
 				if enemy.Enemy.Y > tank.Pos.Y {
 					tmpEnemyThreat[k].Quadrant = QUADRANT_D
 					tmpEnemyThreat[k].Distance = enemy.Enemy.Y - tank.Pos.Y
-					if enemy.Enemy.Direction == DirectionLeft || enemy.Enemy.Direction == DirectionRight || enemy.Enemy.Direction == DirectionDown{
-						tmpEnemyThreat[k].Distance += state.Params.BulletSpeed
-					}
 				}
 			}
 
@@ -343,16 +333,10 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 				if enemy.Enemy.X < tank.Pos.X {
 					tmpEnemyThreat[k].Quadrant = QUADRANT_L
 					tmpEnemyThreat[k].Distance = tank.Pos.X - enemy.Enemy.X
-					if enemy.Enemy.Direction == DirectionUp || enemy.Enemy.Direction == DirectionDown || enemy.Enemy.Direction == DirectionLeft {
-						tmpEnemyThreat[k].Distance += state.Params.BulletSpeed
-					}
 				}
 				if enemy.Enemy.X > tank.Pos.X {
 					tmpEnemyThreat[k].Quadrant = QUADRANT_R
 					tmpEnemyThreat[k].Distance = enemy.Enemy.X - tank.Pos.X
-					if enemy.Enemy.Direction == DirectionUp || enemy.Enemy.Direction == DirectionDown || enemy.Enemy.Direction == DirectionRight {
-						tmpEnemyThreat[k].Distance += state.Params.BulletSpeed
-					}
 				}
 			}
 		}

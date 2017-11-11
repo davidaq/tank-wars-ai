@@ -5,7 +5,7 @@
 package framework
 
 import (
-	"fmt"
+	//"fmt"
 )
 
 type Dodger struct {
@@ -23,15 +23,23 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
 
 	// 约定紧急程度为击中回合数倒数
 	firelineThreat := make(map[string]interface{})
+	quadrantThreat := make(map[string]interface{})
 	for _, tank := range state.MyTank {
 		// STEP1 计算火线上的威胁
 		// 先算最紧急的火线威胁步数
 		tmpFirelineThreat := make(map[int]int)
+		// STEP2 观察除火线外四个象限
+		// 再看非火线象限上的威胁步数
+		tmpQuadrantThreat := make(map[int]int)
 		if bulletApproach == true && len((*bullets)[tank.Id]) > 0 {
 			for _, b := range (*bullets)[tank.Id] {
 				if b.Quadrant == QUADRANT_U || b.Quadrant == QUADRANT_L || b.Quadrant == QUADRANT_D || b.Quadrant == QUADRANT_R {
 					if tmpFirelineThreat[b.Quadrant] == 0 || tmpFirelineThreat[b.Quadrant] > b.Distance {
 						tmpFirelineThreat[b.Quadrant] = b.Distance
+					}
+				} else {
+					if tmpQuadrantThreat[b.Quadrant] == 0 || tmpQuadrantThreat[b.Quadrant] > b.Distance {
+						tmpQuadrantThreat[b.Quadrant] = b.Distance
 					}
 				}
 			}
@@ -43,33 +51,21 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
 					if tmpFirelineThreat[e.Quadrant] == 0 || tmpFirelineThreat[e.Quadrant] > e.Distance {
 						tmpFirelineThreat[e.Quadrant] = e.Distance
 					}
+				} else {
+					if tmpQuadrantThreat[e.Quadrant] == 0 || tmpQuadrantThreat[e.Quadrant] > e.Distance {
+						tmpQuadrantThreat[e.Quadrant] = e.Distance
+					}
 				}
 			}
 		}
 
-		if len(tmpFirelineThreat) != 0 {
-			firelineThreat[tank.Id] = tmpFirelineThreat
-			fmt.Println("#############")
-			fmt.Println(tank.Id)
-			fmt.Println("-------")
-			fmt.Println(firelineThreat[tank.Id])
-			fmt.Println("#############")
-		}
-
-
-		// STEP2 观察除火线外四个象限
-
-		// STEP3 闪避策略
-
-		// STEP4 综合调度
-
-		// 威胁指数判断
-		// 子弹已经在火线上，找最近的距离那一个（威胁最大）
-
-		// 如果小于
-
-		// 再算次要紧急四象限
+		firelineThreat[tank.Id] = tmpFirelineThreat
+		quadrantThreat[tank.Id] = tmpQuadrantThreat
 	}
+
+	if bulletApproach == true || enemyApproach == true {
+	}
+
 
 	return radarDodge
 
