@@ -1,7 +1,39 @@
-// 雷达系统，用于侦测威胁以及可以开火的目标
+/**
+ * 高性能最怂雷达系统，用于侦测威胁以及可以开火的目标
+ * author: linxingchen
+ */
 package framework;
 
+import (
+	"math"
+)
+
 type Radar struct {
+}
+
+// 8象限系统
+const (
+	QUADRANT_NONE = 0
+	QUADRANT_Y_U = -1	// Y轴上方
+	QUADRANT_X_L = -2	// X轴左侧
+	QUADRANT_Y_D = -3	// Y轴下方
+	QUADRANT_X_R = -4	// X轴右侧
+	QUADRANT_R_U = 1	// 第一象限 右上角
+	QUADRANT_L_U = 2	// 第二象限 左上角
+	QUADRANT_L_D = 3	// 第三象限 左下角
+	QUADRANT_R_D = 4	// 第四象限 右下角
+)
+
+type BulletThreat struct {
+	BulletPosition Position
+	Distance 	int	// 距离四方向火线的威胁度
+	Quadrant	int	// 相对于坦克的第几象限
+}
+
+type EnemyThreat struct {
+	Enemy 		Position
+	Distance	int
+	Quadrant	int
 }
 
 func NewRadar() *Radar {
@@ -10,9 +42,427 @@ func NewRadar() *Radar {
 	return inst
 }
 
+// 侦测几回合的威胁
+const RADAR_BULLET_STEP = 4
+const RADAR_ENEMY_STEP	= 3
+
+func (self *Radar) avoidBullet(state *GameState) (bulletApproach bool, bulletThreat map[string][]BulletThreat){
+	// 雷达半径由步数实际算出
+	radius := state.Params.BulletSpeed * RADAR_BULLET_STEP
+
+	// 双方子弹merge
+	bulletMerge := []Bullet{}
+	for _, tmpEBullet := range state.EnemyBullet {
+		bulletMerge = append(bulletMerge, tmpEBullet)
+	}
+	for _, tmpMBullet := range state.MyBullet {
+		bulletMerge = append(bulletMerge, tmpMBullet)
+	}
+
+	// 计算子弹在自己的什么位置
+	bulletRadar := make(map[string][]BulletThreat)
+	// 循环计算各个坦克
+	for _, tank := range state.MyTank {
+		var tmpBullet []BulletThreat
+		for _, bullet := range bulletMerge {
+			// 检查是否需要关注
+			if math.Pow(float64(bullet.Pos.X - tank.Pos.X), 2) + math.Pow(float64(bullet.Pos.Y - tank.Pos.Y), 2) <= float64(radius * radius) {
+				// 象限
+				tmpQuadrant := QUADRANT_NONE
+				tmpDistance := 0	// 注意要除子弹速度，这里是距离火线位置。威胁度还需要另外处理
+				if bullet.Pos.X < tank.Pos.X {
+					if bullet.Pos.Y < tank.Pos.Y && (bullet.Pos.Direction == DirectionRight || bullet.Pos.Direction == DirectionDown) {
+						tmpQuadrant = QUADRANT_L_U
+						if bullet.Pos.Direction == DirectionRight {
+							for w := bullet.Pos.X; w <= tank.Pos.X; w++ {
+								if 1 == state.Terain.Get(w, tank.Pos.Y) {
+									tmpQuadrant = QUADRANT_NONE
+									break
+								}
+								tmpDistance++
+							}
+						} else {
+							for w := bullet.Pos.Y; w <= tank.Pos.Y; w++ {
+								if 1 == state.Terain.Get(tank.Pos.X, w) {
+									tmpQuadrant = QUADRANT_NONE
+									break
+								}
+								tmpDistance++
+							}
+						}
+					}
+					if bullet.Pos.Y > tank.Pos.Y && (bullet.Pos.Direction == DirectionRight || bullet.Pos.Direction == DirectionUp) {
+						tmpQuadrant = QUADRANT_L_D
+						if bullet.Pos.Direction == DirectionRight {
+							for w := bullet.Pos.X; w <= tank.Pos.X; w++ {
+								if 1 == state.Terain.Get(w, tank.Pos.Y) {
+									tmpQuadrant = QUADRANT_NONE
+									break
+								}
+								tmpDistance++
+							}
+						} else {
+							for w := bullet.Pos.Y; w >= tank.Pos.Y; w-- {
+								if 1 == state.Terain.Get(tank.Pos.X, w) {
+									tmpQuadrant = QUADRANT_NONE
+									break
+								}
+								tmpDistance++
+							}
+						}
+					}
+				}
+				if bullet.Pos.X > tank.Pos.X {
+					if bullet.Pos.Y < tank.Pos.Y && (bullet.Pos.Direction == DirectionLeft || bullet.Pos.Direction == DirectionDown) {
+						tmpQuadrant = QUADRANT_R_U
+						if bullet.Pos.Direction == DirectionLeft {
+							for w := bullet.Pos.X; w >= tank.Pos.X; w-- {
+								if 1 == state.Terain.Get(w, tank.Pos.Y) {
+									tmpQuadrant = QUADRANT_NONE
+									break
+								}
+								tmpDistance++
+							}
+						} else {
+							for w := bullet.Pos.Y; w <= tank.Pos.Y; w++ {
+								if 1 == state.Terain.Get(tank.Pos.X, w) {
+									tmpQuadrant = QUADRANT_NONE
+									break
+								}
+								tmpDistance++
+							}
+						}
+					}
+					if bullet.Pos.Y > tank.Pos.Y && (bullet.Pos.Direction == DirectionLeft || bullet.Pos.Direction == DirectionUp) {
+						tmpQuadrant = QUADRANT_R_D
+						if bullet.Pos.Direction == DirectionLeft {
+							for w := bullet.Pos.X; w >= tank.Pos.X; w-- {
+								if 1 == state.Terain.Get(w, tank.Pos.Y) {
+									tmpQuadrant = QUADRANT_NONE
+									break
+								}
+								tmpDistance++
+							}
+						} else {
+							for w := bullet.Pos.Y; w <= tank.Pos.Y; w++ {
+								if 1 == state.Terain.Get(tank.Pos.X, w) {
+									tmpQuadrant = QUADRANT_NONE
+									break
+								}
+								tmpDistance++
+							}
+						}
+					}
+				}
+				if bullet.Pos.X == tank.Pos.X {
+					//在Y火线上
+					if bullet.Pos.Y < tank.Pos.Y && bullet.Pos.Direction == DirectionDown {
+						tmpQuadrant = QUADRANT_Y_U
+						for w := bullet.Pos.Y; w <= tank.Pos.Y; w++ {
+							if 1 == state.Terain.Get(tank.Pos.X, w) {
+								tmpQuadrant = QUADRANT_NONE
+								break
+							}
+							tmpDistance++
+						}
+					}
+					if bullet.Pos.Y > tank.Pos.Y && bullet.Pos.Direction == DirectionUp {
+						tmpQuadrant = QUADRANT_Y_D
+						for w := bullet.Pos.Y; w >= tank.Pos.Y; w-- {
+							if 1 == state.Terain.Get(tank.Pos.X, w) {
+								tmpQuadrant = QUADRANT_NONE
+								break
+							}
+							tmpDistance++
+						}
+					}
+				}
+				if bullet.Pos.Y == tank.Pos.Y {
+					//在X火线上
+					if bullet.Pos.X < tank.Pos.X && bullet.Pos.Direction == DirectionRight {
+						tmpQuadrant = QUADRANT_X_L
+						for w := bullet.Pos.X; w <= tank.Pos.X; w++ {
+							if 1 == state.Terain.Get(w, tank.Pos.Y) {
+								tmpQuadrant = QUADRANT_NONE
+								break
+							}
+							tmpDistance++
+						}
+					}
+					if bullet.Pos.X > tank.Pos.X && bullet.Pos.Direction == DirectionLeft {
+						tmpQuadrant = QUADRANT_X_R
+						for w := bullet.Pos.X; w >= tank.Pos.X; w-- {
+							if 1 == state.Terain.Get(w, tank.Pos.Y) {
+								tmpQuadrant = QUADRANT_NONE
+								break
+							}
+							tmpDistance++
+						}
+					}
+				}
+
+				if tmpQuadrant == QUADRANT_NONE || tmpDistance == 0 {
+					continue
+				}
+
+				tmpBullet = append(tmpBullet, BulletThreat{
+					BulletPosition: bullet.Pos,
+					Distance: tmpDistance,	// 这里不做处理，后面再综合除
+					Quadrant: tmpQuadrant,
+				})
+			}
+		}
+		bulletRadar[tank.Id] = tmpBullet
+	}
+
+	for _, tmp := range bulletRadar {
+		if len(tmp) > 0 {
+			return true, bulletRadar
+		}
+	}
+	return false, bulletRadar
+}
+
+func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string][]EnemyThreat) {
+	// 雷达半径由步数实际算出
+	radius := state.Params.TankSpeed * RADAR_ENEMY_STEP
+
+	// 计算敌军在自己的什么方位 无视墙，防止LYB苟墙角
+	enemyRadar := make(map[string][]EnemyThreat)
+
+	// 循环计算多个坦克
+	for _, tank := range state.MyTank {
+		var tmpEnemyThreat []EnemyThreat
+		for _, enemyTank := range state.EnemyTank {
+			// 检查是否需要关注 圆形雷达
+			if math.Pow(float64(enemyTank.Pos.X - tank.Pos.X), 2) + math.Pow(float64(enemyTank.Pos.Y - tank.Pos.Y), 2) <= float64(radius * radius) {
+				tmpEnemyThreat = append(tmpEnemyThreat, EnemyThreat{
+					Enemy: enemyTank.Pos,
+					//Distance: int(math.Sqrt(math.Pow(float64(enemyTank.Pos.X - tank.Pos.X), 2) + math.Pow(float64(enemyTank.Pos.Y - tank.Pos.Y), 2))),
+				})
+			}
+		}
+
+		if 0 == len(tmpEnemyThreat) {
+			enemyRadar[tank.Id] = tmpEnemyThreat
+			continue
+		}
+
+		// 计算方位和象限
+		for k, enemy := range tmpEnemyThreat {
+			if enemy.Enemy.Y < tank.Pos.Y {
+				if enemy.Enemy.X > tank.Pos.X {
+					// 计算象限
+					tmpEnemyThreat[k].Quadrant = QUADRANT_R_U
+					// 计算distance 非面向火线则distance+1
+					if enemy.Enemy.Direction == DirectionLeft {
+						tmpEnemyThreat[k].Distance = enemy.Enemy.X - tank.Pos.X
+					} else if enemy.Enemy.Direction == DirectionDown {
+						tmpEnemyThreat[k].Distance = tank.Pos.Y - enemy.Enemy.Y
+					} else {
+						tmpEnemyThreat[k].Distance = int(math.Max(float64(enemy.Enemy.X - tank.Pos.X), float64(tank.Pos.Y - enemy.Enemy.Y))) + 1
+					}
+				}
+				if enemy.Enemy.X < tank.Pos.X {
+					tmpEnemyThreat[k].Quadrant = QUADRANT_L_U
+					// 计算distance
+					if enemy.Enemy.Direction == DirectionRight {
+						tmpEnemyThreat[k].Distance = tank.Pos.X - enemy.Enemy.X
+					} else if enemy.Enemy.Direction == DirectionDown {
+						tmpEnemyThreat[k].Distance = tank.Pos.Y - enemy.Enemy.Y
+					} else {
+						tmpEnemyThreat[k].Distance = int(math.Max(float64(tank.Pos.X - enemy.Enemy.X), float64(tank.Pos.Y - enemy.Enemy.Y))) + 1
+					}
+				}
+			}
+
+			if enemy.Enemy.Y > tank.Pos.Y {
+				if enemy.Enemy.X < tank.Pos.X {
+					tmpEnemyThreat[k].Quadrant = QUADRANT_L_D
+					// 计算distance
+					if enemy.Enemy.Direction == DirectionUp {
+						tmpEnemyThreat[k].Distance = enemy.Enemy.Y - tank.Pos.Y
+					} else if enemy.Enemy.Direction == DirectionRight {
+						tmpEnemyThreat[k].Distance = tank.Pos.X - enemy.Enemy.X
+					} else {
+						tmpEnemyThreat[k].Distance = int(math.Max(float64(enemy.Enemy.Y - tank.Pos.Y), float64(tank.Pos.X - enemy.Enemy.X))) + 1
+					}
+				}
+				if enemy.Enemy.X > tank.Pos.X {
+					tmpEnemyThreat[k].Quadrant = QUADRANT_R_D
+					// 计算distance
+					if enemy.Enemy.Direction == DirectionUp {
+						tmpEnemyThreat[k].Distance = enemy.Enemy.Y - tank.Pos.Y
+					} else if enemy.Enemy.Direction == DirectionLeft {
+						tmpEnemyThreat[k].Distance = enemy.Enemy.X - tank.Pos.X
+					} else {
+						tmpEnemyThreat[k].Distance = int(math.Max(float64(enemy.Enemy.Y - tank.Pos.Y), float64(enemy.Enemy.X - tank.Pos.X))) + 1
+					}
+				}
+			}
+
+			if enemy.Enemy.X == tank.Pos.X {
+				if enemy.Enemy.Y < tank.Pos.Y {
+					tmpEnemyThreat[k].Quadrant = QUADRANT_Y_U
+					tmpEnemyThreat[k].Distance = tank.Pos.Y - enemy.Enemy.Y
+					if enemy.Enemy.Direction == DirectionLeft || enemy.Enemy.Direction == DirectionRight {
+						tmpEnemyThreat[k].Distance++
+					}
+					if enemy.Enemy.Direction == DirectionUp {
+						// 背对着，加2
+						tmpEnemyThreat[k].Distance += 2
+					}
+				}
+				if enemy.Enemy.Y > tank.Pos.Y {
+					tmpEnemyThreat[k].Quadrant = QUADRANT_Y_D
+					tmpEnemyThreat[k].Distance = enemy.Enemy.Y - tank.Pos.Y
+					if enemy.Enemy.Direction == DirectionLeft || enemy.Enemy.Direction == DirectionRight {
+						tmpEnemyThreat[k].Distance++
+					}
+					if enemy.Enemy.Direction == DirectionDown {
+						tmpEnemyThreat[k].Distance += 2
+					}
+				}
+			}
+
+			if enemy.Enemy.Y == tank.Pos.Y {
+				if enemy.Enemy.X < tank.Pos.X {
+					tmpEnemyThreat[k].Quadrant = QUADRANT_X_L
+					tmpEnemyThreat[k].Distance = tank.Pos.X - enemy.Enemy.X
+					if enemy.Enemy.Direction == DirectionUp || enemy.Enemy.Direction == DirectionDown {
+						tmpEnemyThreat[k].Distance++
+					}
+					if enemy.Enemy.Direction == DirectionLeft {
+						tmpEnemyThreat[k].Distance += 2
+					}
+				}
+				if enemy.Enemy.X > tank.Pos.X {
+					tmpEnemyThreat[k].Quadrant = QUADRANT_X_R
+					tmpEnemyThreat[k].Distance = enemy.Enemy.X - tank.Pos.X
+					if enemy.Enemy.Direction == DirectionUp || enemy.Enemy.Direction == DirectionDown {
+						tmpEnemyThreat[k].Distance++
+					}
+					if enemy.Enemy.Direction == DirectionRight {
+						tmpEnemyThreat[k].Distance += 2
+					}
+				}
+			}
+		}
+		enemyRadar[tank.Id] = tmpEnemyThreat
+	}
+
+	for _, tmp := range enemyRadar {
+		if len(tmp) != 0 {
+			return true, enemyRadar
+		}
+	}
+	return false, enemyRadar
+}
+
+/**
+ * 象限转置 从假定向上的象限系统转换为相对于实际坦克方向的象限系统
+ */
+func (self *Radar) convertQuadrant(state *GameState, bulletApproach bool, bullets *map[string][]BulletThreat, enemyApproach bool, enemy *map[string][]EnemyThreat) (bool){
+	if bulletApproach == false && enemyApproach == false {
+		return false
+	}
+
+	for _, tank := range state.MyTank {
+
+		// 象限旋转（假定为上，然后旋转）
+		quadrant := make(map[int]int)
+		switch tank.Pos.Direction {
+		case DirectionUp:
+			quadrant[0] = 0
+			quadrant[1] = 1
+			quadrant[2] = 2
+			quadrant[3] = 3
+			quadrant[4] = 4
+			quadrant[-1] = -1
+			quadrant[-2] = -2
+			quadrant[-3] = -3
+			quadrant[-4] = -4
+
+		case DirectionLeft:
+			quadrant[0] = 0
+			quadrant[2] = 1
+			quadrant[3] = 2
+			quadrant[4] = 3
+			quadrant[1] = 4
+			quadrant[-2] = -1
+			quadrant[-3] = -2
+			quadrant[-4] = -3
+			quadrant[-1] = -4
+
+		case DirectionDown:
+			quadrant[0] = 0
+			quadrant[3] = 1
+			quadrant[4] = 2
+			quadrant[1] = 3
+			quadrant[2] = 4
+			quadrant[-3] = -1
+			quadrant[-4] = -2
+			quadrant[-1] = -3
+			quadrant[-2] = -4
+
+		case DirectionRight:
+			quadrant[0] = 0
+			quadrant[4] = 1
+			quadrant[1] = 2
+			quadrant[2] = 3
+			quadrant[3] = 4
+			quadrant[-4] = -1
+			quadrant[-1] = -2
+			quadrant[-2] = -3
+			quadrant[-3] = -4
+		}
+
+		if bulletApproach == true {
+			if len((*bullets)[tank.Id]) > 0 {
+				for k := range (*bullets)[tank.Id] {
+					(*bullets)[tank.Id][k].Quadrant = quadrant[(*bullets)[tank.Id][k].Quadrant]
+				}
+			}
+		}
+
+		if enemyApproach == true {
+			if len((*enemy)[tank.Id]) > 0 {
+				for k := range (*enemy)[tank.Id] {
+					(*enemy)[tank.Id][k].Quadrant = quadrant[(*enemy)[tank.Id][k].Quadrant]
+				}
+			}
+		}
+	}
+	return true
+}
+
 // 检查自己当前的位置以及面朝方向前进的位置周围是否安全
 // 检查每个坦克四周开火命中率与代价
 func (self *Radar) Scan(state *GameState) *RadarResult {
+	// 躲避炮弹，炮弹还有几步打到
+	bulletApproach, bullets := self.avoidBullet(state)
+
+	// 敌军威胁
+	enemyApproach, enemy := self.threat(state)
+
+	// 转换象限
+	self.convertQuadrant(state, bulletApproach, &bullets, enemyApproach, &enemy)
+
+	// 准备躲避返回字段
+	radarDodge := make(map[string]RadarDodge)
+	if bulletApproach != true && enemyApproach != true {
+		for _, tank := range state.MyTank {
+			radarDodge[tank.Id] = RadarDodge{}
+		}
+	}
+
+	// 躲避系统（撞墙、友军、草丛警戒）
+
+
+	// 开火系统
+
+
+	// 返回
 	ret := &RadarResult {
 		Dodge: make(map[string]RadarDodge),
 		Fire: make(map[string]RadarFireAll),
@@ -25,6 +475,7 @@ func (self *Radar) Scan(state *GameState) *RadarResult {
 				Cost: 10,
 			},
 		}
+		ret.Dodge[tank.Id] = radarDodge[tank.Id]
 	}
 	return ret
 }

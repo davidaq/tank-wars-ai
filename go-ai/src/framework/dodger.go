@@ -11,29 +11,17 @@ import (
 type Dodger struct {
 }
 
-type EnemyBullet struct {
-	BulletPosition Position
-	Distance 	int
-	Quadrant	int
-}
-
-type EnemyThreat struct {
-	Enemy 		Position
-	Distance	int
-	Quadrant	int
-}
-
 func NewDodger() *Dodger {
 	inst := &Dodger {
 	}
 	return inst
 }
 
-func (self *Dodger) avoidBullet(tank *Tank, state *GameState) (bulletApproach bool, enemyBullet []EnemyBullet) {
+func (self *Dodger) avoidBullet(tank *Tank, state *GameState) (bulletApproach bool, enemyBullet []BulletThreat) {
 	radius := 8	//子弹雷达半径
 
 	// 计算子弹在自己的什么方位 子弹方向必须面向火线 从自己方位向四个方位探索墙
-	var tmpBullet []EnemyBullet
+	var tmpBullet []BulletThreat
 	for _, enemyBullet := range state.EnemyBullet {
 		// 检查是否需要关注
 		if math.Pow(float64(enemyBullet.Pos.X - tank.Pos.X), 2) + math.Pow(float64(enemyBullet.Pos.Y - tank.Pos.Y), 2) <= float64(radius * radius) {
@@ -176,7 +164,7 @@ func (self *Dodger) avoidBullet(tank *Tank, state *GameState) (bulletApproach bo
 				continue
 			}
 
-			tmpBullet = append(tmpBullet, EnemyBullet{
+			tmpBullet = append(tmpBullet, BulletThreat{
 				BulletPosition: enemyBullet.Pos,
 				Distance: int(tmpDistance / 2),
 				Quadrant: tmpQuadrant,
@@ -191,10 +179,10 @@ func (self *Dodger) avoidBullet(tank *Tank, state *GameState) (bulletApproach bo
 }
 
 
-func (self *Dodger) oldAvoidBullet(tank *Tank, state *GameState) (bulletApproach bool, enemyBullet []EnemyBullet) {
+func (self *Dodger) oldAvoidBullet(tank *Tank, state *GameState) (bulletApproach bool, enemyBullet []BulletThreat) {
 	// 注意射过来的炮弹可能多个
 	// 没有子弹射过来的情况
-	enemyBulletList := []EnemyBullet{}
+	enemyBulletList := []BulletThreat{}
 	for _, bullet := range state.EnemyBullet {
 		if tank.Pos.X == bullet.Pos.X && int(math.Abs(float64(bullet.Pos.Y - tank.Pos.Y))) <= 8 || tank.Pos.Y == bullet.Pos.Y && int(math.Abs(float64(bullet.Pos.X - tank.Pos.X))) <= 8 {
 			// 子弹方向判断
@@ -243,7 +231,7 @@ func (self *Dodger) oldAvoidBullet(tank *Tank, state *GameState) (bulletApproach
 				Y: bullet.Pos.Y,
 				Direction: bulletDirection,
 			}
-			enemyBulletList = append(enemyBulletList, EnemyBullet{
+			enemyBulletList = append(enemyBulletList, BulletThreat{
 				Distance: int(math.Abs(float64(bullet.Pos.Y - tank.Pos.Y)) + math.Abs(float64(bullet.Pos.X - tank.Pos.X))),
 				BulletPosition: tmpBulletPosition,
 			})
@@ -381,7 +369,7 @@ func (self *Dodger) threat(tank *Tank, state *GameState) (threat bool, enemyThre
 }
 
 
-func (self *Dodger) determine(tank *Tank, state *GameState, bulletApproach bool, enemyBullets *[]EnemyBullet, enemyApproach bool, enemyThreat *[]EnemyThreat) (action int, urgent int) {
+func (self *Dodger) determine(tank *Tank, state *GameState, bulletApproach bool, enemyBullets *[]BulletThreat, enemyApproach bool, enemyThreat *[]EnemyThreat) (action int, urgent int) {
 	// 注意方向撞墙情况，如果没有则确认方向
 	// 象限旋转（假定为上，然后旋转）
 	quadrant := make(map[int]int)
