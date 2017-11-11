@@ -288,7 +288,7 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 			if enemy.Enemy.X == tank.Pos.X {
 				if enemy.Enemy.Y < tank.Pos.Y {
 					tmpEnemyThreat[k].Quadrant = QUADRANT_U
-                    tmpEnemyThreat[k].Distances[QUADRANT_R] = tank.Pos.Y - enemy.Enemy.Y // 当在火线上时由垂直距离改为水平距离
+                    tmpEnemyThreat[k].Distances[QUADRANT_U] = tank.Pos.Y - enemy.Enemy.Y // 当在火线上时由垂直距离改为水平距离
 				}
 				if enemy.Enemy.Y > tank.Pos.Y {
 					tmpEnemyThreat[k].Quadrant = QUADRANT_D
