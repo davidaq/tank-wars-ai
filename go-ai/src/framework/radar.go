@@ -11,13 +11,19 @@ import (
 type Radar struct {
 }
 
+func NewRadar() *Radar {
+	inst := &Radar {
+	}
+	return inst
+}
+
 // 8象限系统
 const (
 	QUADRANT_NONE = 0
-	QUADRANT_Y_U = -1	// Y轴上方
-	QUADRANT_X_L = -2	// X轴左侧
-	QUADRANT_Y_D = -3	// Y轴下方
-	QUADRANT_X_R = -4	// X轴右侧
+	QUADRANT_U = -1		// 上方
+	QUADRANT_L = -2		// 左侧
+	QUADRANT_D = -3		// 下方
+	QUADRANT_R = -4		// 右侧
 	QUADRANT_R_U = 1	// 第一象限 右上角
 	QUADRANT_L_U = 2	// 第二象限 左上角
 	QUADRANT_L_D = 3	// 第三象限 左下角
@@ -34,12 +40,6 @@ type EnemyThreat struct {
 	Enemy 		Position
 	Distance	int
 	Quadrant	int
-}
-
-func NewRadar() *Radar {
-	inst := &Radar {
-	}
-	return inst
 }
 
 // 侦测几回合的威胁
@@ -69,7 +69,7 @@ func (self *Radar) avoidBullet(state *GameState) (bulletApproach bool, bulletThr
 			if math.Pow(float64(bullet.Pos.X - tank.Pos.X), 2) + math.Pow(float64(bullet.Pos.Y - tank.Pos.Y), 2) <= float64(radius * radius) {
 				// 象限
 				tmpQuadrant := QUADRANT_NONE
-				tmpDistance := 0	// 注意要除子弹速度，这里是距离火线位置。威胁度还需要另外处理
+				tmpDistance := 0	// 注意要除子弹速度，这里是**距离火线位置**。威胁度还需要另外处理
 				if bullet.Pos.X < tank.Pos.X {
 					if bullet.Pos.Y < tank.Pos.Y && (bullet.Pos.Direction == DirectionRight || bullet.Pos.Direction == DirectionDown) {
 						tmpQuadrant = QUADRANT_L_U
@@ -157,7 +157,7 @@ func (self *Radar) avoidBullet(state *GameState) (bulletApproach bool, bulletThr
 				if bullet.Pos.X == tank.Pos.X {
 					//在Y火线上
 					if bullet.Pos.Y < tank.Pos.Y && bullet.Pos.Direction == DirectionDown {
-						tmpQuadrant = QUADRANT_Y_U
+						tmpQuadrant = QUADRANT_U
 						for w := bullet.Pos.Y; w <= tank.Pos.Y; w++ {
 							if 1 == state.Terain.Get(tank.Pos.X, w) {
 								tmpQuadrant = QUADRANT_NONE
@@ -167,7 +167,7 @@ func (self *Radar) avoidBullet(state *GameState) (bulletApproach bool, bulletThr
 						}
 					}
 					if bullet.Pos.Y > tank.Pos.Y && bullet.Pos.Direction == DirectionUp {
-						tmpQuadrant = QUADRANT_Y_D
+						tmpQuadrant = QUADRANT_D
 						for w := bullet.Pos.Y; w >= tank.Pos.Y; w-- {
 							if 1 == state.Terain.Get(tank.Pos.X, w) {
 								tmpQuadrant = QUADRANT_NONE
@@ -180,7 +180,7 @@ func (self *Radar) avoidBullet(state *GameState) (bulletApproach bool, bulletThr
 				if bullet.Pos.Y == tank.Pos.Y {
 					//在X火线上
 					if bullet.Pos.X < tank.Pos.X && bullet.Pos.Direction == DirectionRight {
-						tmpQuadrant = QUADRANT_X_L
+						tmpQuadrant = QUADRANT_L
 						for w := bullet.Pos.X; w <= tank.Pos.X; w++ {
 							if 1 == state.Terain.Get(w, tank.Pos.Y) {
 								tmpQuadrant = QUADRANT_NONE
@@ -190,7 +190,7 @@ func (self *Radar) avoidBullet(state *GameState) (bulletApproach bool, bulletThr
 						}
 					}
 					if bullet.Pos.X > tank.Pos.X && bullet.Pos.Direction == DirectionLeft {
-						tmpQuadrant = QUADRANT_X_R
+						tmpQuadrant = QUADRANT_R
 						for w := bullet.Pos.X; w >= tank.Pos.X; w-- {
 							if 1 == state.Terain.Get(w, tank.Pos.Y) {
 								tmpQuadrant = QUADRANT_NONE
@@ -254,13 +254,18 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 				if enemy.Enemy.X > tank.Pos.X {
 					// 计算象限
 					tmpEnemyThreat[k].Quadrant = QUADRANT_R_U
-					// 计算distance 非面向火线则distance+1
+					// 计算distance
 					if enemy.Enemy.Direction == DirectionLeft {
 						tmpEnemyThreat[k].Distance = enemy.Enemy.X - tank.Pos.X
 					} else if enemy.Enemy.Direction == DirectionDown {
 						tmpEnemyThreat[k].Distance = tank.Pos.Y - enemy.Enemy.Y
 					} else {
-						tmpEnemyThreat[k].Distance = int(math.Max(float64(enemy.Enemy.X - tank.Pos.X), float64(tank.Pos.Y - enemy.Enemy.Y))) + 1
+						// 非面向火线的距离为 距离火线最短距离 因为能直接向后开炮，所以不用另加 下同
+						if enemy.Enemy.X - tank.Pos.X > tank.Pos.Y - enemy.Enemy.Y {
+							tmpEnemyThreat[k].Distance = tank.Pos.Y - enemy.Enemy.Y
+						} else {
+							tmpEnemyThreat[k].Distance = enemy.Enemy.X - tank.Pos.X
+						}
 					}
 				}
 				if enemy.Enemy.X < tank.Pos.X {
@@ -271,7 +276,11 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 					} else if enemy.Enemy.Direction == DirectionDown {
 						tmpEnemyThreat[k].Distance = tank.Pos.Y - enemy.Enemy.Y
 					} else {
-						tmpEnemyThreat[k].Distance = int(math.Max(float64(tank.Pos.X - enemy.Enemy.X), float64(tank.Pos.Y - enemy.Enemy.Y))) + 1
+						if tank.Pos.X - enemy.Enemy.X > tank.Pos.Y - enemy.Enemy.Y {
+							tmpEnemyThreat[k].Distance = tank.Pos.Y - enemy.Enemy.Y
+						} else {
+							tmpEnemyThreat[k].Distance = tank.Pos.X - enemy.Enemy.X
+						}
 					}
 				}
 			}
@@ -285,7 +294,11 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 					} else if enemy.Enemy.Direction == DirectionRight {
 						tmpEnemyThreat[k].Distance = tank.Pos.X - enemy.Enemy.X
 					} else {
-						tmpEnemyThreat[k].Distance = int(math.Max(float64(enemy.Enemy.Y - tank.Pos.Y), float64(tank.Pos.X - enemy.Enemy.X))) + 1
+						if enemy.Enemy.Y - tank.Pos.Y > tank.Pos.X - enemy.Enemy.X {
+							tmpEnemyThreat[k].Distance = tank.Pos.X - enemy.Enemy.X
+						} else {
+							tmpEnemyThreat[k].Distance = enemy.Enemy.Y - tank.Pos.Y
+						}
 					}
 				}
 				if enemy.Enemy.X > tank.Pos.X {
@@ -296,55 +309,34 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 					} else if enemy.Enemy.Direction == DirectionLeft {
 						tmpEnemyThreat[k].Distance = enemy.Enemy.X - tank.Pos.X
 					} else {
-						tmpEnemyThreat[k].Distance = int(math.Max(float64(enemy.Enemy.Y - tank.Pos.Y), float64(enemy.Enemy.X - tank.Pos.X))) + 1
+						if enemy.Enemy.Y - tank.Pos.Y > enemy.Enemy.X - tank.Pos.X {
+							tmpEnemyThreat[k].Distance = enemy.Enemy.X - tank.Pos.X
+						} else {
+							tmpEnemyThreat[k].Distance = enemy.Enemy.Y - tank.Pos.Y
+						}
 					}
 				}
 			}
 
 			if enemy.Enemy.X == tank.Pos.X {
 				if enemy.Enemy.Y < tank.Pos.Y {
-					tmpEnemyThreat[k].Quadrant = QUADRANT_Y_U
+					tmpEnemyThreat[k].Quadrant = QUADRANT_U
 					tmpEnemyThreat[k].Distance = tank.Pos.Y - enemy.Enemy.Y
-					if enemy.Enemy.Direction == DirectionLeft || enemy.Enemy.Direction == DirectionRight {
-						tmpEnemyThreat[k].Distance++
-					}
-					if enemy.Enemy.Direction == DirectionUp {
-						// 背对着，加2
-						tmpEnemyThreat[k].Distance += 2
-					}
 				}
 				if enemy.Enemy.Y > tank.Pos.Y {
-					tmpEnemyThreat[k].Quadrant = QUADRANT_Y_D
+					tmpEnemyThreat[k].Quadrant = QUADRANT_D
 					tmpEnemyThreat[k].Distance = enemy.Enemy.Y - tank.Pos.Y
-					if enemy.Enemy.Direction == DirectionLeft || enemy.Enemy.Direction == DirectionRight {
-						tmpEnemyThreat[k].Distance++
-					}
-					if enemy.Enemy.Direction == DirectionDown {
-						tmpEnemyThreat[k].Distance += 2
-					}
 				}
 			}
 
 			if enemy.Enemy.Y == tank.Pos.Y {
 				if enemy.Enemy.X < tank.Pos.X {
-					tmpEnemyThreat[k].Quadrant = QUADRANT_X_L
+					tmpEnemyThreat[k].Quadrant = QUADRANT_L
 					tmpEnemyThreat[k].Distance = tank.Pos.X - enemy.Enemy.X
-					if enemy.Enemy.Direction == DirectionUp || enemy.Enemy.Direction == DirectionDown {
-						tmpEnemyThreat[k].Distance++
-					}
-					if enemy.Enemy.Direction == DirectionLeft {
-						tmpEnemyThreat[k].Distance += 2
-					}
 				}
 				if enemy.Enemy.X > tank.Pos.X {
-					tmpEnemyThreat[k].Quadrant = QUADRANT_X_R
+					tmpEnemyThreat[k].Quadrant = QUADRANT_R
 					tmpEnemyThreat[k].Distance = enemy.Enemy.X - tank.Pos.X
-					if enemy.Enemy.Direction == DirectionUp || enemy.Enemy.Direction == DirectionDown {
-						tmpEnemyThreat[k].Distance++
-					}
-					if enemy.Enemy.Direction == DirectionRight {
-						tmpEnemyThreat[k].Distance += 2
-					}
 				}
 			}
 		}
@@ -361,6 +353,7 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 
 /**
  * 象限转置 从假定向上的象限系统转换为相对于实际坦克方向的象限系统
+ * **禁止随意改动**
  */
 func (self *Radar) convertQuadrant(state *GameState, bulletApproach bool, bullets *map[string][]BulletThreat, enemyApproach bool, enemy *map[string][]EnemyThreat) (bool){
 	if bulletApproach == false && enemyApproach == false {
@@ -454,10 +447,10 @@ func (self *Radar) Scan(state *GameState) *RadarResult {
 		for _, tank := range state.MyTank {
 			radarDodge[tank.Id] = RadarDodge{}
 		}
+	} else {
+		// 躲避系统（撞墙、友军、草丛警戒）
+		radarDodge = self.dodge(state, bulletApproach, &bullets, enemyApproach, &enemy)
 	}
-
-	// 躲避系统（撞墙、友军、草丛警戒）
-
 
 	// 开火系统
 
