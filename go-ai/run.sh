@@ -2,7 +2,7 @@ cd `dirname $0`
 export GOPATH=`pwd`
 
 export HOST=ml.niven.cn:8777
-export GAME=BJGHQoN1M
+export GAME=rycfhmBkz
 export SIDE=red
 
 #export TACTICS=random
