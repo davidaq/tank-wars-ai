@@ -26,7 +26,7 @@ func caculateForestRange(terain [][]int, pos Position) int {
 	status := true
 	count := 0
 	for {
-		if !status {
+		if status {
 			break
 		} else {
 			count++
@@ -92,7 +92,6 @@ func searchForest(preState *GameState, state *GameState, ret *DiffResult, watchL
 				}
 			} else {
 				forestRange := caculateForestRange(terain, v.Pos)
-				
 				// 子弹消失
 				if forestRange == 0 {
 					// 草丛边缘，即将离开草丛
@@ -282,32 +281,53 @@ func searchForest(preState *GameState, state *GameState, ret *DiffResult, watchL
 	// 检测我方即将进入草丛的子弹，列入监视名单
 	for i:=0; i<len(state.MyBullet); i++ {
 		curItemPos := state.MyBullet[i].Pos
+		step := 0
 		
 		switch curItemPos.Direction {
 		case DirectionUp:
-			for j:= 1; j<=bulletSpeed; j++ {
-				if state.Terain.Data[curItemPos.Y-j][curItemPos.X] == 2 {
+			if curItemPos.Y - bulletSpeed < 0 {
+				step = 0
+			} else {
+				step = bulletSpeed
+			}
+			for j:= 1; j<=step; j++ {
+				if terain[curItemPos.Y-j][curItemPos.X] == 2 {
 					tempList.bullet[state.MyBullet[i].Id] = state.MyBullet[i]
 					break
 				}
 			}
 		case DirectionLeft:
-			for j:= 1; j<=bulletSpeed; j++ {
-				if state.Terain.Data[curItemPos.Y][curItemPos.X-j] == 2 {
+			if curItemPos.X - bulletSpeed < 0 {
+				step = 0
+			} else {
+				step = bulletSpeed
+			}
+			for j:= 1; j<=step; j++ {
+				if terain[curItemPos.Y][curItemPos.X-j] == 2 {
 					tempList.bullet[state.MyBullet[i].Id] = state.MyBullet[i]
 					break
 				}
 			}
 		case DirectionDown:
-			for j:= 1; j<=bulletSpeed; j++ {
-				if state.Terain.Data[curItemPos.Y+j][curItemPos.X] == 2 {
+			if curItemPos.Y + bulletSpeed > state.Terain.Height {
+				step = state.Terain.Height - curItemPos.Y
+			} else {
+				step = bulletSpeed
+			}
+			for j:= 1; j<=step; j++ {
+				if terain[curItemPos.Y+j-1][curItemPos.X] == 2 {
 					tempList.bullet[state.MyBullet[i].Id] = state.MyBullet[i]
 					break
 				}
 			}
 		case DirectionRight:
-			for j:= 1; j<=bulletSpeed; j++ {
-				if state.Terain.Data[curItemPos.Y][curItemPos.X+j] == 2 {
+			if curItemPos.X + bulletSpeed > state.Terain.Width {
+				step = state.Terain.Width - curItemPos.X
+			} else {
+				step = bulletSpeed
+			}
+			for j:= 1; j<=step; j++ {
+				if terain[curItemPos.Y][curItemPos.X+j-1] == 2 {
 					tempList.bullet[state.MyBullet[i].Id] = state.MyBullet[i]
 					break
 				}
@@ -318,32 +338,53 @@ func searchForest(preState *GameState, state *GameState, ret *DiffResult, watchL
 	// 检测地方可能进入草丛的坦克，进入监视名单
 	for i:= 0; i<len(state.EnemyTank); i++ {
 		curItemPos := state.EnemyTank[i].Pos
+		step := 0
 
 		switch curItemPos.Direction {
 		case DirectionUp:
-			for j:= 1; j<=tankSpeed; j++ {
-				if state.Terain.Data[curItemPos.Y-j][curItemPos.X] == 2 {
+			if curItemPos.Y - tankSpeed < 0 {
+				step = 0
+			} else {
+				step = tankSpeed
+			}
+			for j:= 1; j<=step; j++ {
+				if terain[curItemPos.Y-j][curItemPos.X] == 2 {
 					tempList.tank[state.EnemyTank[i].Id] = state.EnemyTank[i]
 					break
 				}
 			}
 		case DirectionLeft:
-			for j:= 1; j<=tankSpeed; j++ {
-				if state.Terain.Data[curItemPos.Y][curItemPos.X-j] == 2 {
+			if curItemPos.X - tankSpeed < 0 {
+				step = 0
+			} else {
+				step = tankSpeed
+			}
+			for j:= 1; j<=step; j++ {
+				if terain[curItemPos.Y][curItemPos.X-j] == 2 {
 					tempList.tank[state.EnemyTank[i].Id] = state.EnemyTank[i]
 					break
 				}
 			}
 		case DirectionDown:
-			for j:= 1; j<=tankSpeed; j++ {
-				if state.Terain.Data[curItemPos.Y+j][curItemPos.X] == 2 {
+			if curItemPos.Y + tankSpeed > state.Terain.Height {
+				step = state.Terain.Height - curItemPos.Y
+			} else {
+				step = tankSpeed
+			}
+			for j:= 1; j<=step; j++ {
+				if terain[curItemPos.Y+j-1][curItemPos.X] == 2 {
 					tempList.tank[state.EnemyTank[i].Id] = state.EnemyTank[i]
 					break
 				}
 			}
 		case DirectionRight:
-			for j:= 1; j<=tankSpeed; j++ {
-				if state.Terain.Data[curItemPos.Y][curItemPos.X+j] == 2 {
+			if curItemPos.X + tankSpeed > state.Terain.Width {
+				step = state.Terain.Width - curItemPos.X
+			} else {
+				step = tankSpeed
+			}
+			for j:= 1; j<=step; j++ {
+				if terain[curItemPos.Y][curItemPos.X+j-1] == 2 {
 					tempList.tank[state.EnemyTank[i].Id] = state.EnemyTank[i]
 					break
 				}
@@ -358,12 +399,17 @@ func (self *Diff) Compare(newState *GameState) DiffResult {
 	ret := DiffResult {
 		ForestThreat: make(map[Position]float64),
 	}
-	// var res DiffResult
+	if self.watchList == nil {
+		self.watchList = &ObservationList {
+			tank: make(map[string]Tank),
+			bullet: make(map[string]Bullet),
+		}
+	}
 	if self.prevState != nil {
 		// TODO
 		searchForest(self.prevState, newState, &ret, self.watchList)
-		// ret.ForestThreat[Position { X: 0, Y: 0 }] = 1.
 	}
 	self.prevState = newState
+	fmt.Println(ret)
 	return ret
 }
