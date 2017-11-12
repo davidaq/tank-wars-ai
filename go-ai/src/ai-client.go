@@ -9,6 +9,7 @@ import (
 	"os"
 	"encoding/json"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -53,6 +54,16 @@ func setup(host string, gameid string, side string) *f.GameState {
 }
 
 func act(host string, gameid string, side string, move map[string]int) *f.GameState {
+	responded := false
+	defer (func() { responded = true })()
+	go (func () {
+		for i := 0; i < 20 && !responded; i++ {
+			time.Sleep(50 * time.Millisecond)	
+		}
+		if !responded {
+			fmt.Println("Game server not responding")	
+		}
+	})()
 	send := make(map[string]string)
 	for k,v := range move {
 		send[k] = f.ActionToStr(v)
