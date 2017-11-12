@@ -174,7 +174,7 @@ func toAction (source Position, target Position) int {
 		targetDirection = target.Direction
 		if targetDirection == DirectionNone || source.Direction == target.Direction {
 			return ActionStay	
-		} 
+		}
 	}
 	if targetDirection == source.Direction {
 		return ActionMove

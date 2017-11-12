@@ -51,6 +51,53 @@
           </label>
           &nbsp;&nbsp;&nbsp;&nbsp;
           <label>
+            森林数量： <input name="game-Forests" type="number" value="20" min="5" step="1" style="width: 50px">
+          </label>
+          &nbsp;&nbsp;&nbsp;&nbsp;
+          <label>
+            障碍物量： <input name="game-Obstacles" type="number" value="100" min="5" step="1" style="width: 50px">
+          </label>
+          &nbsp;&nbsp;&nbsp;&nbsp;
+          <label>
+            <input name="game-StaticMap" type="checkbox" style="vertical-align: top">
+            <span style="display: inline-block; vertical-align: top">固定地形</span>
+          </label>
+          &nbsp;&nbsp;&nbsp;&nbsp;
+          <label>
+            <input name="game-CustomMap" type="checkbox" style="vertical-align: top" onchange="toggleCustom(this.checked)">
+            <span style="display: inline-block; vertical-align: top">直接设定地图</span>
+          </label>
+          <div id="mapeditor" style="display: none">
+            <small>
+              0：空地，1：障碍物，2：草丛
+              &nbsp;&nbsp;&nbsp;
+            </small>
+            <small id="maperror" style="color: red"></small>
+            <input type="hidden" name="game-CustomMapValue">
+            <textarea name="game-CustomMapEdit" style="width: 100%" rows="20" oninput="validateMap()">
+              1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+              1 2 2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1
+              1 2 0 1 0 0 0 0 0 1 0 0 0 0 0 0 0 0 1
+              1 1 1 1 0 0 0 0 0 1 0 0 0 0 0 0 0 0 1
+              1 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 1
+              1 0 0 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 1
+              1 0 0 0 0 2 2 1 2 2 2 2 2 2 0 0 0 0 1
+              1 0 0 0 0 2 2 1 2 2 2 2 2 2 0 0 0 0 1
+              1 0 0 0 0 2 2 2 2 2 2 2 2 2 0 0 0 0 1
+              1 0 0 0 0 2 2 2 2 2 2 2 2 2 0 0 0 0 1
+              1 0 0 0 0 2 2 2 2 2 2 2 2 2 0 0 0 0 1
+              1 0 0 0 0 2 2 2 2 2 2 1 2 2 0 0 0 0 1
+              1 0 0 0 0 2 2 2 2 2 2 1 2 2 0 0 0 0 1
+              1 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 0 0 1
+              1 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 1
+              1 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 1 1 1
+              1 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0 2 1
+              1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 2 2 1
+              1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+            </textarea>
+          </div>
+          <br>
+          <label>
             初始坦克： <input name="game-InitTank" type="number" value="5" min="1" step="1" style="width: 50px">
           </label>
           &nbsp;&nbsp;&nbsp;&nbsp;
@@ -66,15 +113,6 @@
             子弹移速： <input name="game-BulletSpeed" type="number" value="2" min="2" step="1" style="width: 50px">
           </label>
           &nbsp;&nbsp;&nbsp;&nbsp;
-          <br>
-          <label>
-            森林数量： <input name="game-Forests" type="number" value="20" min="5" step="1" style="width: 50px">
-          </label>
-          &nbsp;&nbsp;&nbsp;&nbsp;
-          <label>
-            障碍物量： <input name="game-Obstacles" type="number" value="100" min="5" step="1" style="width: 50px">
-          </label>
-          &nbsp;&nbsp;&nbsp;&nbsp;
           <label>
             旗子恢复： <input name="game-FlagTime" type="number" value="50" min="2" step="1" style="width: 50px">
           </label>
@@ -83,10 +121,6 @@
             回合上限： <input name="game-MaxMoves" type="number" value="200" min="5" step="1" style="width: 50px">
           </label>
           &nbsp;&nbsp;&nbsp;&nbsp;
-          <label>
-            <input name="game-StaticMap" type="checkbox" style="vertical-align: top">
-            <span style="display: inline-block; vertical-align: top">固定地形</span>
-          </label>
           <!--
           &nbsp;&nbsp;&nbsp;&nbsp;
           <label>
