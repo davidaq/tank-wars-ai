@@ -6,7 +6,6 @@ package framework
 
 import (
 	"math";
-	"fmt";
 )
 
 type Attacker struct {
@@ -18,7 +17,7 @@ func NewAttacker() *Attacker {
 	return inst
 }
 
-func calcSin (theTank Tank, tanks []Tank, fireDirection int, bulletSpeed int) {
+func calcSin (theTank Tank, tanks []Tank, fireDirection int, bulletSpeed int) float64 {
 	for _, otherTank := range tanks {
 		if theTank.Id == otherTank.Id {
 			continue
@@ -32,73 +31,74 @@ func calcSin (theTank Tank, tanks []Tank, fireDirection int, bulletSpeed int) {
 		switch fireDirection {
 		case QUADRANT_U: 
 			if ox == fx && fy > oy &&  fy - oy <= bulletSpeed {
-				return 1
+				return float64(1)
 			}
 		case QUADRANT_L:
 			if oy == fy && fx > ox && fx - ox <= bulletSpeed {
-				return 1
+				return float64(1)
 			}
 		case QUADRANT_D:
 			if ox == fx && oy > fy && oy - fy <= bulletSpeed {
-				return 1
+				return float64(1)
 			}
 		case QUADRANT_R:
 			if oy == fy && ox > fx && ox - fx <= bulletSpeed {
-				return 1
+				return float64(1)
 			}
 		}
 	}
-	return 0
+	return float64(0)
 }
 
-func calcFaith (distances, bulletSpeed int) {
+func calcFaith (distance, bulletSpeed int) float64 {
 	if distance <= bulletSpeed {
-		return 1
+		return float64(1)
 	}
-	return 0
+	return float64(0)
 }
 
-func calcCost (tank Tank, fireDirection int, bulletSpeed int, terain Terain) {
+func calcCost (tank Tank, fireDirection int, bulletSpeed int, terain Terain) int {
 	cost := 1
 	switch fireDirection {
 	case QUADRANT_U:
 		for i := tank.Pos.Y - 1; i >= 0; i-- {
 			if terain.Get(tank.Pos.X, i) == 1 {
-				return math.Ceil(float64(cost) / float64(bulletSpeed))
+				return int(math.Ceil(float64(cost) / float64(bulletSpeed)))
 			}
 			cost += 1
 		}
 	case QUADRANT_L:
 		for i := tank.Pos.X - 1; i >= 0; i-- {
 			if terain.Get(i, tank.Pos.Y) == 1 {
-				return math.Ceil(float64(cost) / float64(bulletSpeed))
+				return int(math.Ceil(float64(cost) / float64(bulletSpeed)))
 			}
 			cost += 1
 		}
 	case QUADRANT_D:
 		for i := tank.Pos.Y + 1; i < terain.Height; i++ {
 			if terain.Get(tank.Pos.X, i) == 1 {
-				return math.Ceil(float64(cost) / float64(bulletSpeed))
+				return int(math.Ceil(float64(cost) / float64(bulletSpeed)))
 			}
 			cost += 1
 		}
 	case QUADRANT_R:
 		for i := tank.Pos.X + 1; i < terain.Width; i++ {
 			if terain.Get(i, tank.Pos.Y) == 1 {
-				return math.Ceil(float64(cost) / float64(bulletSpeed))
+				return int(math.Ceil(float64(cost) / float64(bulletSpeed)))
 			}
 			cost += 1
 		}
 	}
+	return 0
 }
 
-func (self *Radar) attack(state *GameState, enemyThreats *map[string][]EnemyThreat) (map[string]RadarFireAll) {
-	radarFireAlls := make(map[string]RadarFireAll)
+func (self *Radar) attack(state *GameState, enemyThreats *map[string][]EnemyThreat) (map[string]*RadarFireAll) {
+	radarFireAlls := make(map[string]*RadarFireAll)
 
 	for _, tank := range state.MyTank {
 		for _, enemyThreat := range (*enemyThreats)[tank.Id] {
-			faith := 0
-			sin := 0
+			faith := float64(0)
+			sin := float64(0)
 			cost := 0
 			if len(enemyThreat.Distances) == 1 {
 				for fireDirection, dist := range enemyThreat.Distances {
@@ -107,13 +107,13 @@ func (self *Radar) attack(state *GameState, enemyThreats *map[string][]EnemyThre
 					cost = calcCost(tank, fireDirection, state.Params.BulletSpeed, state.Terain)
 					switch fireDirection {
 					case QUADRANT_U:
-						radarFireAlls[tank.Id].Up = RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireUp}
+						radarFireAlls[tank.Id].Up = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireUp}
 					case QUADRANT_L:
-						radarFireAlls[tank.Id].Left = RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireLeft}
+						radarFireAlls[tank.Id].Left = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireLeft}
 					case QUADRANT_D:
-						radarFireAlls[tank.Id].Down = RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireDown}
+						radarFireAlls[tank.Id].Down = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireDown}
 					case QUADRANT_R:
-						radarFireAlls[tank.Id].Right = RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireRight}
+						radarFireAlls[tank.Id].Right = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireRight}
 					}
 				}
 			}
