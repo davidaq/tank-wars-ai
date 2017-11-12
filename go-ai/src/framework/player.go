@@ -1,11 +1,16 @@
 package framework
 
+import (
+	_ "fmt"
+)
+
 type Player struct {
 	inited bool
 	tactics Tactics
 	objectives map[string]Objective
 	radar *Radar
 	traveller *Traveller
+	differ *Diff
 }
 
 func NewPlayer(tactics Tactics) *Player {
@@ -15,6 +20,7 @@ func NewPlayer(tactics Tactics) *Player {
 		inited: false,
 		radar: nil,
 		traveller: nil,
+		differ: NewDiff(),
 	}
 	return inst
 }
@@ -26,6 +32,7 @@ func (self *Player) Play(state *GameState) map[string]int {
 		self.radar = NewRadar()
 		self.traveller = NewTraveller()
 	}
+	self.differ.Compare(state)
 	radarResult := self.radar.Scan(state)
 	self.tactics.Plan(state, radarResult, self.objectives)
 
