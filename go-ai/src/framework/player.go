@@ -38,7 +38,7 @@ func (self *Player) Play(state *GameState) map[string]int {
 			travel[tank.Id] = &objective.Target
 		} else if objective.Action == ActionTravelWithDodge {
 			dodge, ok := radarResult.Dodge[tank.Id]
-			if ok {
+			if ok && dodge.Threat > 0.001 {
 				if dodge.SafePos.X == tank.Pos.X && dodge.SafePos.Y == tank.Pos.Y {
 					noForward = append(noForward, tank.Id)
 					travel[tank.Id] = &objective.Target
