@@ -2,6 +2,7 @@ package framework
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 type GameState struct {
@@ -172,6 +173,7 @@ func ParseGameState (bytes []byte) (*GameState, error) {
 		Ended: dat["ended"].(bool),
 	}
 	// parse terain
+	fmt.Println(dat["terain"])
 	for _, iline := range dat["terain"].([]interface{}) {
 		line := iline.([]interface{})
 		ret.Terain.Width = len(line)

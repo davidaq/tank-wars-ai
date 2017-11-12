@@ -22,4 +22,4 @@ module.exports = solver => co(function* () {
     state = yield fetch(api, { method: 'POST', body: JSON.stringify(moves) }).then(r => r.json());
   }
   process.stdout.write(`  ${i++}\t my: ${state.myTank.length}\t enemy: ${state.enemyTank.length}\t\t\t\n`);
-});
+}).catch(err => console.error(err.stack));

@@ -3,13 +3,13 @@ const frame = require('./_frame');
 let fired;
 
 frame((state, obj) => {
+  console.log(state.radar);
   if (!fired) {
     fired = {};
     state.myTank.forEach(tank => {
       fired[tank.id] = 0;
     });
   }
-  console.log(state.radar);
   state.myTank.forEach(tank => {
     let dist = 100;
     let target = null;
@@ -20,27 +20,30 @@ frame((state, obj) => {
         target = enemy;
       }
     });
-    // if (fired[tank.id] == 0) {
-    //   if (target.x == tank.x) {
-    //     if (Math.abs(target.y - tank.y) < 10) {
-    //       fired[tank.id] = 4;
-    //       obj[tank.id] = {
-    //         action: target.y < tank.y ? 'fire-up' : 'fire-down',
-    //       };
-    //       return;
-    //     }
-    //   } else if (target.y == tank.y) {
-    //     if (Math.abs(target.x - tank.x) < 10) {
-    //       fired[tank.id] = 4;
-    //       obj[tank.id] = {
-    //         action: target.x < tank.x ? 'fire-left' : 'fire-right',
-    //       };
-    //       return;
-    //     }
-    //   }
-    // } else {
-    //   fired[tank.id]--;
-    // }
+    if (!target) {
+      return;
+    }
+    if (fired[tank.id] == 0) {
+      if (target.x == tank.x) {
+        if (Math.abs(target.y - tank.y) < 10) {
+          fired[tank.id] = 4;
+          obj[tank.id] = {
+            action: target.y < tank.y ? 'fire-up' : 'fire-down',
+          };
+          return;
+        }
+      } else if (target.y == tank.y) {
+        if (Math.abs(target.x - tank.x) < 10) {
+          fired[tank.id] = 4;
+          obj[tank.id] = {
+            action: target.x < tank.x ? 'fire-left' : 'fire-right',
+          };
+          return;
+        }
+      }
+    } else {
+      fired[tank.id]--;
+    }
     obj[tank.id] = {
       // x: Math.floor(state.terain[0].length / 2),
       // y: Math.floor(state.terain.length / 2),
