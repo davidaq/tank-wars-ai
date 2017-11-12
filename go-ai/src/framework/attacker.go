@@ -29,19 +29,19 @@ func calcSin (theTank Tank, tanks []Tank, fireDirection int, bulletSpeed int) fl
 		oy := otherTank.Pos.Y
 
 		switch fireDirection {
-		case QUADRANT_U: 
+		case DirectionUp: 
 			if ox == fx && fy > oy &&  fy - oy <= bulletSpeed {
 				return float64(1)
 			}
-		case QUADRANT_L:
+		case DirectionLeft:
 			if oy == fy && fx > ox && fx - ox <= bulletSpeed {
 				return float64(1)
 			}
-		case QUADRANT_D:
+		case DirectionDown:
 			if ox == fx && oy > fy && oy - fy <= bulletSpeed {
 				return float64(1)
 			}
-		case QUADRANT_R:
+		case DirectionRight:
 			if oy == fy && ox > fx && ox - fx <= bulletSpeed {
 				return float64(1)
 			}
@@ -60,28 +60,28 @@ func calcFaith (distance, bulletSpeed int) float64 {
 func calcCost (tank Tank, fireDirection int, bulletSpeed int, terain Terain) int {
 	cost := 1
 	switch fireDirection {
-	case QUADRANT_U:
+	case DirectionUp:
 		for i := tank.Pos.Y - 1; i >= 0; i-- {
 			if terain.Get(tank.Pos.X, i) == 1 {
 				return int(math.Ceil(float64(cost) / float64(bulletSpeed)))
 			}
 			cost += 1
 		}
-	case QUADRANT_L:
+	case DirectionLeft:
 		for i := tank.Pos.X - 1; i >= 0; i-- {
 			if terain.Get(i, tank.Pos.Y) == 1 {
 				return int(math.Ceil(float64(cost) / float64(bulletSpeed)))
 			}
 			cost += 1
 		}
-	case QUADRANT_D:
+	case DirectionDown:
 		for i := tank.Pos.Y + 1; i < terain.Height; i++ {
 			if terain.Get(tank.Pos.X, i) == 1 {
 				return int(math.Ceil(float64(cost) / float64(bulletSpeed)))
 			}
 			cost += 1
 		}
-	case QUADRANT_R:
+	case DirectionRight:
 		for i := tank.Pos.X + 1; i < terain.Width; i++ {
 			if terain.Get(i, tank.Pos.Y) == 1 {
 				return int(math.Ceil(float64(cost) / float64(bulletSpeed)))
@@ -103,10 +103,6 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 			cost := 0
 			if len(enemyThreat.Distances) == 1 {
 				for fireDirection, dist := range enemyThreat.Distances {
-					faith = calcFaith(dist, state.Params.BulletSpeed)
-					sin = calcSin(tank, state.MyTank, fireDirection, state.Params.BulletSpeed)
-					cost = calcCost(tank, fireDirection, state.Params.BulletSpeed, state.Terain) 
-
 					realDirection := 0
 					switch fireDirection {
 					case QUADRANT_U:
@@ -119,6 +115,10 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 						realDirection = DirectionRight
 					}
 					realDirection = DirectionUp + ((realDirection - DirectionUp) + (tank.Pos.Direction - DirectionUp) + 4) % 4
+
+					faith = calcFaith(dist, state.Params.BulletSpeed)
+					sin = calcSin(tank, state.MyTank, realDirection, state.Params.BulletSpeed)
+					cost = calcCost(tank, realDirection, state.Params.BulletSpeed, state.Terain) 
 
 					switch realDirection {
 					case DirectionUp:

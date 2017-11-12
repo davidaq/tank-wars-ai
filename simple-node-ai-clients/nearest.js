@@ -11,6 +11,7 @@ frame((state, obj) => {
   }
   state.myTank.forEach(tank => {
     let fire = state.radar.fire[tank.id];
+    console.log(JSON.stringify(fire, false, '  '));
     fire = [fire.up, fire.left, fire.down, fire.right].filter(v => v && v.sin < 0.001);
     if (fire.length > 0) {
       obj[tank.id] = fire[0].action;
