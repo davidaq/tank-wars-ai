@@ -59,6 +59,7 @@ func (self *Player) Play(state *GameState) map[string]int {
 			movement[tank.Id] = objective.Action
 		}
 	}
+
 	self.traveller.Search(travel, state, movement)
 	for _, tankId := range noForward {
 		action, _ := movement[tankId]
