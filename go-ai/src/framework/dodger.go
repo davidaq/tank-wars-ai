@@ -72,6 +72,8 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
     // 各种操作的紧急度
     moveUrgent := make(map[string]map[int]int)
 
+    minThreat     := math.MaxInt32
+
 	// STEP3 对威胁程度进行分析
 	if bulletApproach == true || enemyApproach == true {
 		for _, tank := range state.MyTank {
@@ -85,9 +87,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
 
 			// STEP3.1 火线上的必须躲
 			if len(firelineThreat[tank.Id]) >= 0 {
-                radarDodge[tank.Id] = RadarDodge{
-                    Threat: 1, // 火线上不进行行动肯定会被击毁
-                }
+                minThreat = 1 // 火线上不进行行动肯定会被击毁
 				// 坦克在某个火线上遭遇袭击
 				for quadrant, distance := range firelineThreat[tank.Id] {
                     if quadrant == QUADRANT_U || quadrant == QUADRANT_D {
@@ -172,8 +172,8 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
 	// STEP4 综合场上局势进行协同调度
     for tankId, urgent := range moveUrgent {
         // STEP4.1 行动威胁排序，保存行动从大到小的key
-        urgentV := []int{}
-        urgentA := []int{}
+        urgentV := []int{}  // 距离value列表
+        urgentA := []int{}  // 行动key列表
         for _, vu := range urgent {
             urgentV = append(urgentV, vu)
         }
@@ -210,78 +210,87 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
             nextPos[action] = tmpNextPos
         }
 
-        // 排除列表
-        toAction := []int{}
+        // 排除墙列表
+        actionSequence := []int{}
         for _, action := range urgentA {
             if actionWall[action] != true {
-                toAction = append(toAction, action)
+                actionSequence = append(actionSequence, action)
             }
         }
 
         // STEP4.3 对行动类型列表进行分析，后面会对附近坦克进行计算
-        // 前进优先
+        // 优先度直接扔到第一位，方便后面处理
+        // 前进优先，如果前进是满距离，而且相对最高（重复值一样）
+        if urgent[ActionMove] == math.MaxInt32 {
+            // 直接直行
+            // 找key
+            tmpActionSequence := actionSequence[0]
+            for k, v := range actionSequence {
+                if v == ActionMove {
+                    actionSequence[0] = ActionMove
+                    actionSequence[k] = tmpActionSequence
+                    break
+                }
+            }
+        } else {
+            for _, action := range actionSequence {
+                if urgent[action] == math.MaxInt32 {
+                    continue
+                }
+                if urgent[ActionMove] == urgent[action] {
+                    // 如果相对最高，直接直行
+                    tmpActionSequence := actionSequence[0]
+                    for k, v := range actionSequence {
+                        if v == ActionMove {
+                            actionSequence[0] = ActionMove
+                            actionSequence[k] = tmpActionSequence
+                            break
+                        }
+                    }
+                }
+                break
+            }
+        }
 
-        // 其他选最高的
+        // 计算最低的威胁作为闪避威胁度
+        for i := 0; i < len(actionSequence); i++ {
+            if minThreat > urgent[actionSequence[i]] {
+                minThreat = urgent[actionSequence[i]]
+            }
+        }
 
+        // 先直接选最高的策略
+        // 最高策略的下一步行进位置
+        for i := 0; i < len(actionSequence); i++ {
+            canmove, pos := self.convertActionToPosition(state, tankData, actionSequence[0], 1)
+            if canmove == false {
+                continue
+            }
+
+            var finThreat float64
+            if minThreat <= 0 {
+                finThreat = 1
+            }
+            // 计算威胁度
+            finThreat = math.Floor(float64(minThreat / state.Params.BulletSpeed))
+            if finThreat < 1.0 {
+                finThreat = 1.0
+            }
+            radarDodge[tankId] = RadarDodge{
+                Threat:  finThreat,
+                SafePos: pos,
+            }
+            fmt.Println(radarDodge[tankId])
+            break
+        }
         // 草丛躲避
-
-        fmt.Println("######")
-        fmt.Println(urgentA)
-        fmt.Println(actionWall)
-        fmt.Println(toAction)
-        fmt.Println("######")
-        //for i := 1; i < len(urgent); i++ {
-        //    if radarDodge[tankId].Threat > urgent[i] {
-        //       radarDodge[tankId] = RadarDodge{
-        //           Threat: urgent[i],
-        //       }
-        //    }
-        //}
-
-
-
         // 查找是否有阻挡的己方坦克
     }
 
-    // STEP5 动作转坐标点
-
+    fmt.Println("####")
+    fmt.Println(radarDodge)
+    fmt.Println("####")
 	return radarDodge
-    //
-	//// 对子弹威胁和敌军威胁进行找最大的，然后按照子弹威胁优先
-	//bulletMaxAction	 := -1
-	//bulletMaxUrgent  := -1
-	//bulletMinUrgent  := math.MaxInt32
-	//for i := 1; i < len(BulletMoveUrgent); i++ {
-	//	if bulletMinUrgent > BulletMoveUrgent[i] {
-	//		bulletMinUrgent = BulletMoveUrgent[i]
-	//	}
-	//	// 行动优先
-	//	if bulletMaxUrgent < BulletMoveUrgent[i] && (i == ActionMove || i == ActionRight || i == ActionLeft || i == ActionBack){
-	//		bulletMaxAction = i
-	//		bulletMaxUrgent = BulletMoveUrgent[i]
-	//	}
-	//}
-    //
-	//// 遵从本来的方向(2号行动)，如果原来的方向不为MAX，则顺序去找第一个大的行动。
-	//if BulletMoveUrgent[ActionMove] == math.MaxInt32 {
-	//	// 继续行进
-	//	return ActionMove, bulletMinUrgent
-	//}
-    //
-	//// 已经有了行动推荐
-	//if bulletMaxAction != -1 {
-	//	return bulletMaxAction, bulletMinUrgent
-	//} else {
-	//	// 行动推荐失败，除非停留绝对安全，否则进行其他判断
-	//	if BulletMoveUrgent[ActionStay] == math.MaxInt32 {
-	//		return ActionStay, bulletMinUrgent
-	//	} else {
-	//		// 此处光荣弹策略需要添加
-	//		return bulletMaxAction, bulletMinUrgent
-	//	}
-	//}
-    //
-	//return bulletMaxAction, bulletMinUrgent
 }
 
 /**
