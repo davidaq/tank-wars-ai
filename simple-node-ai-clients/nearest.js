@@ -3,7 +3,6 @@ const frame = require('./_frame');
 let fired;
 
 frame((state, obj) => {
-  console.log(state.radar);
   if (!fired) {
     fired = {};
     state.myTank.forEach(tank => {
@@ -12,7 +11,7 @@ frame((state, obj) => {
   }
   state.myTank.forEach(tank => {
     let fire = state.radar.fire[tank.id];
-    fire = [fire.up, fire.left, fire.down, fire.right].filter(v => v);
+    fire = [fire.up, fire.left, fire.down, fire.right].filter(v => v && v.sin < 0.001);
     if (fire.length > 0) {
       obj[tank.id] = fire[0].action;
       return;

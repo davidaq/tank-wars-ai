@@ -106,14 +106,28 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 					faith = calcFaith(dist, state.Params.BulletSpeed)
 					sin = calcSin(tank, state.MyTank, fireDirection, state.Params.BulletSpeed)
 					cost = calcCost(tank, fireDirection, state.Params.BulletSpeed, state.Terain) 
+
+					realDirection := 0
 					switch fireDirection {
 					case QUADRANT_U:
-						radarFireAlls[tank.Id].Up = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireUp}
+						realDirection = DirectionUp
 					case QUADRANT_L:
-						radarFireAlls[tank.Id].Left = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireLeft}
+						realDirection = DirectionLeft
 					case QUADRANT_D:
-						radarFireAlls[tank.Id].Down = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireDown}
+						realDirection = DirectionDown
 					case QUADRANT_R:
+						realDirection = DirectionRight
+					}
+					realDirection = DirectionUp + ((realDirection - DirectionUp) + (tank.Pos.Direction - DirectionUp) + 4) % 4
+
+					switch realDirection {
+					case DirectionUp:
+						radarFireAlls[tank.Id].Up = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireUp}
+					case DirectionLeft:
+						radarFireAlls[tank.Id].Left = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireLeft}
+					case DirectionDown:
+						radarFireAlls[tank.Id].Down = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireDown}
+					case DirectionRight:
 						radarFireAlls[tank.Id].Right = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireRight}
 					}
 				}
