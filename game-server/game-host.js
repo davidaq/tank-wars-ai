@@ -122,6 +122,8 @@ class GameHost extends EventEmitter {
   }
   setupTerrain () {
     this.terain = [];
+    this.flagX = Math.floor(this.MapWidth / 2);
+    this.flagY = Math.floor(this.MapHeight / 2);
     if (this.CustomMap) {
       this.terain = JSON.parse(this.CustomMapValue);
     } else {
@@ -132,8 +134,6 @@ class GameHost extends EventEmitter {
           line.push(0);
         }
       }
-      this.flagX = Math.floor(this.MapWidth / 2);
-      this.flagY = Math.floor(this.MapHeight / 2);
       let x = Math.floor(this.random.nextFloat() * this.MapWidth / 2);
       let y = Math.floor(this.random.nextFloat() * this.MapHeight);
       const tankW = Math.ceil(Math.sqrt(this.InitTank));
