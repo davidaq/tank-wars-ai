@@ -92,10 +92,11 @@ func calcCost (tank Tank, fireDirection int, bulletSpeed int, terain Terain) int
 	return 0
 }
 
-func (self *Radar) attack(state *GameState, enemyThreats *map[string][]EnemyThreat) (map[string]*RadarFireAll) {
+func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThreat) (map[string]*RadarFireAll) {
 	radarFireAlls := make(map[string]*RadarFireAll)
 
 	for _, tank := range state.MyTank {
+		radarFireAlls[tank.Id] = &RadarFireAll {}
 		for _, enemyThreat := range (*enemyThreats)[tank.Id] {
 			faith := float64(0)
 			sin := float64(0)
@@ -104,7 +105,7 @@ func (self *Radar) attack(state *GameState, enemyThreats *map[string][]EnemyThre
 				for fireDirection, dist := range enemyThreat.Distances {
 					faith = calcFaith(dist, state.Params.BulletSpeed)
 					sin = calcSin(tank, state.MyTank, fireDirection, state.Params.BulletSpeed)
-					cost = calcCost(tank, fireDirection, state.Params.BulletSpeed, state.Terain)
+					cost = calcCost(tank, fireDirection, state.Params.BulletSpeed, state.Terain) 
 					switch fireDirection {
 					case QUADRANT_U:
 						radarFireAlls[tank.Id].Up = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireUp}

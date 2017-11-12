@@ -425,7 +425,7 @@ func (self *Radar) Scan(state *GameState) *RadarResult {
 	}
 
 	// 开火系统
-
+	attack := self.Attack(state, &enemy)
 
 	// 返回
 	ret := &RadarResult {
@@ -433,12 +433,8 @@ func (self *Radar) Scan(state *GameState) *RadarResult {
 		Fire: make(map[string]RadarFireAll),
 	}
 	for _, tank := range state.MyTank {
-		ret.Fire[tank.Id] = RadarFireAll {
-			Up: &RadarFire {
-				Faith: 1.,
-				Action: ActionFireUp,
-				Cost: 10,
-			},
+		if atk, ok := attack[tank.Id]; ok {
+			ret.Fire[tank.Id] = *atk
 		}
 		ret.Dodge[tank.Id] = radarDodge[tank.Id]
 	}
