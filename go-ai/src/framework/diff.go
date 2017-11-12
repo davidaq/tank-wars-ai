@@ -1,14 +1,18 @@
 // 检查当前state和之前state，判断草丛威胁
 package framework
 
+import (
+	"fmt"
+)
+
 type Diff struct {
 	prevState *GameState
 	watchList *ObservationList
 }
 
 type ObservationList struct {
-	tank map[string]Tank,
-	bullet map[string]Bullet,
+	tank map[string]Tank
+	bullet map[string]Bullet
 }
 
 func NewDiff() *Diff {
@@ -18,19 +22,54 @@ func NewDiff() *Diff {
 	}
 }
 
-func caculateForestRange(pos) int {
-
+func caculateForestRange(terain [][]int, pos Position) int {
+	status := true
+	count := 0
+	for {
+		if !status {
+			break
+		} else {
+			count++
+			switch pos.Direction {
+			case DirectionUp:
+				if terain[pos.Y-count][pos.X] == 2 {
+					count++
+				} else {
+					status = false
+				}
+			case DirectionLeft:
+				if terain[pos.Y][pos.X-count] == 2 {
+					count++
+				} else {
+					status = false
+				}
+			case DirectionDown:
+				if terain[pos.Y+count][pos.X] == 2 {
+					count++
+				} else {
+					status = false
+				}
+			case DirectionRight:
+				if terain[pos.Y][pos.X+count] == 2 {
+					count++
+				} else {
+					status = false
+				}
+			}
+		}
+	}
+	return count
 }
 
-func searchForest(preState, state, ret, watchList) DiffResult {
+func searchForest(preState GameState, state GameState, ret DiffResult, watchList ObservationList) DiffResult {
 	bulletSpeed := state.params.bulletSpeed
 	tankSpeed := state.params.tankSpeed
 	terain := state.Terain.Data
 	events := state.Events
 
 	tempList := ObservationList {
-		tank make(map[string]Position),
-		bullet make(map[string]Position)
+		tank: make(map[string]Position),
+		bullet: make(map[string]Position),
 	}
 
 	// 检查观察列表中子弹的状态
@@ -47,12 +86,12 @@ func searchForest(preState, state, ret, watchList) DiffResult {
 				// 子弹存活，并飞出草丛
 				delete(watchList.bullet, k)
 			} else {
-				forestRange := caculateForestRange(v)
+				forestRange := caculateForestRange(terain, v)
 				maybeHit := false
 	
 				// 前方存在可能击中的坦克
 				for i:=0;i<len(events);i++ {
-					if events[i].type == "me-hit-enemy" && events[i].From == v.From {
+					if events[i].typ == "me-hit-enemy" && events[i].From == v.From {
 						maybeHit = true
 						delete(watchList.bullet, k)
 						break
@@ -82,10 +121,10 @@ func searchForest(preState, state, ret, watchList) DiffResult {
 								chance := bulletSpeed
 							}
 							for i:=1;i<=forestRange;i++ {
-								tempPos := {
+								tempPos := Position {
 									X: v.Pos.X,
 									Y: v.Pos.Y-i,
-									Direction: v.Direction
+									Direction: v.Direction,
 								}
 								ret.ForestThreat[tempPos] = 1/chance
 							}
@@ -102,10 +141,10 @@ func searchForest(preState, state, ret, watchList) DiffResult {
 								chance := bulletSpeed
 							}
 							for i:=1;i<=forestRange;i++ {
-								tempPos := {
+								tempPos := Position {
 									X: v.Pos.X-i,
 									Y: v.Pos.Y,
-									Direction: v.Direction
+									Direction: v.Direction,
 								}
 								ret.ForestThreat[tempPos] = 1/chance
 							}
@@ -122,10 +161,10 @@ func searchForest(preState, state, ret, watchList) DiffResult {
 								chance := bulletSpeed
 							}
 							for i:=1;i<=forestRange;i++ {
-								tempPos := {
+								tempPos := Position {
 									X: v.Pos.X,
 									Y: v.Pos.Y+i,
-									Direction: v.Direction
+									Direction: v.Direction,
 								}
 								ret.ForestThreat[tempPos] = 1/chance
 							}
@@ -142,10 +181,10 @@ func searchForest(preState, state, ret, watchList) DiffResult {
 								chance := bulletSpeed
 							}
 							for i:=1;i<=forestRange;i++ {
-								tempPos := {
+								tempPos := Position {
 									X: v.Pos.X+i,
 									Y: v.Pos.Y,
-									Direction: v.Direction
+									Direction: v.Direction,
 								}
 								ret.ForestThreat[tempPos] = 1/chance
 							}
@@ -155,37 +194,37 @@ func searchForest(preState, state, ret, watchList) DiffResult {
 						switch v.Pos.Direction {
 						case DirectionUp:
 							for i:=1;i<=bulletSpeed;i++ {
-								tempPos := {
+								tempPos := Position {
 									X: v.Pos.X,
 									Y: v.Pos.Y-i,
-									Direction: v.Pos.Direction
+									Direction: v.Pos.Direction,
 								}
 								ret.ForestThreat[tempPos] = 1/bulletSpeed
 							}
 						case DirectionLeft:
 							for i:=1;i<=bulletSpeed;i++ {
-								tempPos := {
+								tempPos := Position {
 									X: v.Pos.X-i,
 									Y: v.Pos.Y,
-									Direction: v.Pos.Direction
+									Direction: v.Pos.Direction,
 								}
 								ret.ForestThreat[tempPos] = 1/bulletSpeed
 							}
 						case DirectionDown:
 							for i:=1;i<=bulletSpeed;i++ {
-								tempPos := {
+								tempPos := Position {
 									X: v.Pos.X,
 									Y: v.Pos.Y+i,
-									Direction: v.Pos.Direction
+									Direction: v.Pos.Direction,
 								}
 								ret.ForestThreat[tempPos] = 1/bulletSpeed
 							}
 						case DirectionRight:
 							for i:=1;i<=bulletSpeed;i++ {
-								tempPos := {
+								tempPos := Position {
 									X: v.Pos.X+i,
 									Y: v.Pos.Y,
-									Direction: v.Pos.Direction
+									Direction: v.Pos.Direction,
 								}
 								ret.ForestThreat[tempPos] = 1/bulletSpeed
 							}
@@ -215,7 +254,7 @@ func searchForest(preState, state, ret, watchList) DiffResult {
 			if disappear {
 				// 判断坦克是否被击杀
 				for i:=0;i<len(events);i++ {
-					if events[i].type == "me-hit-enemy" || events[i].type == "enemy-hit-enemy" {
+					if events[i].typ == "me-hit-enemy" || events[i].typ == "enemy-hit-enemy" {
 						if v == events[i].target {
 							increaseHP++
 						}
@@ -227,31 +266,31 @@ func searchForest(preState, state, ret, watchList) DiffResult {
 					// 草丛无障碍物
 					switch v.Pos.Direction {
 					case DirectionUp:
-						tempPos := {
+						tempPos := Position {
 							X: v.Pos.X,
 							Y: v.Pos.Y-tankSpeed,
-							Direction: v.Pos.Direction
+							Direction: v.Pos.Direction,
 						}
 						ret.ForestThreat[tempPos] = 1
 					case DirectionLeft:
-						tempPos := {
+						tempPos := Position {
 							X: v.Pos.X-tankSpeed,
 							Y: v.Pos.Y,
-							Direction: v.Pos.Direction
+							Direction: v.Pos.Direction,
 						}
 						ret.ForestThreat[tempPos] = 1
 					case DirectionDown:
-						tempPos := {
+						tempPos := Position {
 							X: v.Pos.X,
 							Y: v.Pos.Y+tankSpeed,
-							Direction: v.Pos.Direction
+							Direction: v.Pos.Direction,
 						}
 						ret.ForestThreat[tempPos] = 1
-					case DirectionRight
-						tempPos := {
+					case DirectionRight:
+						tempPos := Position {
 							X: v.Pos.X+tankSpeed,
 							Y: v.Pos.Y,
-							Direction: v.Pos.Direction
+							Direction: v.Pos.Direction,
 						}
 						ret.ForestThreat[tempPos] = 1
 					}
@@ -268,28 +307,28 @@ func searchForest(preState, state, ret, watchList) DiffResult {
 		case DirectionUp:
 			for j:= 1; j<=tankSpeed; j++ {
 				if state.Terain.Data[curItemPos.Y-j][curtItemPos.X] == 2 {
-					tempList.tank.[state.EnemyTank[i].Id] = state.EnemyTank[i]
+					tempList.tank[state.EnemyTank[i].Id] = state.EnemyTank[i]
 					break
 				}
 			}
 		case DirectionLeft:
 			for j:= 1; j<=tankSpeed; j++ {
 				if state.Terain.Data[curItemPos.Y][curtItemPos.X-j] == 2 {
-					tempList.tank.[state.EnemyTank[i].Id] = state.EnemyTank[i]
+					tempList.tank[state.EnemyTank[i].Id] = state.EnemyTank[i]
 					break
 				}
 			}
 		case DirectionDown:
 			for j:= 1; j<=tankSpeed; j++ {
 				if state.Terain.Data[curItemPos.Y+j][curtItemPos.X] == 2 {
-					tempList.tank.[state.EnemyTank[i].Id] = state.EnemyTank[i]
+					tempList.tank[state.EnemyTank[i].Id] = state.EnemyTank[i]
 					break
 				}
 			}
 		case DirectionRight:
 			for j:= 1; j<=tankSpeed; j++ {
 				if state.Terain.Data[curItemPos.Y][curtItemPos.X+j] == 2 {
-					tempList.tank.[state.EnemyTank[i].Id] = state.EnemyTank[i]
+					tempList.tank[state.EnemyTank[i].Id] = state.EnemyTank[i]
 					break
 				}
 			}
@@ -304,28 +343,28 @@ func searchForest(preState, state, ret, watchList) DiffResult {
 		case DirectionUp:
 			for j:= 1; j<=bulletSpeed; j++ {
 				if state.Terain.Data[curItemPos.Y-j][curtItemPos.X] == 2 {
-					tempList.bullet.[state.MyBullet[i].Id] = state.MyBullet[i]
+					tempList.bullet[state.MyBullet[i].Id] = state.MyBullet[i]
 					break
 				}
 			}
 		case DirectionLeft:
 			for j:= 1; j<=bulletSpeed; j++ {
 				if state.Terain.Data[curItemPos.Y][curtItemPos.X-j] == 2 {
-					tempList.bullet.[state.MyBullet[i].Id] = state.MyBullet[i]
+					tempList.bullet[state.MyBullet[i].Id] = state.MyBullet[i]
 					break
 				}
 			}
 		case DirectionDown:
 			for j:= 1; j<=bulletSpeed; j++ {
 				if state.Terain.Data[curItemPos.Y+j][curtItemPos.X] == 2 {
-					tempList.bullet.[state.MyBullet[i].Id] = state.MyBullet[i]
+					tempList.bullet[state.MyBullet[i].Id] = state.MyBullet[i]
 					break
 				}
 			}
 		case DirectionRight:
 			for j:= 1; j<=bulletSpeed; j++ {
 				if state.Terain.Data[curItemPos.Y][curtItemPos.X+j] == 2 {
-					tempList.bullet.[state.MyBullet[i].Id] = state.MyBullet[i]
+					tempList.bullet[state.MyBullet[i].Id] = state.MyBullet[i]
 					break
 				}
 			}
@@ -346,5 +385,6 @@ func (self *Diff) compare(newState *GameState) DiffResult {
 		// ret.ForestThreat[Position { X: 0, Y: 0 }] = 1.
 	}
 	self.prevState = newState
+	fmt.println(res)
 	return res
 }
