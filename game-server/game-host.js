@@ -36,9 +36,17 @@ class GameHost extends EventEmitter {
     const tankH = Math.ceil(this.InitTank / tankW);
     this.MapWidth = Math.max(tankW * 2, this.MapWidth - 0);
     this.MapHeight = Math.max(tankH * 2, this.MapHeight - 0);
-    this.MapWidth += 1 - (this.MapHeight & 1);
-    this.MapHeight += 1 - (this.MapHeight & 1);
+    if (this.MapWidth != settings.MapWidth || this.MapHeight != settings.MapHeight) {
+      this.CustomMap = false;
+    }
     let remain = (this.MapWidth - 3) * (this.MapHeight - 3) - (tankW + 1) * (tankH + 1) * 3 - 5;
+    if (remain < 0) {
+      this.CustomMap = false;
+    }
+    if (!this.CustomMap) {
+      this.MapWidth += 1 - (this.MapHeight & 1);
+      this.MapHeight += 1 - (this.MapHeight & 1);
+    }
     this.Obstacles = Math.min(this.Obstacles - 0, remain);
     remain -= this.Obstacles - 5;
     this.Forests = Math.min(this.Forests - 0, remain);
@@ -114,56 +122,60 @@ class GameHost extends EventEmitter {
   }
   setupTerrain () {
     this.terain = [];
-    for (let y = 0; y < this.MapHeight; y++) {
-      const line = [];
-      this.terain.push(line);
-      for (let x = 0; x < this.MapWidth; x++) {
-        line.push(0);
+    if (this.CustomMap) {
+      this.terain = JSON.parse(this.CustomMapValue);
+    } else {
+      for (let y = 0; y < this.MapHeight; y++) {
+        const line = [];
+        this.terain.push(line);
+        for (let x = 0; x < this.MapWidth; x++) {
+          line.push(0);
+        }
       }
-    }
-    this.flagX = Math.floor(this.MapWidth / 2);
-    this.flagY = Math.floor(this.MapHeight / 2);
-    let x = Math.floor(this.random.nextFloat() * this.MapWidth / 2);
-    let y = Math.floor(this.random.nextFloat() * this.MapHeight);
-    const tankW = Math.ceil(Math.sqrt(this.InitTank));
-    const tankH = Math.ceil(this.InitTank / tankW);
-    for (let i = 0; i < this.Obstacles;) {
-      switch (Math.floor(this.random.nextFloat() * 4)) {
-        case 0:
-          x++;
-          break;
-        case 1:
-          y++;
-          break;
-        case 2:
-          x--;
-          break;
-        case 3:
-          y--;
-          break;
-        default:
+      this.flagX = Math.floor(this.MapWidth / 2);
+      this.flagY = Math.floor(this.MapHeight / 2);
+      let x = Math.floor(this.random.nextFloat() * this.MapWidth / 2);
+      let y = Math.floor(this.random.nextFloat() * this.MapHeight);
+      const tankW = Math.ceil(Math.sqrt(this.InitTank));
+      const tankH = Math.ceil(this.InitTank / tankW);
+      for (let i = 0; i < this.Obstacles;) {
+        switch (Math.floor(this.random.nextFloat() * 4)) {
+          case 0:
+            x++;
+            break;
+          case 1:
+            y++;
+            break;
+          case 2:
+            x--;
+            break;
+          case 3:
+            y--;
+            break;
+          default:
+            x = Math.floor(this.random.nextFloat() * this.MapWidth / 2);
+            y = Math.floor(this.random.nextFloat() * this.MapHeight);
+            break;
+        }
+        if (x >= 0 && x < this.MapWidth && y >= 0 && y < this.MapHeight && this.terain[y][x] === 0 && x >= tankW && y >= tankH && x !== this.flagX && y != this.flagY) {
+          this.terain[y][x] = 1;
+          this.terain[this.MapHeight - y - 1][this.MapWidth - x - 1] = 1;
+          i += 2;
+        } else {
           x = Math.floor(this.random.nextFloat() * this.MapWidth / 2);
           y = Math.floor(this.random.nextFloat() * this.MapHeight);
-          break;
+        }
       }
-      if (x >= 0 && x < this.MapWidth && y >= 0 && y < this.MapHeight && this.terain[y][x] === 0 && x >= tankW && y >= tankH && x !== this.flagX && y != this.flagY) {
-        this.terain[y][x] = 1;
-        this.terain[this.MapHeight - y - 1][this.MapWidth - x - 1] = 1;
-        i += 2;
-      } else {
-        x = Math.floor(this.random.nextFloat() * this.MapWidth / 2);
-        y = Math.floor(this.random.nextFloat() * this.MapHeight);
-      }
-    }
-    for (let i = 0; i < this.Forests;) {
-      while (true) {
-        const x = Math.floor(this.random.nextFloat() * this.MapWidth / 2);
-        const y = Math.floor(this.random.nextFloat() * this.MapHeight);
-        if (x >= 0 && x < this.MapWidth && y >= 0 && y < this.MapHeight && this.terain[y][x] === 0 && x >= tankW && y >= tankH && x !== this.flagX && y != this.flagY) {
-          this.terain[y][x] = 2;
-          this.terain[this.MapHeight - y - 1][this.MapWidth - x - 1] = 2;
-          i += 2;
-          break;
+      for (let i = 0; i < this.Forests;) {
+        while (true) {
+          const x = Math.floor(this.random.nextFloat() * this.MapWidth / 2);
+          const y = Math.floor(this.random.nextFloat() * this.MapHeight);
+          if (x >= 0 && x < this.MapWidth && y >= 0 && y < this.MapHeight && this.terain[y][x] === 0 && x >= tankW && y >= tankH && x !== this.flagX && y != this.flagY) {
+            this.terain[y][x] = 2;
+            this.terain[this.MapHeight - y - 1][this.MapWidth - x - 1] = 2;
+            i += 2;
+            break;
+          }
         }
       }
     }
@@ -174,12 +186,30 @@ class GameHost extends EventEmitter {
     this.blueBullet = [];
     this.redBullet = [];
     const tankW = Math.ceil(Math.sqrt(this.InitTank));
-    for (let i = 0; i < this.InitTank; i++) {
-      const x = Math.floor(i % tankW);
-      const y = Math.floor(i / tankW);
-      this.blueTank.push({ bullet: '', hp: this.TankHP, color: 'blue', x, y, direction: 'down', id: shortid.generate() });
-      this.redTank.push({ bullet: '', hp: this.TankHP, color: 'red', x: this.MapWidth - x - 1, y: this.MapHeight - y - 1, direction: 'up', id: shortid.generate() });
+    let M = 0;
+    const maxM = Math.min(this.MapWidth, this.MapHeight);
+    while (M < maxM) {
+      for (let i = 0; i < M; i++) {
+        this.assignTank(i, M);
+        this.assignTank(M, i);
+        if (this.blueTank.length >= this.InitTank) {
+          return;
+        }
+      }
+      this.assignTank(M, M);
+      M++;
+      if (this.blueTank.length >= this.InitTank) {
+        return;
+      }
     }
+  }
+  assignTank (x, y) {
+    if (this.terain[this.MapHeight - y - 1][x] !== 0 || this.terain[y][this.MapWidth - x - 1] !== 0) {
+      return false;
+    }
+    this.blueTank.push({ bullet: '', hp: this.TankHP, color: 'blue', x, y: this.MapHeight - y - 1, direction: 'down', id: shortid.generate() });
+    this.redTank.push({ bullet: '', hp: this.TankHP, color: 'red', x: this.MapWidth - x - 1, y, direction: 'up', id: shortid.generate() });
+    return true;
   }
   *calcState () {
     if (this.flagWait > 0) {

@@ -90,17 +90,62 @@ function toggleAcceptClient(accept) {
   });
 }
 
+function toggleCustom(isCustom) {
+  document.querySelector('#mapeditor').style.display = isCustom ? 'block' : 'none';
+  if (isCustom) {
+    validateMap();
+  }
+}
+
+const validateMap = _.throttle(() => {
+  $el = document.querySelector('[name="game-CustomMapEdit"]');
+  $err = document.querySelector('#maperror');
+  $err.innerHTML = '';
+  let width = 0;
+  let obstacles = 0;
+  let forests = 0;
+  const val = $el.value.split('\n').map(line => {
+    line = line.trim();
+    if (line) {
+      line = line.split(/[^0-9]*/).map(v => v | 0);
+      line.forEach(v => {
+        if (v == 1) {
+          obstacles++;
+        } else if (v == 2) {
+          forests++;
+        }
+      });
+      if (width == 0) {
+        width = line.length;
+      } else if (width != line.length) {
+        width = -1;
+      }
+      return line;
+    }
+  }).filter(v => !!v)
+  if (width === -1) {
+    $err.innerHTML = '地图每一行长度必须一样';
+    return;
+  }
+  const height = val.length;
+  document.querySelector('[name="game-MapWidth"]').value = width;
+  document.querySelector('[name="game-MapHeight"]').value = height;
+  document.querySelector('[name="game-Obstacles"]').value = obstacles;
+  document.querySelector('[name="game-Forests"]').value = forests;
+  document.querySelector('[name="game-CustomMapValue"]').value = JSON.stringify(val);
+}, 1000);
+
 function createGame () {
   const data = {};
   [
     'title', 'total', 'red', 'blue',
     'MapWidth', 'MapHeight', 'InitTank', 'TankHP', 'TankSpeed', 'BulletSpeed', 'FlagTime',
-    'Forests', 'Obstacles', 'MaxMoves',
+    'Forests', 'Obstacles', 'MaxMoves', 'CustomMapValue',
     'TankScore', 'FlagScore',
   ].forEach(f => {
     data[f] = document.querySelector(`[name="game-${f}"]`).value;
   });
-  ['client', 'StaticMap', 'FriendlyFire'].forEach(f => {
+  ['client', 'StaticMap', 'FriendlyFire', 'CustomMap'].forEach(f => {
     data[f] = document.querySelector(`[name="game-${f}"]`).checked;
   });
   fetch('/game', {
