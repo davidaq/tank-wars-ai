@@ -5,6 +5,7 @@
 package framework
 
 import (
+	"fmt";
 	"math";
 )
 
@@ -50,46 +51,126 @@ func calcSin (theTank Tank, tanks []Tank, fireDirection int, bulletSpeed int) fl
 	return float64(0)
 }
 
-func calcFaith (distance, bulletSpeed int) float64 {
-	if distance <= bulletSpeed {
-		return float64(1)
+func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool, fireDirection int, enemyPos Position, tankPos Position) float64 {
+	faith := float64(0)
+
+	if verticalDistance <= bulletSpeed {
+		faith = float64(1)
+	} else if verticalDistance <= bulletSpeed * 2 {
+		faith = 0.5
 	}
-	return float64(0)
+
+	if fireLine {
+		// 敌方朝向和开火方向相同，且在火线上
+		if enemyPos.Direction == fireDirection {
+			return faith
+		}
+
+		// 敌方朝向和开火方向相反，且在火线上		
+		if enemyPos.Direction == fireDirection + 2 {
+			return faith
+		}
+
+		// 敌方朝向和开火方向相反，且在火线上		
+		if enemyPos.Direction == fireDirection - 2 {
+			return faith
+		}
+
+		// 敌方朝向和开火方向垂直，且在火线上
+		return faith / 2
+	} else {
+		// 敌方不在火线，开火方向是上或下
+		if fireDirection == DirectionUp || fireDirection == DirectionDown {
+
+			// 坦克下回合走不到火线上
+			if math.Abs(tankPos.X - enemyPos.X) != tankSpeed {
+				return float64(0)
+			}			
+
+			// 敌方坦克在火线左侧，朝向火线			
+			if tankPos.X > enemyPos.X && enemyPos.Direction == DirectionRight {
+				return faith - 0.15
+			}
+			// 敌方坦克在火线右侧，朝向火线
+			if tankPos.X < enemyPos.X && enemyPos.Direction == DirectionLeft {
+				return faith - 0.15
+			}
+			// 敌方坦克朝向与火线相反
+			return float64(0)
+		}
+		
+		// 开火方向是左或右
+		if fireDirection == DirectionLeft || fireDirection == DirectionRight {
+
+			// 坦克下回合走不到火线上
+			if math.Abs(tankPos.Y - enemyPos.Y) != tankSpeed {
+				return float64(0)
+			}	
+
+			// 敌方坦克在火线上面，朝向火线
+			if tankPos.Y > enemyPos.Y && enemyPos.Direction == DirectionDown {
+				return faith - 0.15
+			}
+			// 敌方坦克在火线下面，朝向火线
+			if tankPos.Y < enemyPos.Y && enemyPos.Direction == DirectionUp {
+				return faith - 0.15
+			}
+			// 敌方坦克朝向与火线相反
+			return float64(0)
+		}
+	}
+
+	return faith
 }
 
 func calcCost (tank Tank, fireDirection int, bulletSpeed int, terain Terain) int {
-	cost := 1
+	cost := 0
 	switch fireDirection {
 	case DirectionUp:
 		for i := tank.Pos.Y - 1; i >= 0; i-- {
 			if terain.Get(tank.Pos.X, i) == 1 {
-				return int(math.Ceil(float64(cost) / float64(bulletSpeed)))
+				return cost
 			}
 			cost += 1
 		}
 	case DirectionLeft:
 		for i := tank.Pos.X - 1; i >= 0; i-- {
 			if terain.Get(i, tank.Pos.Y) == 1 {
-				return int(math.Ceil(float64(cost) / float64(bulletSpeed)))
+				return cost
 			}
 			cost += 1
 		}
 	case DirectionDown:
 		for i := tank.Pos.Y + 1; i < terain.Height; i++ {
 			if terain.Get(tank.Pos.X, i) == 1 {
-				return int(math.Ceil(float64(cost) / float64(bulletSpeed)))
+				return cost
 			}
 			cost += 1
 		}
 	case DirectionRight:
 		for i := tank.Pos.X + 1; i < terain.Width; i++ {
 			if terain.Get(i, tank.Pos.Y) == 1 {
-				return int(math.Ceil(float64(cost) / float64(bulletSpeed)))
+				return cost
 			}
 			cost += 1
 		}
 	}
 	return 0
+}
+
+func directionConvert(fireDirection int) int {
+	realDirection := 0
+	switch fireDirection {
+	case QUADRANT_U:
+		realDirection = DirectionUp
+	case QUADRANT_L:
+		realDirection = DirectionLeft
+	case QUADRANT_D:
+		realDirection = DirectionDown
+	case QUADRANT_R:
+		realDirection = DirectionRight
+	}
+	return DirectionUp + ((realDirection - DirectionUp) + (tank.Pos.Direction - DirectionUp) + 4) % 4
 }
 
 func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThreat) (map[string]*RadarFireAll) {
@@ -101,24 +182,46 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 			faith := float64(0)
 			sin := float64(0)
 			cost := 0
+
+			// 敌方不在火线，但在火线两侧
+			if len(enemyThreat.Distances) == 2 {
+				verticalDist := 0
+				for fireDirection, dist := range enemyThreat {
+					if dist == 1 {
+						realDirection := directionConvert(fireDirection)
+
+						faith = calcFaith(verticalDist, state.Params.BulletSpeed, state.Params.TankSpeed, false, realDirection, enemyThreat.Enemy, tank.Pos)
+						sin = calcSin(tank, state.MyTank, realDirection, state.Params.BulletSpeed)
+						cost = calcCost(tank, realDirection, state.Params.BulletSpeed, state.Terain)
+
+						if cost < dist {
+							faith = float64(0)
+							sin = float64(0)
+						}
+
+						cost = int(math.Ceil(float64(cost) / float64(state.Params.BulletSpeed)))					
+
+					} else {
+						verticalDist = dist
+					}
+				}
+			}
+
+			// 敌方在火线
 			if len(enemyThreat.Distances) == 1 {
 				for fireDirection, dist := range enemyThreat.Distances {
-					realDirection := 0
-					switch fireDirection {
-					case QUADRANT_U:
-						realDirection = DirectionUp
-					case QUADRANT_L:
-						realDirection = DirectionLeft
-					case QUADRANT_D:
-						realDirection = DirectionDown
-					case QUADRANT_R:
-						realDirection = DirectionRight
-					}
-					realDirection = DirectionUp + ((realDirection - DirectionUp) + (tank.Pos.Direction - DirectionUp) + 4) % 4
+					realDirection := directionConvert(fireDirection)
 
-					faith = calcFaith(dist, state.Params.BulletSpeed)
+					faith = calcFaith(dist, state.Params.BulletSpeed, state.Params.TankSpeed, true, enemyThreat.Enemy.Direction, realDirection, enemyThreat.Enemy, tank.Pos)
 					sin = calcSin(tank, state.MyTank, realDirection, state.Params.BulletSpeed)
-					cost = calcCost(tank, realDirection, state.Params.BulletSpeed, state.Terain) 
+					cost = calcCost(tank, realDirection, state.Params.BulletSpeed, state.Terain)
+
+					if cost < dist {
+						faith = float64(0)
+						sin = float64(0)
+					}
+
+					cost = int(math.Ceil(float64(cost) / float64(state.Params.BulletSpeed)))
 
 					switch realDirection {
 					case DirectionUp:
