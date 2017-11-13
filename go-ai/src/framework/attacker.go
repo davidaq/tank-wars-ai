@@ -5,7 +5,7 @@
 package framework
 
 import (
-	"fmt";
+	// "fmt";
 	"math";
 )
 
@@ -224,8 +224,6 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 						faith = float64(0)
 						sin = float64(0)
 					}
-
-					fmt.Println("cost: ", cost, "dist: ", dist)
 					
 					cost = int(math.Ceil(float64(cost) / float64(state.Params.BulletSpeed)))
 
