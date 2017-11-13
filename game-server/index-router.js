@@ -98,7 +98,12 @@ router.get('/game/:id/match/:side', (req, res) => {
 // emit command and receive results
 router.post('/game/:id/match/:side', (req, res) => {
   req.pipe(concat(buffer => {
-    const moves = JSON.parse(buffer);
+    let moves;
+    try {
+      moves = JSON.parse(buffer);
+    } catch (err) {
+      moves = {};
+    }
     gameList.clientMove(req.params.id, req.params.side, moves, state => {
       if (!state) {
         res.writeHead(404);
