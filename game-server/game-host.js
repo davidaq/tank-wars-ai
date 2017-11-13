@@ -79,9 +79,13 @@ class GameHost extends EventEmitter {
       this.redFlag = 0;
       this.blueFlag = 0;
       this.random = this.StaticMap ? new Random(this.id) : new Random(this.roundId);
+      console.info('setup terain');
       this.setupTerrain();
+      console.info('setup tank');
       this.spawnTank();
+      console.info('calc first time state');
       yield* this.calcState();
+      console.info('call player setup');
       yield this.callApi('setup');
       let i = 0;
       for (; i < this.MaxMoves; i++) {
@@ -89,18 +93,21 @@ class GameHost extends EventEmitter {
         if (this.blueTank.length === 0 || this.redTank.length === 0) {
           break;
         }
+        console.info('call player move');
         yield this.callApi('move');
         this.blueEvents = [];
         this.redEvents = [];
+        console.info('calc state');
         yield* this.calcState();
         if (i % 10 === 0) {
-          console.log('GAME', this.roundId, i, {
+          console.info('GAME', this.roundId, i, {
             blueTank: this.blueTank.length,
             redTank: this.redTank.length,
           });
         }
         this.emit('state');
       }
+      console.info('round end');
       const fwriter = fs.createWriteStream(path.join(__dirname, 'db', this.roundId + '.json.gz'));
       const writer = zlib.createGzip();
       writer.pipe(fwriter);
@@ -188,23 +195,17 @@ class GameHost extends EventEmitter {
     const tankW = Math.ceil(Math.sqrt(this.InitTank));
     let M = 0;
     const maxM = Math.min(this.MapWidth, this.MapHeight);
-    while (M < maxM) {
+    while (M < maxM && this.blueTank.length < this.InitTank) {
       for (let i = 0; i < M; i++) {
         this.assignTank(i, M);
         this.assignTank(M, i);
-        if (this.blueTank.length >= this.InitTank) {
-          return;
-        }
       }
       this.assignTank(M, M);
       M++;
-      if (this.blueTank.length >= this.InitTank) {
-        return;
-      }
     }
   }
   assignTank (x, y) {
-    if (this.terain[this.MapHeight - y - 1][x] !== 0 || this.terain[y][this.MapWidth - x - 1] !== 0) {
+    if (this.terain[this.MapHeight - y - 1][x] !== 0 || this.terain[y][this.MapWidth - x - 1] !== 0 || this.blueTank.length >= this.InitTank) {
       return false;
     }
     this.blueTank.push({ bullet: '', hp: this.TankHP, color: 'blue', x, y: this.MapHeight - y - 1, direction: 'down', id: shortid.generate() });
