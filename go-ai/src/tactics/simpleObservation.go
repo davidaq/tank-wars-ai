@@ -15,10 +15,10 @@ type Observation struct {
     CurState     *f.GameState
     HasFlag      bool
     Flag         Flag
-	Kps          []f.Position  // 位置 提前分析地图
-	Fcnt, Scnt, Kcnt int     // 各类角色分配数量
-	// Forests      []Forest    //
-    // StartSteps, EndSteps   int
+	Kps          []f.Position  // killer的苟点（提前分析地图）
+    FlagKps      []f.Position  // 旗手的苟点（提前分析地图）
+	Fcnt, Scnt, Kcnt int       // 各类角色分配数量
+	// Forests      []Forest   //
 }
 
 type Flag struct {
@@ -48,17 +48,17 @@ func NewObservation(state *f.GameState) (obs *Observation) {
 // 必须每回合都调用，因为记录 steps
 func (o *Observation) makeObservation(state *f.GameState) {
     o.CurSteps += 1
+    o.CurState  = state
 	o.observeFlag(state)
     fmt.Printf("CurSteps: %+v\n", o.CurSteps)
 }
 
 func (o *Observation) observeFlag(state *f.GameState) {
     // TODO 判断条件暂时不明确，暂时当做始终有旗
-	// if state.FlagPos == (f.Position{}) {
-	// 	o.HasFlag = false
-	// 	return
-	// }
-    // 始终有旗
+    if false {
+        o.HasFlag = false
+        return
+    }
 	o.HasFlag = true
 	o.Flag = Flag { Pos: f.Position{ X: state.Params.FlagX, Y:state.Params.FlagY }, Exist: state.FlagWait == 0, Occupied: false }
 	for _, tank := range state.MyTank {
@@ -73,28 +73,31 @@ func (o *Observation) observeFlag(state *f.GameState) {
 			o.Flag.EmyTank  = tank
 		}
 	}
-    fmt.Printf("obs.Flag: %+v\n", o.Flag)
+    // fmt.Printf("obs.Flag: %+v\n", o.Flag)
+}
+
+
+// 观察苟点
+func (o *Observation) observeKps(state *f.GameState) {
+    o.FlagKps = []f.Position{}
+    o.FlagKps = append(o.Kps, f.Position { X:9, Y:6})
+
+    o.Kps = []f.Position{}
+	o.Kps = append(o.Kps, f.Position { X:8, Y:6})
+	// o.Kps = append(o.Kps, f.Position { X:6, Y:6})
+    // o.Kps = append(o.Kps, f.Position { X:15,  Y:17})
 }
 
 // 分配角色
 func (o *Observation) assignRole(state *f.GameState) {
-    // 分配角色，有旗就分配一个旗手
     if o.HasFlag {
-        o.Fcnt = 2
+        o.Fcnt = 1
     } else {
         o.Fcnt = 0
     }
-    o.Scnt = 0
+    o.Scnt = len(o.Kps)
     // o.Scnt = int(len(state.MyTank) / 2)
     o.Kcnt = len(state.MyTank) - o.Scnt - o.Fcnt
-}
-
-// 观察苟点
-func (o *Observation) observeKps(state *f.GameState) {
-	o.Kps = []f.Position{}
-	o.Kps = append(o.Kps, f.Position { X:8,   Y:6})
-	// o.Kps = append(o.Kps, f.Position { X:10,  Y:12})
-    o.Kps = append(o.Kps, f.Position { X:15,  Y:17})
 }
 
 // func (o *Observation) observeForest(state *f.GameState) {

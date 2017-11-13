@@ -36,7 +36,7 @@ package tactics
 
 import (
 	f "framework"
-	"fmt"
+	// "fmt"
 )
 
 type Simple struct {
@@ -86,7 +86,11 @@ func (s *Simple) Init(state *f.GameState) {
 
 // 制定整体计划
 func (s *Simple) Plan(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
-    // 分析局势，输出 mode
+    // 清空上一步的 objective
+    for tankid := range objective {
+        delete(objective, tankid)
+    }
+    // 分析局势
     s.makeObservation(state)
 
     // 设定模式
@@ -100,7 +104,7 @@ func (s *Simple) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
     s.snipers.Plan(state, objective)
     s.killers.Plan(state, objective)
 
-	fmt.Printf("objective: %+v\n", objective)
+	// fmt.Printf("after objs: %+v\n", objective)
 }
 
 func (self *Simple) End(state *f.GameState) {
@@ -131,6 +135,7 @@ func (s *Simple) makeObservation(state *f.GameState) {
 // }
 
 // 检查雷达输出结果，决定躲避 or 开火
+// TODO 根据hp判断躲避优先还是开火优先
 func (s *Simple) checkRadar(radar *f.RadarResult, objs map[string]f.Objective) {
 	var mrf *f.RadarFire
 	var rfs []*f.RadarFire
@@ -157,5 +162,5 @@ func (s *Simple) checkRadar(radar *f.RadarResult, objs map[string]f.Objective) {
 			}
 		}
 	}
-    // fmt.Printf("checkRadar objs len: %+v\n", objs)
+    // fmt.Printf("checkRadar objs: %+v\n", objs)
 }

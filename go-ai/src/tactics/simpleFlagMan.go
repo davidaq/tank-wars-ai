@@ -2,6 +2,7 @@ package tactics
 
 import (
 	f "framework"
+    // "fmt"
 )
 
 type SimpleFlagMan struct {
@@ -43,8 +44,10 @@ func (s *SimpleFlagMan) occupyFlag(tanks []f.Tank, objs map[string]f.Objective) 
     }
     // 其余回到苟点
     if len(tanks) > 0 {
-        s.policy.Dispatch(tanks, s.obs.Kps[0:len(tanks)], objs)
-        // s.policy.Defend(s.obs.Flag.Pos, tanks, s.obs.CurState.Params.TankSpeed, objs)
+        ftanks := s.policy.Dispatch(tanks, s.obs.FlagKps[0:len(tanks)], objs)
+        for _, ftank := range ftanks {
+            objs[ftank.Id] = f.Objective{ Action: f.ActionFireDown}
+        }
     }
 }
 

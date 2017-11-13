@@ -27,7 +27,6 @@ func NewPlayer(tactics Tactics) *Player {
 }
 
 func (self *Player) Play(state *GameState, absTurn bool) map[string]int {
-	// DELETE
 	start := time.Now()
 
 	if !self.inited {
@@ -91,9 +90,8 @@ func (self *Player) Play(state *GameState, absTurn bool) map[string]int {
 			}
 		}
 	}
-	// DELETE
 	elapsed := time.Since(start)
-	fmt.Printf("Play function took %s", elapsed)
+	fmt.Println("Play function took ", elapsed)
 	return movement
 }
 

@@ -31,11 +31,14 @@ func (s *SimpleSniper) Plan(state *f.GameState, objs map[string]f.Objective){
         }
 	}
 	if len(tanks) > 0 {
-		s.Hide(tanks, objs)
+		s.HideAndFire(tanks, objs)
 	}
 }
 
-func (s *SimpleSniper) Hide(tanks []f.Tank, objs map[string]f.Objective) {
-	arrPos := SortByPos(s.obs.Flag.Pos, s.obs.Kps)
-	s.policy.Dispatch(tanks, arrPos[0:len(tanks)], objs)
+func (s *SimpleSniper) HideAndFire(tanks []f.Tank, objs map[string]f.Objective) {
+	arrPos := SortByPos(s.obs.Flag.Pos, s.obs.Kps[0:len(tanks)])
+	ftanks := s.policy.Dispatch(tanks, arrPos[0:len(tanks)], objs)
+    for _, ftank := range ftanks {
+        objs[ftank.Id] = f.Objective{ Action: f.ActionFireDown}
+    }
 }
