@@ -1,10 +1,9 @@
+// 各类战术动作
 package tactics
 
 import (
 	f "framework"
 )
-
-// 各类战术动作
 
 type SimplePolicy struct {
 
@@ -20,10 +19,10 @@ func (p *SimplePolicy) Occupy(pos f.Position, tank f.Tank, objs map[string]f.Obj
 }
 
 // 拱卫
-func (p *SimplePolicy) Defend(pos f.Position, tanks []f.Tank, tspeed int, objs map[string]f.Objective){
-    positions := FindNearByPos(pos, len(tanks), tspeed)
-	p.Dispatch(tanks, positions, objs)
-}
+// func (p *SimplePolicy) Defend(pos f.Position, tanks []f.Tank, tspeed int, objs map[string]f.Objective){
+//     positions := FindNearByPos(pos, len(tanks), tspeed)
+// 	p.Dispatch(tanks, positions, objs)
+// }
 
 // 开火后占领（靠策略）
 // func (p *SimplePolicy) FireAndOccupy(pos Position, tanks []f.Tank, objs *map[string]f.Objective){
@@ -39,7 +38,7 @@ func (p *SimplePolicy) Defend(pos f.Position, tanks []f.Tank, tspeed int, objs m
 
 // 巡查某个位置附近的坦克
 func (p *SimplePolicy) Patrol(pos f.Position, tanks []f.Tank, emytanks []f.Tank,  objs map[string]f.Objective) {
-	var emypos []f.Position
+	emypos := make([]f.Position, len(emytanks))
 	for i, emytank := range emytanks {
 		emypos[i] = emytank.Pos
 	}

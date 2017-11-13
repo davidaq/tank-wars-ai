@@ -35,7 +35,6 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 				if enemyPos.X == ox && enemyPos.Y > oy && enemyPos.Y < fy {
 					return float64(0)
 				} 
-
 				return float64(1)
 			}
 		case DirectionLeft:
@@ -96,9 +95,9 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 			// 坦克下回合走不到火线上
 			if int(math.Abs(float64(tankPos.X - enemyPos.X))) != tankSpeed {
 				return float64(0)
-			}			
+			}
 
-			// 敌方坦克在火线左侧，朝向火线			
+			// 敌方坦克在火线左侧，朝向火线
 			if tankPos.X > enemyPos.X && enemyPos.Direction == DirectionRight {
 				return faith - 0.15
 			}
@@ -109,14 +108,14 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 			// 敌方坦克朝向与火线相反或不朝向火线
 			return float64(0)
 		}
-		
+
 		// 开火方向是左或右
 		if fireDirection == DirectionLeft || fireDirection == DirectionRight {
 
 			// 坦克下回合走不到火线上
 			if int(math.Abs(float64(tankPos.Y - enemyPos.Y))) != tankSpeed {
 				return float64(0)
-			}	
+			}
 
 			// 敌方坦克在火线上面，朝向火线
 			if tankPos.Y > enemyPos.Y && enemyPos.Direction == DirectionDown {
@@ -134,7 +133,7 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 	return faith
 }
 
-func calcCost (tank Tank, fireDirection int, bulletSpeed int, terain Terain) int {
+func calcCost (tank Tank, fireDirection int, bulletSpeed int, terain *Terain) int {
 	cost := 0
 	switch fireDirection {
 	case DirectionUp:
@@ -245,7 +244,7 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 						faith = float64(0)
 						sin = float64(0)
 					}
-					
+
 					cost = int(math.Ceil(float64(cost) / float64(state.Params.BulletSpeed)))
 
 					fmt.Println("fireline: faith: ", faith, ", sin: ", sin, ", cost: ", cost)
