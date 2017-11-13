@@ -232,6 +232,14 @@ class GameHost extends EventEmitter {
       blueFlag: this.blueFlag,
       redFlag: this.redFlag,
     });
+    for (let i = 0; i < this.BulletSpeed; i++) {
+      this.calcStateMoveBullet(scene, this.blueBullet);
+      this.calcStateMoveBullet(scene, this.redBullet);
+      this.history.push(clone({
+        blueBullet: this.blueBullet,
+        redBullet: this.redBullet,
+      }));
+    }
     this.calcStateMoveTank(scene, 'blue', [], [], false, true);
     this.calcStateMoveTank(scene, 'red', [], [], false, true);
     this.history.push(clone({
@@ -244,14 +252,6 @@ class GameHost extends EventEmitter {
       blueBullet: this.blueBullet,
       redBullet: this.redBullet,
     }));
-    for (let i = 0; i < this.BulletSpeed; i++) {
-      this.calcStateMoveBullet(scene, this.blueBullet);
-      this.calcStateMoveBullet(scene, this.redBullet);
-      this.history.push(clone({
-        blueBullet: this.blueBullet,
-        redBullet: this.redBullet,
-      }));
-    }
     const bullets = {};
     this.blueBullet.forEach((bullet, i) => {
       const k = `${bullet.x},${bullet.y}`;

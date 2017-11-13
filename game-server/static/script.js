@@ -281,11 +281,11 @@ async function setupReplay () {
     };
     for (let j = 0; j < bulletSpeed; j++) {
       const state = history[hi++];
-      state.blueBullet.forEach(setObj('bullet', 'blue'));
-      state.redBullet.forEach(setObj('bullet', 'red'));
-      if (j === 0) {
+      if (j + 1 === bulletSpeed) {
         await new Promise(cb => setTimeout(cb, 30));
       }
+      state.blueBullet.forEach(setObj('bullet', 'blue'));
+      state.redBullet.forEach(setObj('bullet', 'red'));
     }
     for (let j = 0; j < tankSpeed; j++) {
       const state = history[hi++];
