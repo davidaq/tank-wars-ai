@@ -22,7 +22,7 @@ func main() {
 	var state *f.GameState = setup(host, gameid, side)
 	i := 0
 	for !state.Ended {
-		state = act(host, gameid, side, player.Play(state))
+		state = act(host, gameid, side, player.Play(state, false))
 		i++
 		fmt.Print(i, "\tmy:", len(state.MyTank), "\tenemy:", len(state.EnemyTank), "\t\t\r")
 	}

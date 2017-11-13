@@ -57,7 +57,7 @@ func calcFaith (distance, bulletSpeed int) float64 {
 	return float64(0)
 }
 
-func calcCost (tank Tank, fireDirection int, bulletSpeed int, terain Terain) int {
+func calcCost (tank Tank, fireDirection int, bulletSpeed int, terain *Terain) int {
 	cost := 1
 	switch fireDirection {
 	case DirectionUp:

@@ -55,7 +55,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 				if from.X != to.X || from.Y != to.Y {
 					if !hasCache || cache.target.X != to.X || cache.target.Y != to.Y {
 						cache = &PathCache {
-							path: self.path(self.astar, from, to, state.Params.TankSpeed, &state.Terain),
+							path: self.path(self.astar, from, to, state.Params.TankSpeed, state.Terain),
 							target: to,
 						}
 						hasCache = true
@@ -79,7 +79,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 						}
 					}
 					if len(cache.path) == 0 {
-						cache.path = self.path(self.astar, from, to, state.Params.TankSpeed, &state.Terain)
+						cache.path = self.path(self.astar, from, to, state.Params.TankSpeed, state.Terain)
 					}
 					if len(cache.path) == 0 {
 						nextPoint = to

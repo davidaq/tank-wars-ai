@@ -25,7 +25,7 @@ func NewPlayer(tactics Tactics) *Player {
 	return inst
 }
 
-func (self *Player) Play(state *GameState) map[string]int {
+func (self *Player) Play(state *GameState, absTurn bool) map[string]int {
 	if !self.inited {
 		self.inited = true
 		self.tactics.Init(state)
@@ -65,6 +65,16 @@ func (self *Player) Play(state *GameState) map[string]int {
 		action, _ := movement[tankId]
 		if action == ActionMove {
 			movement[tankId] = ActionStay
+		}
+	}
+	if absTurn {
+		for _, tankId := range noForward {
+			action, _ := movement[tankId]
+			switch action {
+			case ActionLeft:
+			case ActionRight:
+			case ActionBack:
+			}
 		}
 	}
 	return movement
