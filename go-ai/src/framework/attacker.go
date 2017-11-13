@@ -77,7 +77,7 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 		}
 
 		// 敌方朝向和开火方向垂直，且在火线上
-		return faith / 2
+		return faith / 3
 	} else {
 		// 敌方不在火线，开火方向是上或下
 		if fireDirection == DirectionUp || fireDirection == DirectionDown {
