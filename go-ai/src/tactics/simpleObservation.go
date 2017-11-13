@@ -3,6 +3,7 @@ package tactics
 
 import (
 	f "framework"
+    // "fmt"
 )
 
 type Observation struct {
@@ -34,10 +35,8 @@ func NewObservation(state *f.GameState) (obs *Observation) {
 	// 观察苟点
 	obs.observeKps(state)
 
-
 	// 观察战旗
 	obs.observeFlag(state)
-
 
 	// 分配角色，有旗就分配一个旗手
     if obs.HasFlag {
@@ -56,13 +55,13 @@ func (o *Observation) makeObservation(state *f.GameState) {
 }
 
 func (o *Observation) observeFlag(state *f.GameState) {
-	if state.FlagPos == (f.Position{}) {
-		o.HasFlag = false
-		return
-	}
-
+    // TODO 判断条件暂时不明确，暂时当做始终有旗
+	// if state.FlagPos == (f.Position{}) {
+	// 	o.HasFlag = false
+	// 	return
+	// }
 	o.HasFlag = true
-	o.Flag = Flag { Pos: state.FlagPos, Next: state.FlagWait, Occupied: false }
+	o.Flag = Flag { Pos: f.Position{X:state.Params.FlagX, Y:state.Params.FlagY}, Next: state.FlagWait, Occupied: false }
 	for _, tank := range state.MyTank {
 		if tank.Pos.X == o.Flag.Pos.X && tank.Pos.Y == o.Flag.Pos.Y {
 			o.Flag.Occupied = true
@@ -75,7 +74,9 @@ func (o *Observation) observeFlag(state *f.GameState) {
 			o.Flag.EmyTank  = tank
 		}
 	}
+    // fmt.Printf("obs.Flag: %+v\n", o.Flag)
 }
+
 // 观察苟点
 func (o *Observation) observeKps(state *f.GameState) {
 	o.Kps = []f.Position{}

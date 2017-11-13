@@ -35,7 +35,9 @@ func (s *SimpleFlagMan) occupyFlag(tanks []f.Tank, objs map[string]f.Objective) 
 	tanks = tanks[1:]
 
     // 其余坦克拱卫周围
-    s.policy.Defend(s.obs.Flag.Pos, tanks, s.obs.CurState.Params.TankSpeed, objs)
+    if len(tanks) > 0 {
+        s.policy.Defend(s.obs.Flag.Pos, tanks, s.obs.CurState.Params.TankSpeed, objs)
+    }
 }
 
 // 追击旗点坦克
