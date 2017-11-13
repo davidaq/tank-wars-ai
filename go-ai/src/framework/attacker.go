@@ -58,6 +58,8 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 		faith = float64(1)
 	} else if verticalDistance <= bulletSpeed * 2 {
 		faith = 0.5
+	} else {
+		return faith
 	}
 
 	if fireLine {
@@ -95,7 +97,7 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 			if tankPos.X < enemyPos.X && enemyPos.Direction == DirectionLeft {
 				return faith - 0.15
 			}
-			// 敌方坦克朝向与火线相反
+			// 敌方坦克朝向与火线相反或不朝向火线
 			return float64(0)
 		}
 		
@@ -115,7 +117,7 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 			if tankPos.Y < enemyPos.Y && enemyPos.Direction == DirectionUp {
 				return faith - 0.15
 			}
-			// 敌方坦克朝向与火线相反
+			// 敌方坦克朝向与火线相反或不朝向火线
 			return float64(0)
 		}
 	}
