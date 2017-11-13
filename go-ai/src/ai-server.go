@@ -167,34 +167,38 @@ func (self *PlayerServer) LatestState(raw *player.GameState) (err error) {
 				order := &player.Order {
 					TankId: int32(numId),
 				}
-				switch (action) {
-				case f.ActionMove:
-					order.Order = "move"
-				case f.ActionTurnUp:
-					order.Order = "turnTo"
-					order.Dir = player.Direction_UP
-				case f.ActionTurnLeft:
-					order.Order = "fire"
-					order.Dir = player.Direction_LEFT
-				case f.ActionTurnDown:
-					order.Order = "fire"
-					order.Dir = player.Direction_DOWN
-				case f.ActionTurnRight:
-					order.Order = "fire"
-					order.Dir = player.Direction_RIGHT
-				case f.ActionFireUp:
-					order.Order = "fire"
-					order.Dir = player.Direction_UP
-				case f.ActionFireLeft:
-					order.Order = "fire"
-					order.Dir = player.Direction_LEFT
-				case f.ActionFireDown:
-					order.Order = "fire"
-					order.Dir = player.Direction_DOWN
-				case f.ActionFireRight:
-					order.Order = "fire"
-					order.Dir = player.Direction_RIGHT
-				default:
+				if self.myTank[order.TankId] {
+					switch (action) {
+					case f.ActionMove:
+						order.Order = "move"
+					case f.ActionTurnUp:
+						order.Order = "turnTo"
+						order.Dir = player.Direction_UP
+					case f.ActionTurnLeft:
+						order.Order = "fire"
+						order.Dir = player.Direction_LEFT
+					case f.ActionTurnDown:
+						order.Order = "fire"
+						order.Dir = player.Direction_DOWN
+					case f.ActionTurnRight:
+						order.Order = "fire"
+						order.Dir = player.Direction_RIGHT
+					case f.ActionFireUp:
+						order.Order = "fire"
+						order.Dir = player.Direction_UP
+					case f.ActionFireLeft:
+						order.Order = "fire"
+						order.Dir = player.Direction_LEFT
+					case f.ActionFireDown:
+						order.Order = "fire"
+						order.Dir = player.Direction_DOWN
+					case f.ActionFireRight:
+						order.Order = "fire"
+						order.Dir = player.Direction_RIGHT
+					default:
+						order = nil
+					}
+				} else {
 					order = nil
 				}
 				if order != nil {
