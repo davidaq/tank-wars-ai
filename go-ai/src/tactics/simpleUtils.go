@@ -11,10 +11,11 @@ import (
 // 暂时写死
 func FindNearByPos(pos f.Position, n int, tspeed int) ([]f.Position){
 	var arrPos []f.Position
-	arrPos = append(arrPos, f.Position{ X:6,Y:6})
-	arrPos = append(arrPos, f.Position{ X:6,Y:12})
+	arrPos = append(arrPos, f.Position{ X:6, Y:6})
+	arrPos = append(arrPos, f.Position{ X:6, Y:12})
 	arrPos = append(arrPos, f.Position{ X:12,Y:12})
 	arrPos = append(arrPos, f.Position{ X:12,Y:6})
+    arrPos = append(arrPos, f.Position{ X:5,Y:9})
 	return arrPos[0:n]
 }
 

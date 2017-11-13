@@ -36,7 +36,7 @@ package tactics
 
 import (
 	f "framework"
-	"fmt"
+	// "fmt"
 )
 
 type Simple struct {
@@ -67,11 +67,11 @@ func (s *Simple) NewKiller(tanks []f.Tank) {
     s.killers.Init()
 }
 
-// 分配角色
+// 分配角色（TODO 合适时机应触发重分配）
 func (s *Simple) initRole(state *f.GameState, fcnt int, scnt int, kcnt int) {
     s.NewFlagMan(state.MyTank[0:fcnt])          // 应选血厚、离Flag最近的坦克
     s.NewSniper(state.MyTank[fcnt:fcnt + scnt]) // 应选血薄、离草丛近的坦克
-    s.NewKiller(state.MyTank[fcnt + scnt:])      // 剩余都作为 killer
+    s.NewKiller(state.MyTank[fcnt + scnt:])     // 剩余都作为 killer
 }
 
 func (s *Simple) Init(state *f.GameState) {
@@ -86,6 +86,8 @@ func (s *Simple) Init(state *f.GameState) {
 
 // 制定整体计划
 func (s *Simple) Plan(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
+    // fmt.Println("------------------------")
+
     // 分析局势，输出 mode
     s.makeObservation(state)
 
@@ -100,7 +102,7 @@ func (s *Simple) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
     s.snipers.Plan(state, objective)
     s.killers.Plan(state, objective)
 
-	fmt.Println("%+v", objective)
+	// fmt.Printf("objective: %+v\n", objective)
 }
 
 func (self *Simple) End(state *f.GameState) {
@@ -111,7 +113,7 @@ func (s *Simple) makeObservation(state *f.GameState) {
     s.obs.makeObservation(state)
 }
 
-// 设定模式
+// 设定模式(暂时用不上)
 // func (s *Simple) setMode() {
 //     if s.obs.CurSteps < s.obs.StartSteps {
 //         s.mode = "flyingstart"
@@ -135,9 +137,13 @@ func (s *Simple) checkRadar(radar *f.RadarResult, objs map[string]f.Objective) {
 	var mrf *f.RadarFire
 	var rfs []*f.RadarFire
 	for _, tank := range s.obs.CurState.MyTank {
+        // fmt.Printf("radarDodge: %+v\n", radar.Dodge[tank.Id])
+        // fmt.Printf("radarFire: %+v\n", radar.Fire[tank.Id])
+        // 优先躲避
 		if radar.Dodge[tank.Id].Threat >= 0.7 {
 			objs[tank.Id] = f.Objective{ Action: f.ActionTravel, Target: radar.Dodge[tank.Id].SafePos }
-		} else {
+        // 能否开火
+        } else {
 			mrf = nil
 			rfs = []*f.RadarFire{ radar.Fire[tank.Id].Up, radar.Fire[tank.Id].Down, radar.Fire[tank.Id].Left, radar.Fire[tank.Id].Right }
 			for _, rf := range rfs {
