@@ -1,12 +1,11 @@
 cd `dirname $0`
 export GOPATH=`pwd`
 
-export HOST=ml.niven.cn:8777
-export GAME=ByLYcKBJz
+export HOST=vikki.wang:8777
+export GAME=B1cuWR8JG
 export SIDE=red
-
-#export TACTICS=random
-export TACTICS=proxy PROXY_PORT=8776
+export TACTICS=simple
+# export TACTICS=proxy PROXY_PORT=8776
 
 go run src/ai-client.go
 

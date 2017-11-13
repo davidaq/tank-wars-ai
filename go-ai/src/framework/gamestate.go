@@ -2,18 +2,16 @@ package framework
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 type GameState struct {
 	Raw []byte
 	Ended bool
-	Params Params
+	Params *Params
 
 	Events []Event
-	Terain Terain
+	Terain *Terain
 	FlagWait int
-	FlagPos Position
 	MyTank, EnemyTank []Tank
 	MyBullet, EnemyBullet []Bullet
 	MyFlag, EnemyFlag int
@@ -24,7 +22,8 @@ type Params struct {
 	TankScore, FlagScore int
 	FlagTime int
 	FlagX, FlagY int
-	// Timeout int
+	MaxRound int
+	Timeout int
 }
 
 type Terain struct {
@@ -148,7 +147,7 @@ func ParseGameState (bytes []byte) (*GameState, error) {
 	}
 	ret := &GameState {
 		Raw: bytes,
-		Terain: Terain {
+		Terain: &Terain {
 			Width: 0,
 			Height: 0,
 			Data: nil,
@@ -159,7 +158,7 @@ func ParseGameState (bytes []byte) (*GameState, error) {
 		EnemyBullet: nil,
 		MyFlag: 0,
 		EnemyFlag: 0,
-		Params: Params {
+		Params: &Params {
 			TankSpeed: 0,
 			BulletSpeed: 0,
 			TankScore: 0,
@@ -173,7 +172,7 @@ func ParseGameState (bytes []byte) (*GameState, error) {
 		Ended: dat["ended"].(bool),
 	}
 	// parse terain
-	fmt.Println(dat["terain"])
+	//fmt.Println(dat["terain"])
 	for _, iline := range dat["terain"].([]interface{}) {
 		line := iline.([]interface{})
 		ret.Terain.Width = len(line)
@@ -191,6 +190,7 @@ func ParseGameState (bytes []byte) (*GameState, error) {
 	parseBullet(dat["enemyBullet"].([]interface{}), &ret.EnemyBullet)
 	ret.MyFlag = int(dat["myFlag"].(float64))
 	ret.EnemyFlag = int(dat["enemyFlag"].(float64))
+	ret.FlagWait = int(dat["flagWait"].(float64))
 	// parse params
 	params := dat["params"].(map[string]interface{});
 	ret.Params.TankSpeed = int(params["tankSpeed"].(float64))

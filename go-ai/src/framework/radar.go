@@ -389,11 +389,11 @@ func (self *Radar) convertQuadrant(state *GameState, bulletApproach bool, bullet
 			if len((*enemy)[tank.Id]) > 0 {
 				for k := range (*enemy)[tank.Id] {
 					(*enemy)[tank.Id][k].Quadrant = quadrant[(*enemy)[tank.Id][k].Quadrant]
+					tmpConverted := make(map[int]int)
                     for kds, vds := range (*enemy)[tank.Id][k].Distances {
-                        tmpQuadrantKey := quadrant[kds]
-                        delete((*enemy)[tank.Id][k].Distances, kds)
-                        (*enemy)[tank.Id][k].Distances[tmpQuadrantKey] = vds
+						tmpConverted[quadrant[kds]] = vds
                     }
+					(*enemy)[tank.Id][k].Distances = tmpConverted
 				}
 			}
 		}

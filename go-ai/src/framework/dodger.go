@@ -5,7 +5,6 @@
 package framework
 
 import (
-	"fmt"
 	"math"
     "sort"
 )
@@ -280,16 +279,15 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                 Threat:  finThreat,
                 SafePos: pos,
             }
-            fmt.Println(radarDodge[tankId])
             break
         }
         // 草丛躲避
         // 查找是否有阻挡的己方坦克
     }
+    //fmt.Println("####")
+    //fmt.Println(radarDodge)
+    //fmt.Println("####")
 
-    fmt.Println("####")
-    fmt.Println(radarDodge)
-    fmt.Println("####")
 	return radarDodge
 }
 
@@ -315,12 +313,15 @@ func (self *Radar) convertActionToPosition(state *GameState, tank Tank, action i
         positionRet.X = tank.Pos.X + distance
         positionRet.Y = tank.Pos.Y
     }
+    if action == ActionStay {
+        positionRet.X = tank.Pos.X
+        positionRet.Y = tank.Pos.Y
+    }
 
     // 撞墙、超出地图边界判断
     if state.Terain.Get(positionRet.X, positionRet.Y) == 1{
         return false, Position{}
     }
-
     return true, positionRet
 }
 

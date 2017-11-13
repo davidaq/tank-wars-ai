@@ -22,7 +22,7 @@ func main() {
 	var state *f.GameState = setup(host, gameid, side)
 	i := 0
 	for !state.Ended {
-		state = act(host, gameid, side, player.Play(state))
+		state = act(host, gameid, side, player.Play(state, false))
 		i++
 		fmt.Print(i, "\tmy:", len(state.MyTank), "\tenemy:", len(state.EnemyTank), "\t\t\r")
 	}
@@ -58,10 +58,10 @@ func act(host string, gameid string, side string, move map[string]int) *f.GameSt
 	defer (func() { responded = true })()
 	go (func () {
 		for i := 0; i < 20 && !responded; i++ {
-			time.Sleep(50 * time.Millisecond)	
+			time.Sleep(50 * time.Millisecond)
 		}
 		if !responded {
-			fmt.Println("Game server not responding")	
+			fmt.Println("Game server not responding")
 		}
 	})()
 	send := make(map[string]string)

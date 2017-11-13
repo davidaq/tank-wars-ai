@@ -25,6 +25,10 @@ const (
 	ActionFireRight = iota
 	ActionTravel = iota    						// 仅用作策略的返回
 	ActionTravelWithDodge = iota		 	// 仅用作策略的返回
+	ActionTurnUp = iota								// 仅用于接口交互
+	ActionTurnLeft = iota							// 仅用于接口交互
+	ActionTurnDown = iota							// 仅用于接口交互
+	ActionTurnRight = iota						// 仅用于接口交互
 )
 
 type DiffResult struct {
