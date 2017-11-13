@@ -271,8 +271,8 @@ class GameHost extends EventEmitter {
     for (let i = 0; i < this.TankSpeed; i++) {
       let advances = [];
       const forbid = {};
-      this.calcStateMoveTank(scene, 'blue', advances, forbid, i > 0);
-      this.calcStateMoveTank(scene, 'red', advances, forbid, i > 0);
+      this.calcStateMoveTank(scene, 'blue', advances, forbid, i > 0, false);
+      this.calcStateMoveTank(scene, 'red', advances, forbid, i > 0, false);
       let taken = {};
       const take = (index, val) => {
         if (!taken[index]) {
@@ -418,7 +418,7 @@ class GameHost extends EventEmitter {
           continue;
         }
         const move = myResp[tank.id] || 'stay';
-        let skip = true;
+        let skip = false;
         switch (move) {
           case 'fire':
           case 'fire-up':
