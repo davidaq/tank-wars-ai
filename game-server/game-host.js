@@ -115,7 +115,7 @@ class GameHost extends EventEmitter {
         terain: this.terain,
         history: this.history,
         rounds: i,
-        bulletSpeed: this.BulletSpeed + 1,
+        bulletSpeed: this.BulletSpeed + 2,
         tankSpeed: this.TankSpeed,
       }));
       writer.on('error', err => null);
@@ -234,8 +234,16 @@ class GameHost extends EventEmitter {
     });
     this.calcStateMoveTank(scene, 'blue', [], [], false, true);
     this.calcStateMoveTank(scene, 'red', [], [], false, true);
+    this.history.push(clone({
+      blueBullet: this.blueBullet,
+      redBullet: this.redBullet,
+    }));
     this.calcStateMoveBullet(scene, this.blueBullet, true);
     this.calcStateMoveBullet(scene, this.redBullet, true);
+    this.history.push(clone({
+      blueBullet: this.blueBullet,
+      redBullet: this.redBullet,
+    }));
     for (let i = 0; i < this.BulletSpeed; i++) {
       this.calcStateMoveBullet(scene, this.blueBullet);
       this.calcStateMoveBullet(scene, this.redBullet);
@@ -336,37 +344,23 @@ class GameHost extends EventEmitter {
       });
       this.blueTank.forEach((tank, i) => {
         if (tank) {
-<<<<<<< HEAD
-          const bullet = bullets[`${tank.x},${tank.y}`];
-          if (bullet) {
-            this.hitTank(scene, bullet.set[bullet.i], this.blueTank, i);
-            bullet.set.splice(bullet.i);
-=======
           const bulletList = bullets[`${tank.x},${tank.y}`];
           if (bulletList) {
             for (const bullet of bulletList) {
               this.hitTank(scene, bullet.set[bullet.i], this.blueTank, i);
               bullet.set.splice(bullet.i);
             }
->>>>>>> c5822bc13ef91fab60f5307bce70a02c538b18ae
           }
         }
       });
       this.redTank.forEach((tank, i) => {
         if (tank) {
-<<<<<<< HEAD
-          const bullet = bullets[`${tank.x},${tank.y}`];
-          if (bullet) {
-            this.hitTank(scene, bullet.set[bullet.i], this.redTank, i);
-            bullet.set.splice(bullet.i);
-=======
           const bulletList = bullets[`${tank.x},${tank.y}`];
           if (bulletList) {
             for (const bullet of bulletList) {
               this.hitTank(scene, bullet.set[bullet.i], this.redTank, i);
               bullet.set.splice(bullet.i);
             }
->>>>>>> c5822bc13ef91fab60f5307bce70a02c538b18ae
           }
         }
       });
@@ -405,8 +399,8 @@ class GameHost extends EventEmitter {
         }
       }
     }
-    this.blueTank = this.blueTank.filter(v => v.hp <= 0);
-    this.redTank = this.redTank.filter(v => v.hp <= 0);
+    this.blueTank = this.blueTank.filter(v => v.hp > 0);
+    this.redTank = this.redTank.filter(v => v.hp > 0);
     this.history.push(clone({
       blueBullet: this.blueBullet,
       redBullet: this.redBullet,
