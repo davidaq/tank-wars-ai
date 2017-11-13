@@ -170,12 +170,18 @@ func (self *PlayerServer) LatestState(raw *player.GameState) (err error) {
 				switch (action) {
 				case f.ActionMove:
 					order.Order = "move"
-				case f.ActionLeft:
+				case f.ActionTurnUp:
 					order.Order = "turnTo"
-				case f.ActionRight:
-					order.Order = "turnTo"
-				case f.ActionBack:
-					order.Order = "turnTo"
+					order.Dir = player.Direction_UP
+				case f.ActionTurnLeft:
+					order.Order = "fire"
+					order.Dir = player.Direction_LEFT
+				case f.ActionTurnDown:
+					order.Order = "fire"
+					order.Dir = player.Direction_DOWN
+				case f.ActionTurnRight:
+					order.Order = "fire"
+					order.Dir = player.Direction_RIGHT
 				case f.ActionFireUp:
 					order.Order = "fire"
 					order.Dir = player.Direction_UP
@@ -202,7 +208,8 @@ func (self *PlayerServer) LatestState(raw *player.GameState) (err error) {
 }
 
 func (self *PlayerServer) GetNewOrders() (r []*player.Order, err error) {
-	return nil, nil
+	orders := <- self.play
+	return orders, nil
 }
 
 func main() {
