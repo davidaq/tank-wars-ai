@@ -12,7 +12,6 @@ type GameState struct {
 	Events []Event
 	Terain Terain
 	FlagWait int
-	FlagPos Position
 	MyTank, EnemyTank []Tank
 	MyBullet, EnemyBullet []Bullet
 	MyFlag, EnemyFlag int

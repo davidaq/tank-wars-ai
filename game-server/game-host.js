@@ -241,10 +241,18 @@ class GameHost extends EventEmitter {
     }
     const bullets = {};
     this.blueBullet.forEach((bullet, i) => {
-      bullets[`${bullet.x},${bullet.y}`] = { set: this.blueBullet, i };
+      const k = `${bullet.x},${bullet.y}`;
+      if (!bullets[k]) {
+        bullets[k] = [];
+      }
+      bullets[k].push({ set: this.blueBullet, i });
     });
     this.redBullet.forEach((bullet, i) => {
-      bullets[`${bullet.x},${bullet.y}`] = { set: this.redBullet, i };
+      const k = `${bullet.x},${bullet.y}`;
+      if (!bullets[k]) {
+        bullets[k] = [];
+      }
+      bullets[k].push({ set: this.redBullet, i });
     });
 
     for (let i = 0; i < this.TankSpeed; i++) {
@@ -323,21 +331,23 @@ class GameHost extends EventEmitter {
       });
       this.blueTank.forEach((tank, i) => {
         if (tank) {
-          const bullet = bullets[`${tank.x},${tank.y}`];
-          if (bullet) {
-            console.log('MH');
-            this.hitTank(scene, bullet.set[bullet.i], this.blueTank, i);
-            bullet.set.splice(bullet.i);
+          const bulletList = bullets[`${tank.x},${tank.y}`];
+          if (bulletList) {
+            for (const bullet of bulletList) {
+              this.hitTank(scene, bullet.set[bullet.i], this.blueTank, i);
+              bullet.set.splice(bullet.i);
+            }
           }
         }
       });
       this.redTank.forEach((tank, i) => {
         if (tank) {
-          const bullet = bullets[`${tank.x},${tank.y}`];
-          if (bullet) {
-            console.log('MH');
-            this.hitTank(scene, bullet.set[bullet.i], this.redTank, i);
-            bullet.set.splice(bullet.i);
+          const bulletList = bullets[`${tank.x},${tank.y}`];
+          if (bulletList) {
+            for (const bullet of bulletList) {
+              this.hitTank(scene, bullet.set[bullet.i], this.redTank, i);
+              bullet.set.splice(bullet.i);
+            }
           }
         }
       });
@@ -569,6 +579,10 @@ class GameHost extends EventEmitter {
       }
     }
     scene[bullet.y][bullet.x] = this.terain[bullet.y][bullet.x];
+    const fromTank = this[bullet.color + 'Tank'].filter(v => v && v.id == bullet.from)[0];
+    if (fromTank) {
+      fromTank.bullet = '';
+    }
     this.redEvents.push({
       type: redEventType,
       from: bullet.from,
