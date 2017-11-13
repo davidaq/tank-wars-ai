@@ -1,7 +1,8 @@
 package framework
 
 import (
-	_ "fmt"
+	"fmt"
+    "time"
 )
 
 type Player struct {
@@ -25,7 +26,14 @@ func NewPlayer(tactics Tactics) *Player {
 	return inst
 }
 
+<<<<<<< HEAD
 func (self *Player) Play(state *GameState, absTurn bool) map[string]int {
+=======
+func (self *Player) Play(state *GameState) map[string]int {
+    // DELETE
+    start := time.Now()
+
+>>>>>>> 0163765a8b5908d635fe79f82f3ab57a1b79a787
 	if !self.inited {
 		self.inited = true
 		self.tactics.Init(state)
@@ -77,6 +85,9 @@ func (self *Player) Play(state *GameState, absTurn bool) map[string]int {
 			}
 		}
 	}
+	// DELETE
+	elapsed := time.Since(start)
+	fmt.Printf("Play function took %s", elapsed)
 	return movement
 }
 

@@ -9,15 +9,15 @@ import (
 // x、y 也尽量互不相同（避免阻碍友方攻击）
 // 在可能的情况下应离我方大本营更近
 // 暂时写死
-func FindNearByPos(pos f.Position, n int, tspeed int) ([]f.Position){
-	var arrPos []f.Position
-	arrPos = append(arrPos, f.Position{ X:6, Y:6})
-	arrPos = append(arrPos, f.Position{ X:6, Y:12})
-	arrPos = append(arrPos, f.Position{ X:12,Y:12})
-	arrPos = append(arrPos, f.Position{ X:12,Y:6})
-    arrPos = append(arrPos, f.Position{ X:5,Y:9})
-	return arrPos[0:n]
-}
+// func FindNearByPos(pos f.Position, n int, tspeed int) ([]f.Position){
+// 	var arrPos []f.Position
+// 	arrPos = append(arrPos, f.Position{ X:6, Y:6})
+// 	arrPos = append(arrPos, f.Position{ X:6, Y:12})
+// 	arrPos = append(arrPos, f.Position{ X:12,Y:12})
+// 	arrPos = append(arrPos, f.Position{ X:12,Y:6})
+//     arrPos = append(arrPos, f.Position{ X:5,Y:9})
+// 	return arrPos[0:n]
+// }
 
 // 按离P点距离给一组位置排序
 func SortByPos(p f.Position, ps []f.Position) (arrPos []f.Position) {
