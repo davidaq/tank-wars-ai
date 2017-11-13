@@ -69,7 +69,7 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 			return float64(1)
 		}
 
-		// 敌方朝向和开火方向相同或相反，且在火线上
+		// 敌方朝向和开火方向相同或相反，且在火线上		
 		if enemyPos.Direction == fireDirection || enemyPos.Direction == fireDirection + 2 || enemyPos.Direction == fireDirection - 2  {
 			return faith
 		}
