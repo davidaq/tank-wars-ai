@@ -30,8 +30,11 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 		self.astar = astar.NewAStar(state.Terain.Height, state.Terain.Width)
 		for y := 0; y < state.Terain.Height; y++ {
 			for x := 0; x < state.Terain.Width; x++ {
-				if state.Terain.Get(x, y) == 1 {
+				switch state.Terain.Get(x, y) {
+				case 1:
 					self.astar.FillTile(astar.Point{ Col: x, Row: y }, -1)
+				case 2:
+					self.astar.FillTile(astar.Point{ Col: x, Row: y }, 1)
 				}
 			}
 		}
@@ -40,6 +43,14 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 	waitchan := make(chan bool)
 	var lock sync.Mutex
 	occupy := make(map[Position]bool)
+	a := self.astar.Clone()
+	for _, tank := range state.MyTank {
+		a.FillTile(astar.Point{ Col: tank.Pos.X, Row: tank.Pos.Y }, 8)
+	}
+	for _, tank := range state.EnemyTank {
+		a.FillTile(astar.Point{ Col: tank.Pos.X, Row: tank.Pos.Y }, 8)
+	}
+
 	lock.Lock()
 	for _, tank := range state.MyTank {
 		if target, exists := travel[tank.Id]; exists {
@@ -55,7 +66,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 				if from.X != to.X || from.Y != to.Y {
 					if !hasCache || cache.target.X != to.X || cache.target.Y != to.Y {
 						cache = &PathCache {
-							path: self.path(self.astar, from, to, state.Params.TankSpeed, &state.Terain),
+							path: self.path(a, from, to, state.Params.TankSpeed, &state.Terain),
 							target: to,
 						}
 						hasCache = true
@@ -79,7 +90,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 						}
 					}
 					if len(cache.path) == 0 {
-						cache.path = self.path(self.astar, from, to, state.Params.TankSpeed, &state.Terain)
+						cache.path = self.path(a, from, to, state.Params.TankSpeed, &state.Terain)
 					}
 					if len(cache.path) == 0 {
 						nextPoint = to

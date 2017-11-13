@@ -55,7 +55,8 @@ frame((state, obj) => {
       // y: Math.floor(state.terain.length / 2),
       x: target.x,
       y: target.y,
-      action: 'travel-with-dodge',
+      // action: 'travel-with-dodge',
+      action: 'travel',
     };
   });
 });

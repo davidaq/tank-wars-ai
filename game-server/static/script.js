@@ -283,6 +283,9 @@ async function setupReplay () {
       const state = history[hi++];
       state.blueBullet.forEach(setObj('bullet', 'blue'));
       state.redBullet.forEach(setObj('bullet', 'red'));
+      if (j === 0) {
+        await new Promise(cb => setTimeout(cb, 30));
+      }
     }
     for (let j = 0; j < tankSpeed; j++) {
       const state = history[hi++];

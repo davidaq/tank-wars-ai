@@ -169,6 +169,7 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movele
             if pdirection > 0 && pdirection != cdirection {
                 fill_weight += movelen
             }
+            fill_weight += 1
 
             path_point := &PathPoint{
                 Point:        p,

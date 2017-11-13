@@ -108,7 +108,7 @@ class GameHost extends EventEmitter {
         terain: this.terain,
         history: this.history,
         rounds: i,
-        bulletSpeed: this.BulletSpeed,
+        bulletSpeed: this.BulletSpeed + 1,
         tankSpeed: this.TankSpeed,
       }));
       writer.on('error', err => null);
@@ -231,6 +231,10 @@ class GameHost extends EventEmitter {
       blueFlag: this.blueFlag,
       redFlag: this.redFlag,
     });
+    this.calcStateMoveTank(scene, 'blue', [], [], false, true);
+    this.calcStateMoveTank(scene, 'red', [], [], false, true);
+    this.calcStateMoveBullet(scene, this.blueBullet, true);
+    this.calcStateMoveBullet(scene, this.redBullet, true);
     for (let i = 0; i < this.BulletSpeed; i++) {
       this.calcStateMoveBullet(scene, this.blueBullet);
       this.calcStateMoveBullet(scene, this.redBullet);
@@ -325,7 +329,6 @@ class GameHost extends EventEmitter {
         if (tank) {
           const bullet = bullets[`${tank.x},${tank.y}`];
           if (bullet) {
-            console.log('MH');
             this.hitTank(scene, bullet.set[bullet.i], this.blueTank, i);
             bullet.set.splice(bullet.i);
           }
@@ -335,7 +338,6 @@ class GameHost extends EventEmitter {
         if (tank) {
           const bullet = bullets[`${tank.x},${tank.y}`];
           if (bullet) {
-            console.log('MH');
             this.hitTank(scene, bullet.set[bullet.i], this.redTank, i);
             bullet.set.splice(bullet.i);
           }
@@ -376,8 +378,8 @@ class GameHost extends EventEmitter {
         }
       }
     }
-    this.blueTank = this.blueTank.filter(v => !!v);
-    this.redTank = this.redTank.filter(v => !!v);
+    this.blueTank = this.blueTank.filter(v => v.hp <= 0);
+    this.redTank = this.redTank.filter(v => v.hp <= 0);
     this.history.push(clone({
       blueBullet: this.blueBullet,
       redBullet: this.redBullet,
@@ -385,7 +387,7 @@ class GameHost extends EventEmitter {
       redTank: this.redTank,
     }));
   }
-  calcStateMoveTank (scene, color, advances, forbid, moveOnly) {
+  calcStateMoveTank (scene, color, advances, forbid, moveOnly, fireOnly) {
     const myResp = this[color + 'Resp'] || {};
     const myTank = this[color + 'Tank'];
     try {
@@ -395,6 +397,21 @@ class GameHost extends EventEmitter {
           continue;
         }
         const move = myResp[tank.id] || 'stay';
+        let skip = true;
+        switch (move) {
+          case 'fire':
+          case 'fire-up':
+          case 'fire-left':
+          case 'fire-down':
+          case 'fire-right':
+            skip = !fireOnly;
+            break;
+          default:
+            break;
+        }
+        if (skip) {
+          continue;
+        }
         if (move !== 'move') {
           forbid[`${tank.x},${tank.y}`] = { tank };
           if (moveOnly) {
@@ -498,6 +515,7 @@ class GameHost extends EventEmitter {
                 id: tank.bullet,
                 from: tank.id,
                 color: tank.color,
+                round: this.stepsMoved,
               });
             }
             break;
@@ -507,9 +525,12 @@ class GameHost extends EventEmitter {
       console.error(err.stack);
     }
   }
-  calcStateMoveBullet (scene, myBullet) {
+  calcStateMoveBullet (scene, myBullet, newOnly) {
     for (let i = 0; i < myBullet.length; i++) {
       const bullet = myBullet[i];
+      if (newOnly && bullet.round !== this.stepsMoved) {
+        continue;
+      }
       switch (bullet.direction) {
         case 'up':
           bullet.y--;
@@ -580,9 +601,6 @@ class GameHost extends EventEmitter {
       target: hitTank.id,
     });
     hitTank.hp--;
-    if (hitTank.hp == 0) {
-      tankSet[tankI] = null;
-    }
   }
   getState (side) {
     const ended = this.blueTank.length === 0 || this.redTank.length === 0 || this.stepsMoved + 1 >= this.MaxMoves;
