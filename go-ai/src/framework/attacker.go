@@ -5,7 +5,7 @@
 package framework
 
 import (
-	"fmt";
+	// "fmt";
 	"math";
 )
 
@@ -83,7 +83,7 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 		if fireDirection == DirectionUp || fireDirection == DirectionDown {
 
 			// 坦克下回合走不到火线上
-			if math.Abs(tankPos.X - enemyPos.X) != tankSpeed {
+			if int(math.Abs(float64(tankPos.X - enemyPos.X))) != tankSpeed {
 				return float64(0)
 			}			
 
@@ -103,7 +103,7 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 		if fireDirection == DirectionLeft || fireDirection == DirectionRight {
 
 			// 坦克下回合走不到火线上
-			if math.Abs(tankPos.Y - enemyPos.Y) != tankSpeed {
+			if int(math.Abs(float64(tankPos.Y - enemyPos.Y))) != tankSpeed {
 				return float64(0)
 			}	
 
@@ -158,7 +158,7 @@ func calcCost (tank Tank, fireDirection int, bulletSpeed int, terain Terain) int
 	return 0
 }
 
-func directionConvert(fireDirection int) int {
+func directionConvert(fireDirection int, tank Tank) int {
 	realDirection := 0
 	switch fireDirection {
 	case QUADRANT_U:
@@ -186,9 +186,9 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 			// 敌方不在火线，但在火线两侧
 			if len(enemyThreat.Distances) == 2 {
 				verticalDist := 0
-				for fireDirection, dist := range enemyThreat {
+				for fireDirection, dist := range enemyThreat.Distances {
 					if dist == 1 {
-						realDirection := directionConvert(fireDirection)
+						realDirection := directionConvert(fireDirection, tank)
 
 						faith = calcFaith(verticalDist, state.Params.BulletSpeed, state.Params.TankSpeed, false, realDirection, enemyThreat.Enemy, tank.Pos)
 						sin = calcSin(tank, state.MyTank, realDirection, state.Params.BulletSpeed)
@@ -210,9 +210,9 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 			// 敌方在火线
 			if len(enemyThreat.Distances) == 1 {
 				for fireDirection, dist := range enemyThreat.Distances {
-					realDirection := directionConvert(fireDirection)
+					realDirection := directionConvert(fireDirection, tank)
 
-					faith = calcFaith(dist, state.Params.BulletSpeed, state.Params.TankSpeed, true, enemyThreat.Enemy.Direction, realDirection, enemyThreat.Enemy, tank.Pos)
+					faith = calcFaith(dist, state.Params.BulletSpeed, state.Params.TankSpeed, true, realDirection, enemyThreat.Enemy, tank.Pos)
 					sin = calcSin(tank, state.MyTank, realDirection, state.Params.BulletSpeed)
 					cost = calcCost(tank, realDirection, state.Params.BulletSpeed, state.Terain)
 
