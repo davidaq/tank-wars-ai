@@ -28,8 +28,9 @@ struct Shell {
 struct GameState {
     1:list<Tank> tanks,
     2:list<Shell> shells,
-    3:i32 yourFlags,
-    4:i32 enemyFlags
+    3:i32 yourFlagNo,
+    4:i32 enemyFlagNo,
+    5: optional Position flagPos
 }
 
 struct Order {

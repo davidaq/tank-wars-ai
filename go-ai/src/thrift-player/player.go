@@ -529,13 +529,15 @@ func (p *Shell) String() string {
 // Attributes:
 //  - Tanks
 //  - Shells
-//  - YourFlags
-//  - EnemyFlags
+//  - YourFlagNo
+//  - EnemyFlagNo
+//  - FlagPos
 type GameState struct {
   Tanks []*Tank `thrift:"tanks,1" db:"tanks" json:"tanks"`
   Shells []*Shell `thrift:"shells,2" db:"shells" json:"shells"`
-  YourFlags int32 `thrift:"yourFlags,3" db:"yourFlags" json:"yourFlags"`
-  EnemyFlags int32 `thrift:"enemyFlags,4" db:"enemyFlags" json:"enemyFlags"`
+  YourFlagNo int32 `thrift:"yourFlagNo,3" db:"yourFlagNo" json:"yourFlagNo"`
+  EnemyFlagNo int32 `thrift:"enemyFlagNo,4" db:"enemyFlagNo" json:"enemyFlagNo"`
+  FlagPos *Position `thrift:"flagPos,5" db:"flagPos" json:"flagPos,omitempty"`
 }
 
 func NewGameState() *GameState {
@@ -551,13 +553,24 @@ func (p *GameState) GetShells() []*Shell {
   return p.Shells
 }
 
-func (p *GameState) GetYourFlags() int32 {
-  return p.YourFlags
+func (p *GameState) GetYourFlagNo() int32 {
+  return p.YourFlagNo
 }
 
-func (p *GameState) GetEnemyFlags() int32 {
-  return p.EnemyFlags
+func (p *GameState) GetEnemyFlagNo() int32 {
+  return p.EnemyFlagNo
 }
+var GameState_FlagPos_DEFAULT *Position
+func (p *GameState) GetFlagPos() *Position {
+  if !p.IsSetFlagPos() {
+    return GameState_FlagPos_DEFAULT
+  }
+return p.FlagPos
+}
+func (p *GameState) IsSetFlagPos() bool {
+  return p.FlagPos != nil
+}
+
 func (p *GameState) Read(iprot thrift.TProtocol) error {
   if _, err := iprot.ReadStructBegin(); err != nil {
     return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
@@ -585,6 +598,10 @@ func (p *GameState) Read(iprot thrift.TProtocol) error {
       }
     case 4:
       if err := p.ReadField4(iprot); err != nil {
+        return err
+      }
+    case 5:
+      if err := p.ReadField5(iprot); err != nil {
         return err
       }
     default:
@@ -646,7 +663,7 @@ func (p *GameState)  ReadField3(iprot thrift.TProtocol) error {
   if v, err := iprot.ReadI32(); err != nil {
   return thrift.PrependError("error reading field 3: ", err)
 } else {
-  p.YourFlags = v
+  p.YourFlagNo = v
 }
   return nil
 }
@@ -655,8 +672,16 @@ func (p *GameState)  ReadField4(iprot thrift.TProtocol) error {
   if v, err := iprot.ReadI32(); err != nil {
   return thrift.PrependError("error reading field 4: ", err)
 } else {
-  p.EnemyFlags = v
+  p.EnemyFlagNo = v
 }
+  return nil
+}
+
+func (p *GameState)  ReadField5(iprot thrift.TProtocol) error {
+  p.FlagPos = &Position{}
+  if err := p.FlagPos.Read(iprot); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.FlagPos), err)
+  }
   return nil
 }
 
@@ -668,6 +693,7 @@ func (p *GameState) Write(oprot thrift.TProtocol) error {
     if err := p.writeField2(oprot); err != nil { return err }
     if err := p.writeField3(oprot); err != nil { return err }
     if err := p.writeField4(oprot); err != nil { return err }
+    if err := p.writeField5(oprot); err != nil { return err }
   }
   if err := oprot.WriteFieldStop(); err != nil {
     return thrift.PrependError("write field stop error: ", err) }
@@ -715,22 +741,35 @@ func (p *GameState) writeField2(oprot thrift.TProtocol) (err error) {
 }
 
 func (p *GameState) writeField3(oprot thrift.TProtocol) (err error) {
-  if err := oprot.WriteFieldBegin("yourFlags", thrift.I32, 3); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:yourFlags: ", p), err) }
-  if err := oprot.WriteI32(int32(p.YourFlags)); err != nil {
-  return thrift.PrependError(fmt.Sprintf("%T.yourFlags (3) field write error: ", p), err) }
+  if err := oprot.WriteFieldBegin("yourFlagNo", thrift.I32, 3); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:yourFlagNo: ", p), err) }
+  if err := oprot.WriteI32(int32(p.YourFlagNo)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.yourFlagNo (3) field write error: ", p), err) }
   if err := oprot.WriteFieldEnd(); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T write field end error 3:yourFlags: ", p), err) }
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 3:yourFlagNo: ", p), err) }
   return err
 }
 
 func (p *GameState) writeField4(oprot thrift.TProtocol) (err error) {
-  if err := oprot.WriteFieldBegin("enemyFlags", thrift.I32, 4); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T write field begin error 4:enemyFlags: ", p), err) }
-  if err := oprot.WriteI32(int32(p.EnemyFlags)); err != nil {
-  return thrift.PrependError(fmt.Sprintf("%T.enemyFlags (4) field write error: ", p), err) }
+  if err := oprot.WriteFieldBegin("enemyFlagNo", thrift.I32, 4); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 4:enemyFlagNo: ", p), err) }
+  if err := oprot.WriteI32(int32(p.EnemyFlagNo)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.enemyFlagNo (4) field write error: ", p), err) }
   if err := oprot.WriteFieldEnd(); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T write field end error 4:enemyFlags: ", p), err) }
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 4:enemyFlagNo: ", p), err) }
+  return err
+}
+
+func (p *GameState) writeField5(oprot thrift.TProtocol) (err error) {
+  if p.IsSetFlagPos() {
+    if err := oprot.WriteFieldBegin("flagPos", thrift.STRUCT, 5); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 5:flagPos: ", p), err) }
+    if err := p.FlagPos.Write(oprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.FlagPos), err)
+    }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 5:flagPos: ", p), err) }
+  }
   return err
 }
 

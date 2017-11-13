@@ -46,14 +46,14 @@ func (self *PlayerServer) UploadMap(gamemap [][]int32) (err error) {
 	for y, lineIn := range gamemap {
 		line := make([]int, len(lineIn))
 		for x, val := range lineIn {
-			if val == 3 {
-				line[x] = 0
-				self.flagX = x
-				self.flagY = y
-				self.flagWait = 0
-			} else {
-				line[x] = int(val)
-			}
+			// if val == 3 {
+			// 	line[x] = 0
+			// 	self.flagX = x
+			// 	self.flagY = y
+			// 	self.flagWait = 0
+			// } else {
+			line[x] = int(val)
+			// }
 		}
 		self.terain.Data[y] = line
 	}
@@ -93,9 +93,14 @@ func (self *PlayerServer) LatestState(raw *player.GameState) (err error) {
 	state := &f.GameState {
 		Params: self.params,
 		Terain: self.terain,
-		FlagWait: self.flagWait,
-		MyFlag: int(raw.YourFlags),
-		EnemyFlag: int(raw.EnemyFlags),
+		FlagWait: 1,
+		MyFlag: int(raw.YourFlagNo),
+		EnemyFlag: int(raw.EnemyFlagNo),
+	}
+	if raw.FlagPos != nil {
+		state.FlagWait = 0
+		state.Params.FlagX = int(raw.FlagPos.X)
+		state.Params.FlagY = int(raw.FlagPos.Y)
 	}
 	shotTank := make(map[int32]bool)
 	for _, bulletIn := range raw.Shells {
