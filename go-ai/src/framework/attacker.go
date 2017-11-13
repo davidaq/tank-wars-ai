@@ -64,22 +64,13 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 
 	if fireLine {
 
+		// 一个子弹距离内且在火线上，不管敌方朝向都必中
 		if verticalDistance <= bulletSpeed {
 			return float64(1)
 		}
 
-		// 敌方朝向和开火方向相同，且在火线上
-		if enemyPos.Direction == fireDirection {
-			return faith
-		}
-
-		// 敌方朝向和开火方向相反，且在火线上		
-		if enemyPos.Direction == fireDirection + 2 {
-			return faith
-		}
-
-		// 敌方朝向和开火方向相反，且在火线上		
-		if enemyPos.Direction == fireDirection - 2 {
+		// 敌方朝向和开火方向相同或相反，且在火线上		
+		if enemyPos.Direction == fireDirection || enemyPos.Direction == fireDirection + 2 || enemyPos.Direction == fireDirection - 2  {
 			return faith
 		}
 
@@ -208,8 +199,18 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 							faith = float64(0)
 							sin = float64(0)
 						}
-						cost = int(math.Ceil(float64(cost) / float64(state.Params.BulletSpeed)))					
-
+						cost = int(math.Ceil(float64(cost) / float64(state.Params.BulletSpeed)))
+											
+						switch realDirection {
+						case DirectionUp:
+							radarFireAlls[tank.Id].Up = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireUp}
+						case DirectionLeft:
+							radarFireAlls[tank.Id].Left = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireLeft}
+						case DirectionDown:
+							radarFireAlls[tank.Id].Down = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireDown}
+						case DirectionRight:
+							radarFireAlls[tank.Id].Right = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireRight}
+						}
 					} else {
 						verticalDist = dist
 					}
