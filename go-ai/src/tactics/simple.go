@@ -36,12 +36,12 @@ package tactics
 
 import (
 	f "framework"
-	// "fmt"
+	"fmt"
 )
 
 type Simple struct {
     obs        *Observation         // 对局势的观察分析
-    // mode       string               // 模式: flyingstart, flagfirst, tankfirst, rabiddog
+    // mode       string            // 模式: flyingstart, flagfirst, tankfirst, rabiddog
     policy     *SimplePolicy        // 战术动作
     flagmen    *SimpleFlagMan
     snipers    *SimpleSniper
@@ -53,18 +53,18 @@ func NewSimple() *Simple{
 }
 
 func (s *Simple) NewFlagMan(tanks []f.Tank) {
-    s.flagmen = &SimpleFlagMan { superior: s, policy: s.policy, tanks: tanks, obs: s.obs}
-    s.flagmen.Init()
+    s.flagmen = &SimpleFlagMan { superior: s, policy: s.policy, obs: s.obs}
+    s.flagmen.Init(tanks)
 }
 
 func (s *Simple) NewSniper(tanks []f.Tank) {
-    s.snipers = &SimpleSniper { superior: s, policy: s.policy, tanks: tanks, obs: s.obs }
-    s.snipers.Init()
+    s.snipers = &SimpleSniper { superior: s, policy: s.policy, obs: s.obs }
+    s.snipers.Init(tanks)
 }
 
 func (s *Simple) NewKiller(tanks []f.Tank) {
-    s.killers = &SimpleKiller { superior: s, policy: s.policy, tanks: tanks, obs: s.obs }
-    s.killers.Init()
+    s.killers = &SimpleKiller { superior: s, policy: s.policy, obs: s.obs }
+    s.killers.Init(tanks)
 }
 
 // 分配角色（TODO 合适时机应触发重分配）
@@ -86,8 +86,6 @@ func (s *Simple) Init(state *f.GameState) {
 
 // 制定整体计划
 func (s *Simple) Plan(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
-    // fmt.Println("------------------------")
-
     // 分析局势，输出 mode
     s.makeObservation(state)
 
@@ -102,7 +100,7 @@ func (s *Simple) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
     s.snipers.Plan(state, objective)
     s.killers.Plan(state, objective)
 
-	// fmt.Printf("objective: %+v\n", objective)
+	fmt.Printf("objective: %+v\n", objective)
 }
 
 func (self *Simple) End(state *f.GameState) {
@@ -139,24 +137,25 @@ func (s *Simple) checkRadar(radar *f.RadarResult, objs map[string]f.Objective) {
 	for _, tank := range s.obs.CurState.MyTank {
         // fmt.Printf("radarDodge: %+v\n", radar.Dodge[tank.Id])
         // fmt.Printf("radarFire: %+v\n", radar.Fire[tank.Id])
-        // 优先躲避
-		if radar.Dodge[tank.Id].Threat >= 0.7 {
+        // 暂不判断躲避
+        if false {
+		// if radar.Dodge[tank.Id].Threat >= 0.7 {
 			objs[tank.Id] = f.Objective{ Action: f.ActionTravel, Target: radar.Dodge[tank.Id].SafePos }
         // 能否开火
         } else {
 			mrf = nil
 			rfs = []*f.RadarFire{ radar.Fire[tank.Id].Up, radar.Fire[tank.Id].Down, radar.Fire[tank.Id].Left, radar.Fire[tank.Id].Right }
 			for _, rf := range rfs {
+                if rf == nil { continue }
 				if mrf == nil || mrf.Faith - mrf.Sin < rf.Faith - rf.Sin {
 					mrf = rf
 				}
 			}
-			if mrf == nil {
-				continue
-			}
-			if mrf.Faith > 0.5 && mrf.Sin < 0.3 {
+			if mrf == nil { continue; }
+			if mrf.Faith >= 0.5 && mrf.Sin <= 0.3 {
 				objs[tank.Id] = f.Objective{ Action: mrf.Action }
 			}
 		}
 	}
+    // fmt.Printf("checkRadar objs len: %+v\n", objs)
 }

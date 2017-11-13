@@ -70,7 +70,7 @@ func searchForest(preState *GameState, state *GameState, ret *DiffResult, watchL
 	if watchList.bullet != nil {
 		for k,v := range(watchList.bullet) {
 			live := false
-			var curBullet Bullet 
+			var curBullet Bullet
 			for i:=0;i<len(state.MyBullet);i++ {
 				if state.MyBullet[i].Id == k {
 					live = true
@@ -280,7 +280,7 @@ func searchForest(preState *GameState, state *GameState, ret *DiffResult, watchL
 	for i:=0; i<len(state.MyBullet); i++ {
 		curItemPos := state.MyBullet[i].Pos
 		step := 0
-		
+
 		switch curItemPos.Direction {
 		case DirectionUp:
 			if curItemPos.Y - bulletSpeed < 0 {

@@ -58,10 +58,10 @@ func act(host string, gameid string, side string, move map[string]int) *f.GameSt
 	defer (func() { responded = true })()
 	go (func () {
 		for i := 0; i < 20 && !responded; i++ {
-			time.Sleep(50 * time.Millisecond)	
+			time.Sleep(50 * time.Millisecond)
 		}
 		if !responded {
-			fmt.Println("Game server not responding")	
+			fmt.Println("Game server not responding")
 		}
 	})()
 	send := make(map[string]string)
