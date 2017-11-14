@@ -183,12 +183,8 @@ func directionConvert(fireDirection int, tank Tank) int {
 	return DirectionUp + ((realDirection - DirectionUp) + (tank.Pos.Direction - DirectionUp) + 4) % 4
 }
 
-var count = 0
-
 func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThreat) (map[string]*RadarFireAll) {
 	radarFireAlls := make(map[string]*RadarFireAll)
-
-	count += 1
 
 	for _, tank := range state.MyTank {
 		if tank.Bullet != "" {
