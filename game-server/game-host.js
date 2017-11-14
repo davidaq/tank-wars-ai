@@ -107,6 +107,9 @@ class GameHost extends EventEmitter {
         }
         this.emit('state');
       }
+      this.blueResp = [];
+      this.redResp = [];
+      yield* this.calcState();
       console.info('round end');
       const fwriter = fs.createWriteStream(path.join(__dirname, 'db', this.roundId + '.json.gz'));
       const writer = zlib.createGzip();
@@ -420,21 +423,6 @@ class GameHost extends EventEmitter {
           continue;
         }
         const move = myResp[tank.id] || 'stay';
-        let skip = false;
-        switch (move) {
-          case 'fire':
-          case 'fire-up':
-          case 'fire-left':
-          case 'fire-down':
-          case 'fire-right':
-            skip = !fireOnly;
-            break;
-          default:
-            break;
-        }
-        if (skip) {
-          continue;
-        }
         if (move !== 'move') {
           forbid[`${tank.x},${tank.y}`] = { tank };
           if (moveOnly) {
@@ -453,6 +441,30 @@ class GameHost extends EventEmitter {
               }
             })(),
           };
+        }
+        let skip = false;
+        switch (move) {
+          case 'fire':
+          case 'fire-up':
+          case 'fire-left':
+          case 'fire-down':
+          case 'fire-right':
+            if (fireOnly) {
+              skip = false;
+            } else {
+              skip = true;
+            }
+            break;
+          default:
+            if (fireOnly) {
+              skip = true;
+            } else {
+              skip = false;
+            }
+            break;
+        }
+        if (skip) {
+          continue;
         }
         switch (move) {
           case 'move': {
