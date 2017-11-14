@@ -77,7 +77,7 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 	if fireLine {
 
 		// 与敌方坦克相邻，不管敌方朝向都必中
-		if verticalDistance == 1 {
+		if verticalDistance <= 1 {
 			return float64(1)
 		}
 
@@ -165,7 +165,7 @@ func calcCost (tank Tank, fireDirection int, bulletSpeed int, terain *Terain) in
 			cost += 1
 		}
 	}
-	return 0
+	return cost
 }
 
 func directionConvert(fireDirection int, tank Tank) int {
@@ -183,8 +183,12 @@ func directionConvert(fireDirection int, tank Tank) int {
 	return DirectionUp + ((realDirection - DirectionUp) + (tank.Pos.Direction - DirectionUp) + 4) % 4
 }
 
+var count = 0
+
 func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThreat) (map[string]*RadarFireAll) {
 	radarFireAlls := make(map[string]*RadarFireAll)
+
+	count += 1
 
 	for _, tank := range state.MyTank {
 		if tank.Bullet != "" {
@@ -206,14 +210,13 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 						faith = calcFaith(verticalDist, state.Params.BulletSpeed, state.Params.TankSpeed, false, realDirection, enemyThreat.Enemy, tank.Pos)
 						sin = calcSin(tank, state.MyTank, enemyThreat.Enemy, realDirection, state.Params.BulletSpeed)
 						cost = calcCost(tank, realDirection, state.Params.BulletSpeed, state.Terain)
-
+						
 						if cost < dist {
 							faith = float64(0)
 							sin = float64(0)
 						}
 						cost = int(math.Ceil(float64(cost) / float64(state.Params.BulletSpeed)))
 
-						fmt.Println("not fireline: faith: ", faith, ", sin: ", sin, ", cost: ", cost)
 
 						switch realDirection {
 						case DirectionUp:
@@ -247,8 +250,6 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 
 					cost = int(math.Ceil(float64(cost) / float64(state.Params.BulletSpeed)))
 
-					fmt.Println("fireline: faith: ", faith, ", sin: ", sin, ", cost: ", cost)
-					
 					switch realDirection {
 					case DirectionUp:
 						radarFireAlls[tank.Id].Up = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireUp}
