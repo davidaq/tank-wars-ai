@@ -33,7 +33,11 @@ func (self *Traveller) CollidedTankInGrass(state *GameState) []Position {
 		if cache, ok := self.cache[tank.Id]; ok {
 			from := &tank.Pos
 			if cache.expect != nil && (cache.expect.Y != from.Y || cache.expect.X != from.X) {
-				// dx := 
+				pos := Position {
+					X: from.X + sign(cache.expect.X - from.X),
+					Y: from.Y + sign(cache.expect.Y - from.Y),
+				}
+				items = append(items, pos)
 			}
 		}
 	}
@@ -190,6 +194,16 @@ func abs (val int) int {
 		return -val
 	} else {
 		return val
+	}
+}
+
+func sign (val int) int {
+	if val > 0 {
+		return 1
+	} else if val < 0 {
+		return -1
+	} else {
+		return 0
 	}
 }
 
