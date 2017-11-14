@@ -19,7 +19,7 @@ type AStar interface {
     // enforces it).
     // The start of the path is returned to you. If no path exists then the function will
     // return nil as the path.
-    FindPath(config AStarConfig, source, target []Point, movelen int) *PathPoint
+    FindPath(config AStarConfig, source, target []Point, movelen int, startdir int) *PathPoint
 
     // Clone a new instance
     Clone() AStar
@@ -82,7 +82,7 @@ func (a *gridStruct) ClearTile(p Point) {
     delete(a.filledTiles, p)
 }
 
-func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movelen int) *PathPoint {
+func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movelen int, startdir int) *PathPoint {
     var openList = make(map[Point]*PathPoint)
     var closeList = make(map[Point]*PathPoint)
 
@@ -120,15 +120,17 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movele
         pdirection := 0
         prev := current.Parent
         if prev != nil {
-            if current.Row > prev.Row {
-                pdirection = 1
-            } else if current.Row < prev.Row {
-                pdirection = 2
-            } else if current.Col > prev.Col {
+            if current.Row > prev.Row {             // down
                 pdirection = 3
-            } else if current.Col < prev.Col {
+            } else if current.Row < prev.Row {      // up
+                pdirection = 1
+            } else if current.Col > prev.Col {      // right
                 pdirection = 4
+            } else if current.Col < prev.Col {      // left
+                pdirection = 2
             }
+        } else {
+            pdirection = startdir
         }
 
         surrounding := a.getSurrounding(current.Point, movelen)
@@ -158,13 +160,13 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movele
             }
             cdirection := 0
             if p.Row > current.Row {
-                cdirection = 1
-            } else if p.Row < current.Row {
-                cdirection = 2
-            } else if p.Col > current.Col {
                 cdirection = 3
-            } else if p.Col < current.Col {
+            } else if p.Row < current.Row {
+                cdirection = 1
+            } else if p.Col > current.Col {
                 cdirection = 4
+            } else if p.Col < current.Col {
+                cdirection = 2
             }
             if pdirection > 0 && pdirection != cdirection {
                 fill_weight += movelen

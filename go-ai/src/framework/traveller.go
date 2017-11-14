@@ -15,12 +15,14 @@ type PathCache struct {
 type Traveller struct {
 	astar astar.AStar
 	cache map[string]*PathCache
+	colide map[string]int
 }
 
 func NewTraveller() *Traveller {
 	inst := &Traveller {
 		astar: nil,
 		cache: make(map[string]*PathCache),
+		colide: make(map[string]int),
 	}
 	return inst
 }
@@ -44,13 +46,14 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 	var lock sync.Mutex
 	occupy := make(map[Position]bool)
 	a := self.astar.Clone()
+	lw := state.Terain.Width
 	for _, tank := range state.MyTank {
-		a.FillTile(astar.Point{ Col: tank.Pos.X, Row: tank.Pos.Y }, 8)
+		w := 8 + lw * self.colide[tank.Id]
+		a.FillTile(astar.Point{ Col: tank.Pos.X, Row: tank.Pos.Y }, w)
 	}
 	for _, tank := range state.EnemyTank {
-		a.FillTile(astar.Point{ Col: tank.Pos.X, Row: tank.Pos.Y }, 8)
+		a.FillTile(astar.Point{ Col: tank.Pos.X, Row: tank.Pos.Y }, lw)
 	}
-
 	lock.Lock()
 	for _, tank := range state.MyTank {
 		if target, exists := travel[tank.Id]; exists {
@@ -74,11 +77,17 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 						self.cache[id] = cache
 						lock.Unlock()
 					}
-					if cache.expect != nil && (cache.expect.Y != from.Y || cache.expect.X != from.X) {
-						if abs(from.X - to.X) + abs(from.Y - to.Y) > state.Params.TankSpeed {
-							cache.path = nil
-						} else {
-							cache.path = []Position { *cache.expect }
+					if cache.expect != nil {
+						colide := self.colide[tank.Id]
+						if cache.expect.Y != from.Y || cache.expect.X != from.X {
+							self.colide[tank.Id] = colide + 10
+							if abs(from.X - to.X) + abs(from.Y - to.Y) > state.Params.TankSpeed {
+								cache.path = nil
+							} else {
+								cache.path = []Position { *cache.expect }
+							}
+						} else if colide > 0 {
+							self.colide[tank.Id] = colide - 1
 						}
 					}
 					for len(cache.path) > 0 {
@@ -145,7 +154,7 @@ func (self *Traveller) path(a astar.AStar, source Position, target Position, mov
 	sourcePoint := []astar.Point{ astar.Point{ Row: source.Y, Col: source.X } }
 	targetPoint := []astar.Point{ astar.Point{ Row: target.Y, Col: target.X } }
 
-	p := a.FindPath(p2p, targetPoint, sourcePoint, movelen)
+	p := a.FindPath(p2p, targetPoint, sourcePoint, movelen, source.Direction)
 	
 	var ret []Position
 	for p != nil {
