@@ -24,7 +24,7 @@ func main() {
 	for !state.Ended {
 		state = act(host, gameid, side, player.Play(state, false))
 		i++
-		fmt.Print(i, "\tmy:", len(state.MyTank), "\tenemy:", len(state.EnemyTank), "\t\t\r")
+		fmt.Print(i, "\tmy:", len(state.MyTank), "\tenemy:", len(state.EnemyTank), "\t\t\n")
 	}
 	player.End(state)
 	fmt.Println("\nEnd")
