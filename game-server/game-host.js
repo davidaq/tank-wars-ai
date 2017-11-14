@@ -400,7 +400,7 @@ class GameHost extends EventEmitter {
       }
     }
     this.blueBullet = this.blueBullet.filter(v => !!v);
-    this.redBullet = this.redTank.redBullet(v => !!v);
+    this.redBullet = this.redBullet.filter(v => !!v);
     this.blueTank = this.blueTank.filter(v => v.hp > 0);
     this.redTank = this.redTank.filter(v => v.hp > 0);
     this.history.push(clone({
