@@ -21,7 +21,7 @@ func (p *SimplePolicy) Occupy(pos f.Position, tank f.Tank, objs map[string]f.Obj
 // 拱卫
 // func (p *SimplePolicy) Defend(pos f.Position, tanks []f.Tank, tspeed int, objs map[string]f.Objective){
 //     positions := FindNearByPos(pos, len(tanks), tspeed)
-// 	p.Dispatch(tanks, positions, objs)
+// 	   p.Dispatch(tanks, positions, objs)
 // }
 
 // 开火后占领（靠策略）
@@ -52,11 +52,6 @@ func (p *SimplePolicy) Patrol(pos f.Position, tanks []f.Tank, emytanks []f.Tank,
         return p.Dispatch(tanks, arrPos[0:len(tanks)], objs)
     }
 }
-
-// 指定追击某坦克
-// func (p *SimplePolicy) Hunt(tank f.Tank, pos f.Position, objs map[string]f.Objective){
-// 	objs[tank.Id] = f.Objective{ Action: f.ActionTravel, Target: Pos}
-// }
 
 // 将一组坦克派到一组地点，并返回空闲的坦克
 func (p *SimplePolicy) Dispatch(tanks []f.Tank, pos []f.Position, objs map[string]f.Objective) (ftanks map[string]f.Tank){

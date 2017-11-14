@@ -5,20 +5,6 @@ import (
 	"math"
 )
 
-// N个点坐标不能重复，
-// x、y 也尽量互不相同（避免阻碍友方攻击）
-// 在可能的情况下应离我方大本营更近
-// 暂时写死
-// func FindNearByPos(pos f.Position, n int, tspeed int) ([]f.Position){
-// 	var arrPos []f.Position
-// 	arrPos = append(arrPos, f.Position{ X:6, Y:6})
-// 	arrPos = append(arrPos, f.Position{ X:6, Y:12})
-// 	arrPos = append(arrPos, f.Position{ X:12,Y:12})
-// 	arrPos = append(arrPos, f.Position{ X:12,Y:6})
-//     arrPos = append(arrPos, f.Position{ X:5,Y:9})
-// 	return arrPos[0:n]
-// }
-
 // 按离P点距离给一组位置排序
 func SortByPos(p f.Position, ps []f.Position) (arrPos []f.Position) {
 	var distance int
@@ -34,10 +20,26 @@ func SortByPos(p f.Position, ps []f.Position) (arrPos []f.Position) {
 	return arrPos
 }
 
+// 按离P点距离给一组坦克排序
+func SortTankByPos(p f.Position, tanks []f.Tank) (res []f.Tank) {
+	var distance int
+	mapTank := make(map[int][]f.Tank)
+	for _, tank := range tanks {
+        // 有墙壁阻碍时，X或Y轴的距离是不准确的
+		distance  = int(math.Min(math.Abs(float64(tank.Pos.X-p.X)), math.Abs(float64(tank.Pos.Y - p.Y))))
+		mapTank[distance] = append(mapTank[distance], tank)
+	}
+	for _, tank := range mapTank {
+		res = append(res, tank...)
+	}
+	return res
+}
+
 // 为一组坐标和一组坦克，按距离远近匹配
+// 坐标点数量必须不小于坦克数量
 func MatchPosTank(ps []f.Position, tanks []f.Tank) map[string]f.Position {
 	tankpos := make(map[string]f.Position)
-	if len(ps) <= 0 || len(tanks) <= 0 || len(ps) != len(tanks) {
+	if len(ps) <= 0 || len(tanks) <= 0 || len(ps) < len(tanks) {
 		return nil
 	}
 	for _, tank := range tanks {
