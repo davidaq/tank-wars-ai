@@ -348,7 +348,7 @@ class GameHost extends EventEmitter {
           if (bulletList) {
             for (const bullet of bulletList) {
               this.hitTank(scene, bullet.set[bullet.i], this.blueTank, i);
-              bullet.set.splice(bullet.i);
+              bullet.set[bullet.i] = null;
             }
           }
         }
@@ -359,7 +359,7 @@ class GameHost extends EventEmitter {
           if (bulletList) {
             for (const bullet of bulletList) {
               this.hitTank(scene, bullet.set[bullet.i], this.redTank, i);
-              bullet.set.splice(bullet.i);
+              bullet.set[bullet.i] = null;
             }
           }
         }
@@ -399,6 +399,8 @@ class GameHost extends EventEmitter {
         }
       }
     }
+    this.blueBullet = this.blueBullet.filter(v => !!v);
+    this.redBullet = this.redTank.redBullet(v => !!v);
     this.blueTank = this.blueTank.filter(v => v.hp > 0);
     this.redTank = this.redTank.filter(v => v.hp > 0);
     this.history.push(clone({

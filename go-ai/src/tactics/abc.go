@@ -10,6 +10,8 @@ func StartTactics (name string) f.Tactics {
 		return NewRandom()
 	case "proxy":
 		return NewProxy()
+	case "nearst":
+		return NewNearest()
 	case "simple":
 		return NewSimple()
 	default:
