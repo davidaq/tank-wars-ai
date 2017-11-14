@@ -21,11 +21,12 @@ import (
 
 // 按离P点距离给一组位置排序
 func SortByPos(p f.Position, ps []f.Position) (arrPos []f.Position) {
-	var index int
-	mapPos := make([][]f.Position, 20)   // TODO 回头补坑
+	var distance int
+	mapPos := make(map[int][]f.Position)
 	for _, pitem := range ps {
-		index  = int(math.Min(math.Abs(float64(pitem.X-p.X)), math.Abs(float64(pitem.Y - p.Y))))
-		mapPos[index] = append(mapPos[index], pitem)
+        // 有墙壁阻碍时，X或Y轴的距离是不准确的
+		distance  = int(math.Min(math.Abs(float64(pitem.X-p.X)), math.Abs(float64(pitem.Y - p.Y))))
+		mapPos[distance] = append(mapPos[distance], pitem)
 	}
 	for _, pos := range mapPos {
 		arrPos = append(arrPos, pos...)
