@@ -45,16 +45,25 @@ func (s *SimpleFlagMan) occupyFlag(tanks []f.Tank, objs map[string]f.Objective) 
     // 其余回到苟点
     if len(tanks) > 0 {
         ftanks := s.policy.Dispatch(tanks, s.obs.FlagKps[0:len(tanks)], objs)
+
+        // 已抵达目的地坦克根据友伤选择是否开火
+        var radarFire f.RadarFireAll
         for _, ftank := range ftanks {
-            objs[ftank.Id] = f.Objective{ Action: f.ActionFireDown}
+            radarFire = s.obs.Radar.Fire[ftank.Id]
+
+            if s.obs.Side == "red" {
+                if radarFire == (f.RadarFireAll{}) || radarFire.Down.Sin <= 0.3 {
+                    objs[ftank.Id] = f.Objective{ Action: f.ActionFireDown}
+                } else {
+                    objs[ftank.Id] = f.Objective{ Action: f.ActionStay}
+                }
+            } else {
+                if radarFire == (f.RadarFireAll{}) || radarFire.Up.Sin <= 0.3 {
+                    objs[ftank.Id] = f.Objective{ Action: f.ActionFireUp}
+                } else {
+                    objs[ftank.Id] = f.Objective{ Action: f.ActionStay}
+                }
+            }
         }
     }
 }
-
-// 追击旗点坦克
-// 开火判断已经在上一层做了，这里只要追击旗点附近的坦克即可
-// func (s *SimpleFlagMan) huntFlagEmy(tanks []f.Tank, objs map[string]f.Objective) {
-// 	for _, tank := range tanks {
-// 		s.policy.Hunt(tank, s.obs.Flag.EmyTank.Pos, objs)
-// 	}
-// }

@@ -36,7 +36,7 @@ package tactics
 
 import (
 	f "framework"
-	// "fmt"
+	"fmt"
 )
 
 type Simple struct {
@@ -69,16 +69,22 @@ func (s *Simple) NewKiller(tanks []f.Tank) {
 
 // 分配角色（TODO 合适时机应触发重分配）
 func (s *Simple) initRole(state *f.GameState, fcnt int, scnt int, kcnt int) {
-    s.NewFlagMan(state.MyTank[0:fcnt])          // 应选血厚、离Flag最近的坦克
-    s.NewSniper(state.MyTank[fcnt:fcnt + scnt]) // 应选血薄、离草丛近的坦克
-    s.NewKiller(state.MyTank[fcnt + scnt:])     // 剩余都作为 killer
+    tanks := state.MyTank
+    if fcnt > 0 {
+        tanks = SortTankByPos(s.obs.Flag.Pos, tanks)
+        s.NewFlagMan(tanks[0:fcnt])  // 距离flag最近的坦克
+    }
+    if scnt > 0 {
+        s.NewSniper(state.MyTank[fcnt:fcnt + scnt])
+    }
+    if kcnt > 0 {
+        s.NewKiller(state.MyTank[fcnt + scnt:])     // 剩余都作为 killer
+    }
 }
 
 func (s *Simple) Init(state *f.GameState) {
     s.obs    = NewObservation(state)
     s.policy = NewSimplePolicy()
-
-    // s.mode   = "flyingstart"
 
     // 初始化角色
     s.initRole(state, s.obs.Fcnt, s.obs.Scnt, s.obs.Kcnt)
@@ -91,7 +97,7 @@ func (s *Simple) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
         delete(objective, tankid)
     }
     // 分析局势
-    s.makeObservation(state)
+    s.makeObservation(state, radar)
 
     // 设定模式
     // s.setMode(state)
@@ -104,15 +110,15 @@ func (s *Simple) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
     s.snipers.Plan(state, objective)
     s.killers.Plan(state, objective)
 
-	// fmt.Printf("after objs: %+v\n", objective)
+	fmt.Printf("objective: %+v\n", objective)
 }
 
 func (self *Simple) End(state *f.GameState) {
 }
 
 // 局势分析
-func (s *Simple) makeObservation(state *f.GameState) {
-    s.obs.makeObservation(state)
+func (s *Simple) makeObservation(state *f.GameState, radar *f.RadarResult) {
+    s.obs.makeObservation(state, radar)
 }
 
 // 设定模式(暂时用不上)
@@ -162,5 +168,5 @@ func (s *Simple) checkRadar(radar *f.RadarResult, objs map[string]f.Objective) {
 			}
 		}
 	}
-    // fmt.Printf("checkRadar objs: %+v\n", objs)
+    fmt.Printf("radar objectives: %+v\n", objs)
 }
