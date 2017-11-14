@@ -15,16 +15,29 @@ type PathCache struct {
 type Traveller struct {
 	astar astar.AStar
 	cache map[string]*PathCache
-	colide map[string]int
+	collide map[string]int
 }
 
 func NewTraveller() *Traveller {
 	inst := &Traveller {
 		astar: nil,
 		cache: make(map[string]*PathCache),
-		colide: make(map[string]int),
+		collide: make(map[string]int),
 	}
 	return inst
+}
+
+func (self *Traveller) CollidedTankInGrass(state *GameState) []Position {
+	var items []Position
+	for _, tank := range state.MyTank {
+		if cache, ok := self.cache[tank.Id]; ok {
+			from := &tank.Pos
+			if cache.expect != nil && (cache.expect.Y != from.Y || cache.expect.X != from.X) {
+				// dx := 
+			}
+		}
+	}
+	return items
 }
 
 func (self *Traveller) Search(travel map[string]*Position, state *GameState, movements map[string]int) {
@@ -48,7 +61,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 	a := self.astar.Clone()
 	lw := state.Terain.Width
 	for _, tank := range state.MyTank {
-		w := 8 + lw * self.colide[tank.Id]
+		w := 8 + lw * self.collide[tank.Id]
 		a.FillTile(astar.Point{ Col: tank.Pos.X, Row: tank.Pos.Y }, w)
 	}
 	for _, tank := range state.EnemyTank {
@@ -78,16 +91,16 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 						lock.Unlock()
 					}
 					if cache.expect != nil {
-						colide := self.colide[tank.Id]
+						collide := self.collide[tank.Id]
 						if cache.expect.Y != from.Y || cache.expect.X != from.X {
-							self.colide[tank.Id] = colide + 10
+							self.collide[tank.Id] = collide + 10
 							if abs(from.X - to.X) + abs(from.Y - to.Y) > state.Params.TankSpeed {
 								cache.path = nil
 							} else {
 								cache.path = []Position { *cache.expect }
 							}
-						} else if colide > 0 {
-							self.colide[tank.Id] = colide - 1
+						} else if collide > 0 {
+							self.collide[tank.Id] = collide - 1
 						}
 					}
 					for len(cache.path) > 0 {
