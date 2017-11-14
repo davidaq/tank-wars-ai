@@ -52,33 +52,35 @@ func NewSimple() *Simple{
     return &Simple {}
 }
 
-func (s *Simple) NewFlagMan(tanks []f.Tank) {
-    s.flagmen = &SimpleFlagMan { superior: s, policy: s.policy, obs: s.obs}
-    s.flagmen.Init(tanks)
+func (s *Simple) NewFlagMan() {
+    s.flagmen = &SimpleFlagMan { superior: s, policy: s.policy, obs: s.obs, Tanks: make(map[string]f.Tank)}
 }
 
-func (s *Simple) NewSniper(tanks []f.Tank) {
-    s.snipers = &SimpleSniper { superior: s, policy: s.policy, obs: s.obs }
-    s.snipers.Init(tanks)
+func (s *Simple) NewSniper() {
+    s.snipers = &SimpleSniper { superior: s, policy: s.policy, obs: s.obs, Tanks: make(map[string]f.Tank)}
 }
 
-func (s *Simple) NewKiller(tanks []f.Tank) {
-    s.killers = &SimpleKiller { superior: s, policy: s.policy, obs: s.obs }
-    s.killers.Init(tanks)
+func (s *Simple) NewKiller() {
+    s.killers = &SimpleKiller { superior: s, policy: s.policy, obs: s.obs, Tanks: make(map[string]f.Tank)}
 }
 
-// 分配角色（TODO 合适时机应触发重分配）
 func (s *Simple) initRole(state *f.GameState, fcnt int, scnt int, kcnt int) {
+    // 创建角色
+    s.NewFlagMan()
+    s.NewSniper()
+    s.NewKiller()
+
+    // 分配坦克
     tanks := state.MyTank
     if fcnt > 0 {
         tanks = SortTankByPos(s.obs.Flag.Pos, tanks)
-        s.NewFlagMan(tanks[0:fcnt])  // 距离flag最近的坦克
+        s.flagmen.Init(tanks[0:fcnt])                  // 距离flag最近的坦克
     }
     if scnt > 0 {
-        s.NewSniper(state.MyTank[fcnt:fcnt + scnt])
+        s.snipers.Init(state.MyTank[fcnt:fcnt + scnt])
     }
     if kcnt > 0 {
-        s.NewKiller(state.MyTank[fcnt + scnt:])     // 剩余都作为 killer
+        s.killers.Init(state.MyTank[fcnt + scnt:])     // 剩余都作为 killer
     }
 }
 
@@ -101,6 +103,12 @@ func (s *Simple) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 
     // 设定模式
     // s.setMode(state)
+
+    // 检查各角色状况
+    s.UpdateRoles(state)
+
+    // 重分配角色
+    s.ReassignRoles(state)
 
 	// 分析雷达建议
 	s.checkRadar(radar, objective)
@@ -140,19 +148,16 @@ func (s *Simple) makeObservation(state *f.GameState, radar *f.RadarResult) {
 //     }
 // }
 
-// 检查雷达输出结果，决定躲避 or 开火
-// TODO 根据hp判断躲避优先还是开火优先
+// 根据雷达结果, 决定躲避/开火
 func (s *Simple) checkRadar(radar *f.RadarResult, objs map[string]f.Objective) {
 	var mrf *f.RadarFire
 	var rfs []*f.RadarFire
 	for _, tank := range s.obs.CurState.MyTank {
-        // fmt.Printf("radarDodge: %+v\n", radar.Dodge[tank.Id])
-        // fmt.Printf("radarFire: %+v\n", radar.Fire[tank.Id])
-        // 暂不判断躲避
+        // TODO 躲避判断
         if false {
 		// if radar.Dodge[tank.Id].Threat >= 0.7 {
 			objs[tank.Id] = f.Objective{ Action: f.ActionTravel, Target: radar.Dodge[tank.Id].SafePos }
-        // 能否开火
+        // 开火判断
         } else {
 			mrf = nil
 			rfs = []*f.RadarFire{ radar.Fire[tank.Id].Up, radar.Fire[tank.Id].Down, radar.Fire[tank.Id].Left, radar.Fire[tank.Id].Right }
@@ -168,5 +173,37 @@ func (s *Simple) checkRadar(radar *f.RadarResult, objs map[string]f.Objective) {
 			}
 		}
 	}
-    fmt.Printf("radar objectives: %+v\n", objs)
+}
+
+// 更新角色信息
+func (s *Simple) UpdateRoles(state *f.GameState) {
+    var flagmen, snipers, killers []f.Tank
+    for _, tank := range state.MyTank {
+        if s.flagmen.Tanks[tank.Id] != (f.Tank{}) {
+            flagmen = append(flagmen, tank)
+        } else if s.snipers.Tanks[tank.Id] != (f.Tank{}) {
+            snipers = append(snipers, tank)
+        } else {
+            killers = append(killers, tank)
+        }
+    }
+    s.flagmen.Init(flagmen)
+    s.snipers.Init(snipers)
+    s.killers.Init(killers)
+}
+
+// 重分配角色
+func (s *Simple) ReassignRoles(state *f.GameState) {
+    // 旗手死亡
+    if s.obs.HasFlag && len(s.flagmen.Tanks) == 0 {
+        var tanky f.Tank
+        if len(s.snipers.Tanks) > 0 {
+            tanky = TankyByHp(s.snipers.Tanks)
+            delete(s.snipers.Tanks, tanky.Id)
+        } else {
+            tanky = TankyByHp(s.killers.Tanks)
+            delete(s.snipers.Tanks, tanky.Id)
+        }
+        s.flagmen.Tanks[tanky.Id] = tanky
+    }
 }

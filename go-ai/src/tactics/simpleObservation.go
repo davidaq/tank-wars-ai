@@ -10,6 +10,8 @@ type Observation struct {
     Side         string
     CurSteps     int
     CurState     *f.GameState
+    MyTank      map[string]f.Tank // 我方存活坦克
+    EmyTank     map[string]f.Tank // 敌方存活坦克
     Radar        *f.RadarResult
     HasFlag      bool
     Flag         Flag
@@ -30,6 +32,9 @@ type Flag struct {
 func NewObservation(state *f.GameState) (obs *Observation) {
     obs = &Observation{ CurState: state, CurSteps: 0}
 
+    // 观察坦克
+    obs.observeTank(state)
+
 	// 观察苟点
 	obs.observeKps(state)
 
@@ -44,11 +49,30 @@ func NewObservation(state *f.GameState) (obs *Observation) {
 
 // 必须每回合都调用，因为记录 steps
 func (o *Observation) makeObservation(state *f.GameState, radar *f.RadarResult) {
+    // step
     o.CurSteps += 1
+
     o.CurState  = state
     o.Radar     = radar
+
+    // 更新坦克状态
+    o.observeTank(state)
+
+    // 更新旗点状态
 	o.observeFlag(state)
+
     fmt.Printf("CurSteps: %+v\n", o.CurSteps)
+}
+
+func (o *Observation) observeTank(state *f.GameState) {
+    o.MyTank = make(map[string]f.Tank)
+    for _, tank := range state.MyTank {
+        o.MyTank[tank.Id] = tank
+    }
+    o.EmyTank = make(map[string]f.Tank)
+    for _, tank := range state.EnemyTank {
+        o.EmyTank[tank.Id] = tank
+    }
 }
 
 func (o *Observation) observeFlag(state *f.GameState) {
@@ -71,7 +95,6 @@ func (o *Observation) observeFlag(state *f.GameState) {
 			o.Flag.EmyTank  = tank
 		}
 	}
-    // fmt.Printf("obs.Flag: %+v\n", o.Flag)
 }
 
 // 观察苟点
