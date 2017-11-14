@@ -35,6 +35,17 @@ func SortTankByPos(p f.Position, tanks []f.Tank) (res []f.Tank) {
 	return res
 }
 
+// 按离P点距离给一组坦克排序
+func TankyByHp(tanks map[string]f.Tank) f.Tank {
+	var tanky f.Tank
+	for _, tank := range tanks {
+        if tanky == (f.Tank{}) || tanky.Hp < tank.Hp {
+            tanky = tank
+        }
+	}
+	return tanky
+}
+
 // 为一组坐标和一组坦克，按距离远近匹配
 // 坐标点数量必须不小于坦克数量
 func MatchPosTank(ps []f.Position, tanks []f.Tank) map[string]f.Position {
