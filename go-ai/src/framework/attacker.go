@@ -31,28 +31,28 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 
 		switch fireDirection {
 		case DirectionUp: 
-			if ox == fx && fy > oy && fy - oy <= bulletSpeed {
+			if ox == fx && fy > oy && fy - oy <= bulletSpeed + 1 {
 				if enemyPos.X == ox && enemyPos.Y > oy && enemyPos.Y < fy {
 					return float64(0)
 				} 
 				return float64(1)
 			}
 		case DirectionLeft:
-			if oy == fy && fx > ox && fx - ox <= bulletSpeed {
+			if oy == fy && fx > ox && fx - ox <= bulletSpeed + 1 {
 				if enemyPos.Y == oy && enemyPos.X > ox && enemyPos.X < fx {
 					return float64(0)
 				}
 				return float64(1)
 			}
 		case DirectionDown:
-			if ox == fx && oy > fy && oy - fy <= bulletSpeed {
+			if ox == fx && oy > fy && oy - fy <= bulletSpeed + 1 {
 				if enemyPos.X == ox && enemyPos.Y > fy && enemyPos.Y < oy {
 					return float64(0)
 				}
 				return float64(1)
 			}
 		case DirectionRight:
-			if oy == fy && ox > fx && ox - fx <= bulletSpeed {
+			if oy == fy && ox > fx && ox - fx <= bulletSpeed + 1 {
 				if enemyPos.Y == oy && enemyPos.X > fx && enemyPos.X < ox {
 					return float64(0)
 				}
@@ -66,9 +66,9 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool, fireDirection int, enemyPos Position, tankPos Position) float64 {
 	faith := float64(0)
 
-	if verticalDistance <= bulletSpeed {
+	if verticalDistance <= bulletSpeed + 1 {
 		faith = float64(1)
-	} else if verticalDistance <= bulletSpeed * 2 {
+	} else if verticalDistance <= bulletSpeed * 2 + 1 {
 		faith = 0.5
 	} else {
 		return faith
@@ -76,8 +76,8 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 
 	if fireLine {
 
-		// 一个子弹距离内且在火线上，不管敌方朝向都必中
-		if verticalDistance <= bulletSpeed {
+		// 与敌方坦克相邻，不管敌方朝向都必中
+		if verticalDistance == 1 {
 			return float64(1)
 		}
 
