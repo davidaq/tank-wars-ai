@@ -425,7 +425,7 @@ func (self *Radar) convertQuadrant(state *GameState, bulletApproach bool, bullet
 
 // 检查自己当前的位置以及面朝方向前进的位置周围是否安全
 // 检查每个坦克四周开火命中率与代价
-func (self *Radar) Scan(state *GameState) *RadarResult {
+func (self *Radar) Scan(state *GameState, diff *DiffResult) *RadarResult {
 	// 躲避炮弹，炮弹还有几步打到
 	bulletApproach, bullets := self.avoidBullet(state)
 
