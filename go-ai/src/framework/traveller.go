@@ -109,6 +109,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 						lock.Unlock()
 					}
 					if cache.expect != nil {
+						lock.Lock()
 						collide := self.collide[tank.Id]
 						if cache.expect.Y != from.Y || cache.expect.X != from.X {
 							self.collide[tank.Id] = collide + 10
@@ -120,6 +121,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 						} else if collide > 0 {
 							self.collide[tank.Id] = collide - 1
 						}
+						lock.Unlock()
 					}
 					for len(cache.path) > 0 {
 						p := cache.path[0]
