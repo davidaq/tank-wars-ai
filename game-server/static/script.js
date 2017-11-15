@@ -258,19 +258,21 @@ async function setupReplay () {
       }
       const obj = objs[state.id];
       obj.stamp = stamp;
-      let direction = state.direction;
-      if (direction === 'down' && obj.$el.className.indexOf('direction-left') > -1) {
-        direction = 'pre-down-left';
-        setTimeout(() => {
-          obj.$el.className = `${type} ${type}-${color} direction-${state.direction} cell-size transition`;
-        }, 10);
-      } else if (direction === 'left' && obj.$el.className.indexOf('direction-down') > -1) {
-        direction = 'pre-left-down';
-        setTimeout(() => {
-          obj.$el.className = `${type} ${type}-${color} direction-${state.direction} cell-size transition`;
-        }, 10);
+      if (obj.$el.className.indexOf('pre-') == -1) {
+        let direction = state.direction;
+        if (direction === 'down' && obj.$el.className.indexOf('direction-left') > -1) {
+          direction = 'pre-down-left';
+          setTimeout(() => {
+            obj.$el.className = `${type} ${type}-${color} direction-${state.direction} cell-size transition`;
+          }, 10);
+        } else if (direction === 'left' && obj.$el.className.indexOf('direction-down') > -1) {
+          direction = 'pre-left-down';
+          setTimeout(() => {
+            obj.$el.className = `${type} ${type}-${color} direction-${state.direction} cell-size transition`;
+          }, 10);
+        }
+        obj.$el.className = `${type} ${type}-${color} direction-${direction} cell-size transition`;
       }
-      obj.$el.className = `${type} ${type}-${color} direction-${direction} cell-size transition`;
       Object.assign(obj.$el.style, {
         top: (cellSize * state.y) + 'px',
         left: (cellSize * state.x) + 'px',
