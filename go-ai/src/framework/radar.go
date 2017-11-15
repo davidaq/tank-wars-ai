@@ -32,8 +32,9 @@ const (
 
 type BulletThreat struct {
 	BulletPosition Position
-	Distance 	int	// 距离四方向火线的威胁度
 	Quadrant	int	// 相对于坦克的第几象限
+	Direction 	int // 朝向哪个象限（能判断出转换后的方向）
+	Distances 	map[int]int	// 距离四方向火线的威胁度
 }
 
 type EnemyThreat struct {
@@ -66,149 +67,164 @@ func (self *Radar) avoidBullet(state *GameState) (bulletApproach bool, bulletThr
 		var tmpBullet []BulletThreat
 		for _, bullet := range bulletMerge {
 			// 检查是否需要关注
-			if math.Pow(float64(bullet.Pos.X - tank.Pos.X), 2) + math.Pow(float64(bullet.Pos.Y - tank.Pos.Y), 2) <= float64(radius * radius) {
+			if math.Abs(float64(bullet.Pos.X - tank.Pos.X)) <= float64(radius) && math.Abs(float64(bullet.Pos.Y - tank.Pos.Y)) <= float64(radius) {
 				// 象限
-				tmpQuadrant := QUADRANT_NONE
-				tmpDistance := 0	// 注意要除子弹速度，这里是**距离火线位置**。威胁度还需要另外处理
+				tmpQuadrant 	:= QUADRANT_NONE
+				tmpDirection 	:= QUADRANT_NONE
+				tmpBulletQuadrantThreat := make(map[int]int)
 				if bullet.Pos.X < tank.Pos.X {
 					if bullet.Pos.Y < tank.Pos.Y && (bullet.Pos.Direction == DirectionRight || bullet.Pos.Direction == DirectionDown) {
 						tmpQuadrant = QUADRANT_L_U
 						if bullet.Pos.Direction == DirectionRight {
+							tmpDirection = QUADRANT_U
 							for w := bullet.Pos.X; w <= tank.Pos.X; w++ {
 								if 1 == state.Terain.Get(w, tank.Pos.Y) {
 									tmpQuadrant = QUADRANT_NONE
 									break
 								}
-								tmpDistance++
 							}
 						} else {
+							tmpDirection = QUADRANT_L
 							for w := bullet.Pos.Y; w <= tank.Pos.Y; w++ {
 								if 1 == state.Terain.Get(tank.Pos.X, w) {
 									tmpQuadrant = QUADRANT_NONE
 									break
 								}
-								tmpDistance++
 							}
 						}
+						// 计算相对火线的distances
+						tmpBulletQuadrantThreat[QUADRANT_U] = tank.Pos.X - bullet.Pos.X
+						tmpBulletQuadrantThreat[QUADRANT_L] = tank.Pos.Y - bullet.Pos.Y
 					}
 					if bullet.Pos.Y > tank.Pos.Y && (bullet.Pos.Direction == DirectionRight || bullet.Pos.Direction == DirectionUp) {
 						tmpQuadrant = QUADRANT_L_D
 						if bullet.Pos.Direction == DirectionRight {
+							tmpDirection = QUADRANT_D
 							for w := bullet.Pos.X; w <= tank.Pos.X; w++ {
 								if 1 == state.Terain.Get(w, tank.Pos.Y) {
 									tmpQuadrant = QUADRANT_NONE
 									break
 								}
-								tmpDistance++
 							}
 						} else {
+							tmpDirection = QUADRANT_L
 							for w := bullet.Pos.Y; w >= tank.Pos.Y; w-- {
 								if 1 == state.Terain.Get(tank.Pos.X, w) {
 									tmpQuadrant = QUADRANT_NONE
 									break
 								}
-								tmpDistance++
 							}
 						}
+						tmpBulletQuadrantThreat[QUADRANT_L] = bullet.Pos.Y - tank.Pos.Y
+						tmpBulletQuadrantThreat[QUADRANT_D] = tank.Pos.X - bullet.Pos.X
 					}
 				}
 				if bullet.Pos.X > tank.Pos.X {
 					if bullet.Pos.Y < tank.Pos.Y && (bullet.Pos.Direction == DirectionLeft || bullet.Pos.Direction == DirectionDown) {
 						tmpQuadrant = QUADRANT_R_U
 						if bullet.Pos.Direction == DirectionLeft {
+							tmpDirection = QUADRANT_U
 							for w := bullet.Pos.X; w >= tank.Pos.X; w-- {
 								if 1 == state.Terain.Get(w, tank.Pos.Y) {
 									tmpQuadrant = QUADRANT_NONE
 									break
 								}
-								tmpDistance++
 							}
 						} else {
+							tmpDirection = QUADRANT_R
 							for w := bullet.Pos.Y; w <= tank.Pos.Y; w++ {
 								if 1 == state.Terain.Get(tank.Pos.X, w) {
 									tmpQuadrant = QUADRANT_NONE
 									break
 								}
-								tmpDistance++
 							}
 						}
+						tmpBulletQuadrantThreat[QUADRANT_U] = bullet.Pos.X - tank.Pos.X
+						tmpBulletQuadrantThreat[QUADRANT_R] = tank.Pos.Y - bullet.Pos.Y
 					}
 					if bullet.Pos.Y > tank.Pos.Y && (bullet.Pos.Direction == DirectionLeft || bullet.Pos.Direction == DirectionUp) {
 						tmpQuadrant = QUADRANT_R_D
 						if bullet.Pos.Direction == DirectionLeft {
+							tmpDirection = QUADRANT_D
 							for w := bullet.Pos.X; w >= tank.Pos.X; w-- {
 								if 1 == state.Terain.Get(w, tank.Pos.Y) {
 									tmpQuadrant = QUADRANT_NONE
 									break
 								}
-								tmpDistance++
 							}
 						} else {
+							tmpDirection = QUADRANT_R
 							for w := bullet.Pos.Y; w <= tank.Pos.Y; w++ {
 								if 1 == state.Terain.Get(tank.Pos.X, w) {
 									tmpQuadrant = QUADRANT_NONE
 									break
 								}
-								tmpDistance++
 							}
 						}
+						tmpBulletQuadrantThreat[QUADRANT_D] = bullet.Pos.X - tank.Pos.X
+						tmpBulletQuadrantThreat[QUADRANT_R] = bullet.Pos.Y - tank.Pos.Y
 					}
 				}
 				if bullet.Pos.X == tank.Pos.X {
 					//在Y火线上
 					if bullet.Pos.Y < tank.Pos.Y && bullet.Pos.Direction == DirectionDown {
 						tmpQuadrant = QUADRANT_U
+						tmpDirection = QUADRANT_U
 						for w := bullet.Pos.Y; w <= tank.Pos.Y; w++ {
 							if 1 == state.Terain.Get(tank.Pos.X, w) {
 								tmpQuadrant = QUADRANT_NONE
 								break
 							}
-							tmpDistance++
 						}
+						tmpBulletQuadrantThreat[QUADRANT_U] = tank.Pos.Y - bullet.Pos.Y
 					}
 					if bullet.Pos.Y > tank.Pos.Y && bullet.Pos.Direction == DirectionUp {
 						tmpQuadrant = QUADRANT_D
+						tmpDirection = QUADRANT_D
 						for w := bullet.Pos.Y; w >= tank.Pos.Y; w-- {
 							if 1 == state.Terain.Get(tank.Pos.X, w) {
 								tmpQuadrant = QUADRANT_NONE
 								break
 							}
-							tmpDistance++
 						}
+						tmpBulletQuadrantThreat[QUADRANT_D] = bullet.Pos.Y - tank.Pos.Y
 					}
 				}
 				if bullet.Pos.Y == tank.Pos.Y {
 					//在X火线上
 					if bullet.Pos.X < tank.Pos.X && bullet.Pos.Direction == DirectionRight {
 						tmpQuadrant = QUADRANT_L
+						tmpDirection = QUADRANT_L
 						for w := bullet.Pos.X; w <= tank.Pos.X; w++ {
 							if 1 == state.Terain.Get(w, tank.Pos.Y) {
 								tmpQuadrant = QUADRANT_NONE
 								break
 							}
-							tmpDistance++
 						}
+						tmpBulletQuadrantThreat[QUADRANT_L] = tank.Pos.X - bullet.Pos.X
 					}
 					if bullet.Pos.X > tank.Pos.X && bullet.Pos.Direction == DirectionLeft {
 						tmpQuadrant = QUADRANT_R
+						tmpDirection = QUADRANT_R
 						for w := bullet.Pos.X; w >= tank.Pos.X; w-- {
 							if 1 == state.Terain.Get(w, tank.Pos.Y) {
 								tmpQuadrant = QUADRANT_NONE
 								break
 							}
-							tmpDistance++
 						}
+						tmpBulletQuadrantThreat[QUADRANT_R] = bullet.Pos.X - tank.Pos.X
 					}
 				}
 
-				if tmpQuadrant == QUADRANT_NONE || tmpDistance == 0 {
+				if tmpQuadrant == QUADRANT_NONE {
 					continue
 				}
 
 				tmpBullet = append(tmpBullet, BulletThreat{
 					BulletPosition: bullet.Pos,
-					Distance: tmpDistance,	// 这里不做处理，后面再综合除
 					Quadrant: tmpQuadrant,
+					Direction: tmpDirection,
+					Distances: tmpBulletQuadrantThreat,
 				})
 			}
 		}
@@ -225,7 +241,7 @@ func (self *Radar) avoidBullet(state *GameState) (bulletApproach bool, bulletThr
 
 func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string][]EnemyThreat) {
 	// 雷达半径由步数实际算出
-	radius := state.Params.TankSpeed * RADAR_ENEMY_STEP
+	radius := state.Params.BulletSpeed * RADAR_ENEMY_STEP
 
 	// 计算敌军在自己的什么方位 无视墙，防止LYB苟墙角
 	enemyRadar := make(map[string][]EnemyThreat)
@@ -235,7 +251,7 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 		var tmpEnemyThreat []EnemyThreat
 		for _, enemyTank := range state.EnemyTank {
 			// 检查是否需要关注 圆形雷达
-			if math.Pow(float64(enemyTank.Pos.X - tank.Pos.X), 2) + math.Pow(float64(enemyTank.Pos.Y - tank.Pos.Y), 2) <= float64(radius * radius) {
+			if math.Abs(float64(enemyTank.Pos.X - tank.Pos.X)) <= float64(radius) && math.Abs(float64(enemyTank.Pos.Y - tank.Pos.Y)) <= float64(radius) {
 				tmpEnemyThreat = append(tmpEnemyThreat, EnemyThreat{
 					Enemy: enemyTank.Pos,
 				})
@@ -381,6 +397,12 @@ func (self *Radar) convertQuadrant(state *GameState, bulletApproach bool, bullet
 			if len((*bullets)[tank.Id]) > 0 {
 				for k := range (*bullets)[tank.Id] {
 					(*bullets)[tank.Id][k].Quadrant = quadrant[(*bullets)[tank.Id][k].Quadrant]
+					(*bullets)[tank.Id][k].Direction = quadrant[(*bullets)[tank.Id][k].Direction]
+					tmpConverted := make(map[int]int)
+					for kds, vds := range (*bullets)[tank.Id][k].Distances {
+						tmpConverted[quadrant[kds]] = vds
+					}
+					(*bullets)[tank.Id][k].Distances = tmpConverted
 				}
 			}
 		}
