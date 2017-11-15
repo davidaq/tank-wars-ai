@@ -35,8 +35,9 @@ func (self *Player) Play(state *GameState, absTurn bool) map[string]int {
 		self.radar = NewRadar()
 		self.traveller = NewTraveller()
 	}
-	self.differ.Compare(state)
-	radarResult := self.radar.Scan(state)
+	diff := self.differ.Compare(state, self.traveller.CollidedTankInForest(state))
+	radarResult := self.radar.Scan(state, diff)
+	radarResult.ForestThreat = diff.ForestThreat
 	self.tactics.Plan(state, radarResult, self.objectives)
 
 	movement := make(map[string]int)

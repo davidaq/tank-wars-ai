@@ -393,8 +393,8 @@ func searchForest(preState *GameState, state *GameState, ret *DiffResult, watchL
 	// return ret
 }
 
-func (self *Diff) Compare(newState *GameState) DiffResult {
-	ret := DiffResult {
+func (self *Diff) Compare(newState *GameState, collidedEnemyInForest[]Position) *DiffResult {
+	ret := &DiffResult {
 		ForestThreat: make(map[Position]float64),
 	}
 	if self.watchList == nil {
@@ -405,7 +405,7 @@ func (self *Diff) Compare(newState *GameState) DiffResult {
 	}
 	if self.prevState != nil {
 		// TODO
-		searchForest(self.prevState, newState, &ret, self.watchList)
+		searchForest(self.prevState, newState, ret, self.watchList)
 	}
 	self.prevState = newState
 	return ret

@@ -27,9 +27,15 @@ func NewTraveller() *Traveller {
 	return inst
 }
 
-func (self *Traveller) CollidedTankInGrass(state *GameState) []Position {
-	var items []Position
+func (self *Traveller) CollidedTankInForest(state *GameState) []Position {
+	var candidate []Position
+	myTankPos := make(map[Position]bool)
 	for _, tank := range state.MyTank {
+		p := Position {
+			X: tank.Pos.X,
+			Y: tank.Pos.Y,
+		}
+		myTankPos[p] = true
 		if cache, ok := self.cache[tank.Id]; ok {
 			from := &tank.Pos
 			if cache.expect != nil && (cache.expect.Y != from.Y || cache.expect.X != from.X) {
@@ -37,11 +43,19 @@ func (self *Traveller) CollidedTankInGrass(state *GameState) []Position {
 					X: from.X + sign(cache.expect.X - from.X),
 					Y: from.Y + sign(cache.expect.Y - from.Y),
 				}
-				items = append(items, pos)
+				if state.Terain.Get(pos.X, pos.Y) == 2 {
+					candidate = append(candidate, pos)
+				}
 			}
 		}
 	}
-	return items
+	var ret []Position
+	for _, pos := range candidate {
+		if !myTankPos[pos] {
+			ret = append(ret, pos)
+		}
+	}
+	return ret
 }
 
 func (self *Traveller) Search(travel map[string]*Position, state *GameState, movements map[string]int) {
