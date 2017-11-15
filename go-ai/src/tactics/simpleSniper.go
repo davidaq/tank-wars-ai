@@ -35,27 +35,18 @@ func (s *SimpleSniper) Plan(state *f.GameState, objs map[string]f.Objective){
 }
 
 func (s *SimpleSniper) HideAndFire(tanks []f.Tank, objs map[string]f.Objective) {
-    // 按距离远近分配行动目标
-	arrPos := SortByPos(s.obs.Flag.Pos, s.obs.Kps[0:len(tanks)])    // 优先攻击旗点附近坦克
-	ftanks := s.policy.Dispatch(tanks, arrPos[0:len(tanks)], objs)
-
-    // 已抵达目的地坦克，根据友伤选择是否开火
-    var radarFire f.RadarFireAll
-    for _, ftank := range ftanks {
-        radarFire = s.obs.Radar.Fire[ftank.Id]
-        // 无友伤则开火
-        if s.obs.Side == "red" {
-            if radarFire == (f.RadarFireAll{}) || radarFire.Down.Sin <= 0.3 {
-                objs[ftank.Id] = f.Objective{ Action: f.ActionFireDown}
-            } else {
-                objs[ftank.Id] = f.Objective{ Action: f.ActionStay}
-            }
-        } else {
-            if radarFire == (f.RadarFireAll{}) || radarFire.Up.Sin <= 0.3 {
-                objs[ftank.Id] = f.Objective{ Action: f.ActionFireUp}
-            } else {
-                objs[ftank.Id] = f.Objective{ Action: f.ActionStay}
-            }
+    // 分派狙击手到苟点
+    ftanks := make(map[string]f.Tank)
+    if len(s.obs.Kps) < len(tanks) {
+        ftanks = s.policy.Dispatch(tanks[0:len(s.obs.Kps)],  s.obs.Kps, objs)
+        for _, tank := range tanks[len(s.obs.Kps):]{
+            ftanks[tank.Id] = tank
         }
+    } else {
+        ftanks = s.policy.Dispatch(tanks, s.obs.Kps, objs)
+    }
+    // 已抵达目的地坦克，根据友伤选择是否开火
+    if len(ftanks) > 0 {
+        s.policy.FreeFire(ftanks, s.obs, objs)
     }
 }

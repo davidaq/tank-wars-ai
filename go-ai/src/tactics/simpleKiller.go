@@ -34,7 +34,25 @@ func (s *SimpleKiller) Plan(state *f.GameState, objs map[string]f.Objective){
 	}
 }
 
-// 待优化
+// 追击敌方坦克
 func (s *SimpleKiller) huntEmyTank(tanks []f.Tank, objs map[string]f.Objective) {
-	s.policy.Patrol(s.obs.Flag.Pos, tanks, s.obs.CurState.EnemyTank, objs)
+    // 适合射击的地点
+    var shootPos []f.Position
+    ftanks   := make(map[string]f.Tank)
+    for _, emytank := range s.obs.EmyTank {
+        shootPos = append(shootPos, FindShootPos(emytank.Pos, *s.obs.CurState.Terain, s.obs.CurState.Params.BulletSpeed)...)
+    }
+    // match 附近的坦克
+    if len(shootPos) < len(tanks) {
+        ftanks = s.policy.Dispatch(tanks[0:len(shootPos)], shootPos, objs)
+        for _, tank := range tanks[len(shootPos):]{
+            ftanks[tank.Id] = tank
+        }
+    } else {
+        ftanks = s.policy.Dispatch(tanks, shootPos, objs)
+    }
+
+    if len(ftanks) > 0 {
+        s.policy.FreeFire(ftanks, s.obs, objs)
+    }
 }
