@@ -153,9 +153,9 @@ func (s *Simple) checkRadar(radar *f.RadarResult, objs map[string]f.Objective) {
 	var mrf *f.RadarFire
 	var rfs []*f.RadarFire
 	for _, tank := range s.obs.CurState.MyTank {
-        // TODO 躲避判断
+        // TODO 躲避判断(根据血量提高躲避敏感度)
         if false {
-		// if radar.Dodge[tank.Id].Threat >= 0.7 {
+		// if radar.Dodge[tank.Id].Threat == 1 {
 			objs[tank.Id] = f.Objective{ Action: f.ActionTravel, Target: radar.Dodge[tank.Id].SafePos }
         // 开火判断
         } else {
@@ -173,6 +173,7 @@ func (s *Simple) checkRadar(radar *f.RadarResult, objs map[string]f.Objective) {
 			}
 		}
 	}
+    fmt.Printf("radar objectives: %+v\n", objs)
 }
 
 // 更新角色信息

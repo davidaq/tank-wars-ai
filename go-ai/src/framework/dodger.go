@@ -49,8 +49,10 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
 		if bulletApproach == true && len((*bullets)[tank.Id]) > 0 {
 			for _, b := range (*bullets)[tank.Id] {
 				if b.Quadrant == QUADRANT_U || b.Quadrant == QUADRANT_L || b.Quadrant == QUADRANT_D || b.Quadrant == QUADRANT_R {
-                    // 设置最终紧急度 如果不躲肯定挂掉
-                    tmpUrgent = 1
+                    // 设置最终紧急度 如果不躲 两回合肯定挂掉
+                    if b.Distances[b.Quadrant] <= state.Params.BulletSpeed * 2 + 2 {
+                        tmpUrgent = 1
+                    }
 
                     // 影响火线上的操作
                     if b.Quadrant == QUADRANT_U || b.Quadrant == QUADRANT_D {
@@ -134,13 +136,13 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
 			}
 		}
 
-        // 处理敌军情况
-		if enemyApproach == true && len((*enemys)[tank.Id]) > 0 {
+        // 处理敌军情况 如果自己在草里，不用考虑敌军 威胁
+		if enemyApproach == true && len((*enemys)[tank.Id]) > 0 && state.Terain.Get(tank.Pos.X, tank.Pos.Y) != TerainForest {
 			for _, e := range ((*enemys)[tank.Id]) {
 				if e.Quadrant == QUADRANT_U || e.Quadrant == QUADRANT_L || e.Quadrant == QUADRANT_D || e.Quadrant == QUADRANT_R {
                     // 敌军在火线上的处理
                     // 两回合炮弹距离则为紧急
-                    if e.Distances[e.Quadrant] <= state.Params.BulletSpeed * 2 {
+                    if e.Distances[e.Quadrant] <= state.Params.BulletSpeed * 2 + 2 {
                         tmpUrgent = 1
                     }
 
@@ -306,26 +308,9 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                     break
                 }
             }
-        } else {
-            //for _, action := range actionSequence {
-            //    if urgent[action] == MAX {
-            //        continue
-            //    }
-            //    if urgent[ActionMove] == urgent[action] {
-            //        // 如果相对最高，直接直行
-            //        tmpActionSequence := actionSequence[0]
-            //        for k, v := range actionSequence {
-            //            if v == ActionMove {
-            //                actionSequence[0] = ActionMove
-            //                actionSequence[k] = tmpActionSequence
-            //                fin = true
-            //                break
-            //            }
-            //        }
-            //    }
-            //    break
-            //}
         }
+
+
 
         // 尽可能去行动，而非停止
         if fin == false {
@@ -413,7 +398,7 @@ func (self *Radar) convertActionToPosition(state *GameState, tank Tank, action i
     }
 
     // 撞墙、超出地图边界判断
-    if state.Terain.Get(positionRet.X, positionRet.Y) == 1{
+    if state.Terain.Get(positionRet.X, positionRet.Y) == TerainObstacle {
         return false, Position{}
     }
     return true, positionRet

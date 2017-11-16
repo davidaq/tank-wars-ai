@@ -105,12 +105,12 @@ func (o *Observation) observeKps(state *f.GameState) {
     // 判断红蓝方
     if state.MyTank[0].Pos.X < state.Terain.Width / 2 {
         o.Side    = "blue"
-        o.FlagKps = append(o.Kps, f.Position { X:9, Y:12})
-        o.Kps     = append(o.Kps, f.Position { X:10, Y:12})
+        o.FlagKps = append(o.Kps, f.Position { X:9, Y:11})
+        o.Kps     = append(o.Kps, f.Position { X:10, Y:11})
     } else {
         o.Side    = "red"
-        o.FlagKps = append(o.Kps, f.Position { X:9, Y:6})
-        o.Kps     = append(o.Kps, f.Position { X:8, Y:6})
+        o.FlagKps = append(o.Kps, f.Position { X:9, Y:7})
+        o.Kps     = append(o.Kps, f.Position { X:8, Y:7})
     }
 }
 

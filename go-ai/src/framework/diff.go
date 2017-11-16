@@ -2,7 +2,6 @@
 package framework
 
 import (
-	_ "fmt"
 )
 
 type Diff struct {
@@ -61,7 +60,7 @@ func caculateForestRange(terain [][]int, pos Position) int {
 	return count
 }
 
-func searchForest(preState *GameState, state *GameState, ret *DiffResult, watchList *ObservationList) {
+func searchForest(preState *GameState, watchList *ObservationList, state *GameState, collision []Position, ret *DiffResult ) {
 	bulletSpeed := state.Params.BulletSpeed
 	tankSpeed := state.Params.TankSpeed
 	terain := state.Terain.Data
@@ -284,7 +283,7 @@ func searchForest(preState *GameState, state *GameState, ret *DiffResult, watchL
 		switch curItemPos.Direction {
 		case DirectionUp:
 			if curItemPos.Y - bulletSpeed < 0 {
-				step = 0
+				step = curItemPos.Y
 			} else {
 				step = bulletSpeed
 			}
@@ -296,7 +295,7 @@ func searchForest(preState *GameState, state *GameState, ret *DiffResult, watchL
 			}
 		case DirectionLeft:
 			if curItemPos.X - bulletSpeed < 0 {
-				step = 0
+				step = curItemPos.X
 			} else {
 				step = bulletSpeed
 			}
@@ -307,25 +306,25 @@ func searchForest(preState *GameState, state *GameState, ret *DiffResult, watchL
 				}
 			}
 		case DirectionDown:
-			if curItemPos.Y + bulletSpeed > state.Terain.Height {
-				step = state.Terain.Height - curItemPos.Y
+			if curItemPos.Y + bulletSpeed > state.Terain.Height-1 {
+				step = state.Terain.Height-curItemPos.Y-1
 			} else {
 				step = bulletSpeed
 			}
 			for j:= 1; j<=step; j++ {
-				if terain[curItemPos.Y+j-1][curItemPos.X] == 2 {
+				if terain[curItemPos.Y+j][curItemPos.X] == 2 {
 					watchList.bullet[state.MyBullet[i].Id] = state.MyBullet[i]
 					break
 				}
 			}
 		case DirectionRight:
-			if curItemPos.X + bulletSpeed > state.Terain.Width {
-				step = state.Terain.Width - curItemPos.X
+			if curItemPos.X + bulletSpeed > state.Terain.Width-1 {
+				step = state.Terain.Width-curItemPos.X-1
 			} else {
 				step = bulletSpeed
 			}
 			for j:= 1; j<=step; j++ {
-				if terain[curItemPos.Y][curItemPos.X+j-1] == 2 {
+				if terain[curItemPos.Y][curItemPos.X+j] == 2 {
 					watchList.bullet[state.MyBullet[i].Id] = state.MyBullet[i]
 					break
 				}
@@ -341,7 +340,7 @@ func searchForest(preState *GameState, state *GameState, ret *DiffResult, watchL
 		switch curItemPos.Direction {
 		case DirectionUp:
 			if curItemPos.Y - tankSpeed < 0 {
-				step = 0
+				step = curItemPos.Y
 			} else {
 				step = tankSpeed
 			}
@@ -353,7 +352,7 @@ func searchForest(preState *GameState, state *GameState, ret *DiffResult, watchL
 			}
 		case DirectionLeft:
 			if curItemPos.X - tankSpeed < 0 {
-				step = 0
+				step = curItemPos.X
 			} else {
 				step = tankSpeed
 			}
@@ -364,25 +363,25 @@ func searchForest(preState *GameState, state *GameState, ret *DiffResult, watchL
 				}
 			}
 		case DirectionDown:
-			if curItemPos.Y + tankSpeed > state.Terain.Height {
-				step = state.Terain.Height - curItemPos.Y
+			if curItemPos.Y + tankSpeed > state.Terain.Height-1 {
+				step = state.Terain.Height-curItemPos.Y-1
 			} else {
 				step = tankSpeed
 			}
 			for j:= 1; j<=step; j++ {
-				if terain[curItemPos.Y+j-1][curItemPos.X] == 2 {
+				if terain[curItemPos.Y+j][curItemPos.X] == 2 {
 					watchList.tank[state.EnemyTank[i].Id] = state.EnemyTank[i]
 					break
 				}
 			}
 		case DirectionRight:
-			if curItemPos.X + tankSpeed > state.Terain.Width {
-				step = state.Terain.Width - curItemPos.X
+			if curItemPos.X + tankSpeed > state.Terain.Width-1 {
+				step = state.Terain.Width-curItemPos.X-1
 			} else {
 				step = tankSpeed
 			}
 			for j:= 1; j<=step; j++ {
-				if terain[curItemPos.Y][curItemPos.X+j-1] == 2 {
+				if terain[curItemPos.Y][curItemPos.X+j] == 2 {
 					watchList.tank[state.EnemyTank[i].Id] = state.EnemyTank[i]
 					break
 				}
@@ -390,7 +389,10 @@ func searchForest(preState *GameState, state *GameState, ret *DiffResult, watchL
 		}
 	}
 
-	// return ret
+	// 添加丛林中撞击事件的坦克标记
+	for i:= 0; i<len(collision); i++ {
+		ret.ForestThreat[collision[i]] = float64(1)
+	}
 }
 
 func (self *Diff) Compare(newState *GameState, collidedEnemyInForest[]Position) *DiffResult {
@@ -405,7 +407,7 @@ func (self *Diff) Compare(newState *GameState, collidedEnemyInForest[]Position) 
 	}
 	if self.prevState != nil {
 		// TODO
-		searchForest(self.prevState, newState, ret, self.watchList)
+		searchForest(self.prevState, self.watchList ,newState, collidedEnemyInForest, ret, )
 	}
 	self.prevState = newState
 	return ret

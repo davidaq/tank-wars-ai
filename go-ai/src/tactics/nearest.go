@@ -37,7 +37,7 @@ func (self *Nearest) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 		}
 		if ttank != nil {
 			objective[tank.Id] = f.Objective {
-				Action: f.ActionTravelWithDodge,
+				Action: f.ActionTravel,
 				Target: ttank.Pos,
 			}
 		}
