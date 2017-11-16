@@ -4,6 +4,7 @@ package framework
 import (
 	"lib/go-astar"
 	"sync"
+	"math/rand"
 )
 
 type PathCache struct {
@@ -59,6 +60,7 @@ func (self *Traveller) CollidedTankInForest(state *GameState) []Position {
 }
 
 func (self *Traveller) Search(travel map[string]*Position, state *GameState, movements map[string]int) {
+	maxPathCalc := 9
 	if self.astar == nil {
 		self.astar = astar.NewAStar(state.Terain.Height, state.Terain.Width)
 		for y := 0; y < state.Terain.Height; y++ {
@@ -72,7 +74,6 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 			}
 		}
 	}
-	waits := 0
 	waitchan := make(chan bool)
 	var lock sync.Mutex
 	occupy := make(map[Position]bool)
@@ -86,97 +87,121 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 		a.FillTile(astar.Point{ Col: tank.Pos.X, Row: tank.Pos.Y }, lw)
 	}
 	lock.Lock()
+	var myTanks []*Tank
 	for _, tank := range state.MyTank {
-		if target, exists := travel[tank.Id]; exists {
-			waits += 1
-			id := tank.Id
-			from := tank.Pos
-			to := *target
-			go (func () {
-				nextPoint := from
-				lock.Lock()
-				cache, hasCache := self.cache[id]
-				lock.Unlock()
-				if from.X != to.X || from.Y != to.Y {
-					if !hasCache || cache.target.X != to.X || cache.target.Y != to.Y {
-						cache = &PathCache {
-							path: self.path(a, from, to, state.Params.TankSpeed, state.Terain),
-							target: to,
-						}
-						hasCache = true
-						lock.Lock()
-						self.cache[id] = cache
-						lock.Unlock()
-					}
-					if cache.expect != nil {
-						lock.Lock()
-						collide := self.collide[tank.Id]
-						if cache.expect.Y != from.Y || cache.expect.X != from.X {
-							self.collide[tank.Id] = collide + 10
-							if abs(from.X - to.X) + abs(from.Y - to.Y) > state.Params.TankSpeed {
-								cache.path = nil
-							} else {
-								cache.path = []Position { *cache.expect }
-							}
-						} else if collide > 0 {
-							self.collide[tank.Id] = collide - 1
-						}
-						lock.Unlock()
-					}
-					for len(cache.path) > 0 {
-						p := cache.path[0]
-						if p.X == from.X && p.Y == from.Y {
-							cache.path = cache.path[1:]
-						} else {
-							break
-						}
-					}
-					if len(cache.path) == 0 {
-						cache.path = self.path(a, from, to, state.Params.TankSpeed, state.Terain)
-					}
-					if len(cache.path) == 0 {
-						nextPoint = to
-					} else {
-						nextPoint = cache.path[0]
-					}
-				}
-				action := toAction(from, nextPoint)
-				if hasCache {
-					cache.expect = nil
-				}
-				lock.Lock()
-				if action == ActionMove {
-					p := Position { Y: from.Y, X: from.X }
-					if nextPoint.Y > from.Y {
-						p.Y++
-					} else if nextPoint.Y < from.Y {
-						p.Y--
-					} else if nextPoint.X > from.X {
-						p.X++
-					} else if nextPoint.X < from.X {
-						p.X--
-					}
-					if _, exists = occupy[p]; exists {
-						action = ActionStay
-						p = Position { Y: from.Y, X: from.X }
-					} else if hasCache {
-						cache.expect = &nextPoint
-					}
-					occupy[p] = true
-				} else {
-					p := Position { Y: from.Y, X: from.X }
-					occupy[p] = true
-				}
-				movements[id] = action
-				lock.Unlock()
-				waitchan <- true
-			})()
+		if _, exists := travel[tank.Id]; exists {
+			t := tank
+			myTanks = append(myTanks, &t)
 		} else {
 			occupy[Position{ Y: tank.Pos.Y, X: tank.Pos.X }] = true
 		}
 	}
+	if len(myTanks) > maxPathCalc {
+		full := myTanks
+		myTanks = make([]*Tank, len(full))
+		for i, j := range rand.Perm(len(myTanks)) {
+			myTanks[i] = full[j]
+		}
+	}
+	for _, tank := range myTanks {
+		id := tank.Id
+		from := tank.Pos
+		to := *travel[tank.Id]
+		go (func () {
+			nextPoint := to
+			lock.Lock()
+			cache, hasCache := self.cache[id]
+			if !hasCache {
+				cache = &PathCache {}
+				self.cache[id] = cache
+			}
+			lock.Unlock()
+			if from.X != to.X || from.Y != to.Y {
+				if cache.target.X != to.X || cache.target.Y != to.Y {
+					cache.path = nil
+				}
+				cache.target = to
+				if cache.expect != nil {
+					lock.Lock()
+					collide := self.collide[tank.Id]
+					if cache.expect.Y != from.Y || cache.expect.X != from.X {
+						self.collide[tank.Id] = collide + 10
+						if abs(from.X - to.X) + abs(from.Y - to.Y) > state.Params.TankSpeed {
+							cache.path = nil
+						} else {
+							cache.path = []Position { *cache.expect }
+						}
+					} else if collide > 0 {
+						self.collide[tank.Id] = collide - 1
+					}
+					lock.Unlock()
+				}
+				for len(cache.path) > 0 {
+					p := cache.path[0]
+					if p.X == from.X && p.Y == from.Y {
+						cache.path = cache.path[1:]
+					} else {
+						break
+					}
+				}
+				if len(cache.path) == 0 {
+					lock.Lock()
+					allowCalc := false
+					if maxPathCalc > 0 {
+						maxPathCalc--
+						allowCalc = true
+					}
+					lock.Unlock()
+					if allowCalc {
+						cache.path = self.path(a, from, to, state.Params.TankSpeed, state.Terain)
+						for len(cache.path) > 0 {
+							p := cache.path[0]
+							if p.X == from.X && p.Y == from.Y {
+								cache.path = cache.path[1:]
+							} else {
+								break
+							}
+						}
+					}
+				}
+				if len(cache.path) == 0 {
+					nextPoint = to
+				} else {
+					nextPoint = cache.path[0]
+				}
+			}
+			action := toAction(from, nextPoint)
+			cache.expect = nil
+			lock.Lock()
+			if action == ActionMove {
+				p := Position { Y: from.Y, X: from.X }
+				if nextPoint.Y > from.Y {
+					p.Y++
+				} else if nextPoint.Y < from.Y {
+					p.Y--
+				} else if nextPoint.X > from.X {
+					p.X++
+				} else if nextPoint.X < from.X {
+					p.X--
+				}
+				if _, exists := occupy[p]; exists {
+					action = ActionStay
+					p = Position { Y: from.Y, X: from.X }
+				} else {
+					cache.expect = &nextPoint
+				}
+				occupy[p] = true
+			} else {
+				p := Position { Y: from.Y, X: from.X }
+				occupy[p] = true
+			}
+			movements[id] = action
+			lock.Unlock()
+			waitchan <- true
+		})()
+	}
 	lock.Unlock()
-	for i := 0; i < waits; i++ {
+	for _, _ = range myTanks {
 		_ = <- waitchan
 	}
 }

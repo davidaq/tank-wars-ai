@@ -2,7 +2,6 @@ package astar
 
 import (
     "math"
-    "fmt"
 )
 
 type AStar interface {
@@ -86,7 +85,11 @@ func (a *gridStruct) ClearTile(p Point) {
 func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movelen int, startdir int) *PathPoint {
     var openList = make(map[Point]*PathPoint)
     var closeList = make(map[Point]*PathPoint)
-    stepsLimit := (a.rows + a.cols) * 2
+    stepsLimit := a.rows + a.cols
+    if stepsLimit < 20 {
+        stepsLimit = 20
+    }
+    tpoint := source[0]
 
     source_map := make(map[Point]bool)
     for _, p := range source {
@@ -108,7 +111,8 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movele
         }
     }
 
-    candidates := make(map[Point]*PathPoint)
+    var closest *PathPoint
+    closestDist := 0
     var current *PathPoint
     for {
         current = a.getMinWeight(openList)
@@ -116,11 +120,14 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movele
         if current == nil || config.IsEnd(current.Point, source, source_map) {
             break
         }
+        if tdist := abs(current.Point.Row - tpoint.Row) + abs(current.Point.Col - tpoint.Col); closest == nil || tdist < closestDist {
+            closestDist = tdist
+            closest = current
+        }
 
         delete(openList, current.Point)
         closeList[current.Point] = current
         if current.DistTraveled > stepsLimit {
-            candidates[current.Point] = current
             continue
         }
 
@@ -204,8 +211,7 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movele
         }
     }
     if current == nil {
-        fmt.Println("Select best of candidates")
-        current = a.getMinWeight(candidates)
+        current = closest
     }
 
     current = config.PostProcess(current, a.rows, a.cols, a.filledTiles)
@@ -306,4 +312,12 @@ type PathPoint struct {
 // Manhattan distance NOT euclidean distance because in our routing we cant go diagonally between the points.
 func (p Point) Dist(other Point) int {
     return int(math.Abs(float64(p.Row-other.Row)) + math.Abs(float64(p.Col-other.Col)))
+}
+
+func abs (v int) int {
+    if v < 0 {
+        return -v
+    } else {
+        return v
+    }
 }
