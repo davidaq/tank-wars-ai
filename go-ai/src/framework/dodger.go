@@ -7,6 +7,7 @@ package framework
 import (
 	"math"
     "sort"
+    "fmt"
 )
 
 type Dodger struct {
@@ -292,6 +293,15 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
             }
         }
 
+        // 如果全都撞墙，则不去推荐
+        if len(actionSequence) == 0 {
+            radarDodge[tankId] = RadarDodge{
+                Threat: 0,
+                SafePos: Position{},
+            }
+            continue
+        }
+
         // STEP4.3 对行动类型列表进行分析，后面会对附近坦克进行计算
         // 优先度直接扔到第一位，方便后面处理
         // 前进优先，如果前进是满距离，而且相对最高（重复值一样）
@@ -401,6 +411,23 @@ func (self *Radar) convertActionToPosition(state *GameState, tank Tank, action i
     if state.Terain.Get(positionRet.X, positionRet.Y) == TerainObstacle {
         return false, Position{}
     }
+
+    // 检查碰撞己方和敌方坦克
+    for _, s := range state.MyTank {
+        // 排除自己
+        if s.Id == tank.Id {
+            continue
+        }
+        if positionRet.X == s.Pos.X && positionRet.Y == s.Pos.Y {
+            return false, Position{}
+        }
+    }
+    for _, e := range state.EnemyTank {
+        if positionRet.X == e.Pos.X && positionRet.Y == e.Pos.Y {
+            return false, Position{}
+        }
+    }
+
     return true, positionRet
 }
 

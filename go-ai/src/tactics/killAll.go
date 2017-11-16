@@ -7,9 +7,9 @@ import (
 type KillAll struct {
 }
 
-func NewKillAll() *KillALL {
-	return &KillAll {}
-}
+//func NewKillAll() *KillALL {
+//	return &KillAll {}
+//}
 
 func (self *KillAll) Init(state *f.GameState) {
 }
