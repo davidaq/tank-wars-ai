@@ -2,6 +2,7 @@ const { Router } = require('express');
 const serveStatic = require('serve-static');
 const path = require('path');
 const fs = require('fs');
+const zlib = require('zlib');
 const concat = require('concat-stream');
 const gameList = require('./game-list');
 
@@ -90,7 +91,12 @@ router.get('/game/:id/match/:side', (req, res) => {
       res.writeHead(404);
       res.end('game not found or match already started');
     } else {
-      res.end(JSON.stringify(state));
+      res.writeHead(200, {
+        'content-encoding': 'gzip',
+      });
+      const gzip = zlib.createGzip();
+      gzip.pipe(res);
+      gzip.end(JSON.stringify(state));
     }
   });
 });
@@ -109,7 +115,12 @@ router.post('/game/:id/match/:side', (req, res) => {
         res.writeHead(404);
         res.end('game not found or move already set');
       } else {
-        res.end(JSON.stringify(state));
+        res.writeHead(200, {
+          'content-encoding': 'gzip',
+        });
+        const gzip = zlib.createGzip();
+        gzip.pipe(res);
+        gzip.end(JSON.stringify(state));
       }
     });
   }));
