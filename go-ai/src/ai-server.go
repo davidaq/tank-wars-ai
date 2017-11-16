@@ -227,7 +227,7 @@ func main() {
 	transportFactory := thrift.NewTTransportFactory()
 	protocolFactory  := thrift.NewTBinaryProtocolFactory(false, false)
 	port := os.Getenv("PORT")
-	
+
 	serverTransport, err := thrift.NewTServerSocket("0.0.0.0:" + port)
 	if err != nil {
 		panic(err)

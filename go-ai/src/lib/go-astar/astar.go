@@ -2,6 +2,7 @@ package astar
 
 import (
     "math"
+    "fmt"
 )
 
 type AStar interface {
@@ -85,6 +86,7 @@ func (a *gridStruct) ClearTile(p Point) {
 func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movelen int, startdir int) *PathPoint {
     var openList = make(map[Point]*PathPoint)
     var closeList = make(map[Point]*PathPoint)
+    stepsLimit := (a.rows + a.cols) * 2
 
     source_map := make(map[Point]bool)
     for _, p := range source {
@@ -106,6 +108,7 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movele
         }
     }
 
+    candidates := make(map[Point]*PathPoint)
     var current *PathPoint
     for {
         current = a.getMinWeight(openList)
@@ -116,6 +119,10 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movele
 
         delete(openList, current.Point)
         closeList[current.Point] = current
+        if current.DistTraveled > stepsLimit {
+            candidates[current.Point] = current
+            continue
+        }
 
         pdirection := 0
         prev := current.Parent
@@ -195,6 +202,10 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movele
                 }
             }
         }
+    }
+    if current == nil {
+        fmt.Println("Select best of candidates")
+        current = a.getMinWeight(candidates)
     }
 
     current = config.PostProcess(current, a.rows, a.cols, a.filledTiles)
