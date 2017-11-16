@@ -50,7 +50,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
 			for _, b := range (*bullets)[tank.Id] {
 				if b.Quadrant == QUADRANT_U || b.Quadrant == QUADRANT_L || b.Quadrant == QUADRANT_D || b.Quadrant == QUADRANT_R {
                     // 设置最终紧急度 如果不躲 两回合肯定挂掉
-                    if b.Distances[b.Quadrant] <= state.Params.BulletSpeed * 2 + 2 {
+                    if b.Distances[b.Quadrant] <= state.Params.BulletSpeed * 3 + 1 {
                         tmpUrgent = 1
                     }
 
@@ -142,7 +142,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
 				if e.Quadrant == QUADRANT_U || e.Quadrant == QUADRANT_L || e.Quadrant == QUADRANT_D || e.Quadrant == QUADRANT_R {
                     // 敌军在火线上的处理
                     // 两回合炮弹距离则为紧急
-                    if e.Distances[e.Quadrant] <= state.Params.BulletSpeed * 2 + 2 {
+                    if e.Distances[e.Quadrant] <= state.Params.BulletSpeed * 2 + 1 {
                         tmpUrgent = 1
                     }
 
