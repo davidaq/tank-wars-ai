@@ -14,6 +14,8 @@ func StartTactics (name string) f.Tactics {
 		return NewNearest()
 	case "simple":
 		return NewSimple()
+	case "killall":
+		return NewKillAll()
 	default:
 		return NewRandom()
 	}
