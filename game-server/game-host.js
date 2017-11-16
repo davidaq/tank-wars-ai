@@ -75,7 +75,8 @@ class GameHost extends EventEmitter {
       this.stepsMoved = 0;
       this.blueEvents = [];
       this.redEvents = [];
-      this.flagWait = 0;
+      this.flagWait = 1;
+      this.firstFlagGenerated = false;
       this.redFlag = 0;
       this.blueFlag = 0;
       this.random = this.StaticMap ? new Random(this.id) : new Random(this.roundId);
@@ -216,9 +217,6 @@ class GameHost extends EventEmitter {
     return true;
   }
   *calcState () {
-    if (this.flagWait > 0) {
-      this.flagWait--;
-    }
     const scene = clone(this.terain);
     for (let i = 0; i < this.blueTank.length; i++) {
       const tank = this.blueTank[i];
@@ -374,7 +372,7 @@ class GameHost extends EventEmitter {
       if (this.flagWait === 0) {
         for (const tank of this.blueTank) {
           if (tank && tank.x === this.flagX && tank.y === this.flagY) {
-            this.flagWait = this.FlagTime;
+            this.flagWait = 1;
             this.blueFlag++;
             this.blueEvents.push({
               type: 'my-flag',
@@ -388,7 +386,7 @@ class GameHost extends EventEmitter {
         }
         for (const tank of this.redTank) {
           if (tank && tank.x === this.flagX && tank.y === this.flagY) {
-            this.flagWait = this.FlagTime;
+            this.flagWait = 1;
             this.redFlag++;
             this.redEvents.push({
               type: 'my-flag',
@@ -412,7 +410,18 @@ class GameHost extends EventEmitter {
       blueTank: this.blueTank,
       redTank: this.redTank,
     }));
+    if (!this.firstFlagGenerated) {
+      if (this.stepsMoved >= Math.floor(this.MaxMoves / 2) && this.blueTank.length === this.InitTank && this.redTank.length === this.InitTank) {
+        this.flagWait = 0;
+        this.firstFlagGenerated = true;
+      }
+    } else {
+      if ((this.stepsMoved - Math.floor(this.MaxMoves / 2)) % (Math.floor(Math.floor(this.MaxMoves / 2) / this.InitTank) + 1) === 0) {
+        this.flagWait = 0;
+      }
+    }
   }
+
   calcStateMoveTank (scene, color, advances, forbid, moveOnly, fireOnly) {
     const myResp = this[color + 'Resp'] || {};
     const myTank = this[color + 'Tank'];
@@ -639,7 +648,7 @@ class GameHost extends EventEmitter {
       from: bullet.from,
       target: hitTank.id,
     });
-    hitTank.hp--;
+    // hitTank.hp--;
   }
   getState (side) {
     const ended = this.blueTank.length === 0 || this.redTank.length === 0 || this.stepsMoved + 1 >= this.MaxMoves;
@@ -656,7 +665,7 @@ class GameHost extends EventEmitter {
       return {
         terain: this.terain,
         myTank: this.blueTank,
-        myBullet: this.blueBullet,
+        myBullet: this.blueBullet.filter(obj => this.terain[obj.y][obj.x] !== 2),
         enemyTank: this.redTank.filter(obj => this.terain[obj.y][obj.x] !== 2),
         enemyBullet: this.redBullet.filter(obj => this.terain[obj.y][obj.x] !== 2),
         events: this.blueEvents,
@@ -670,7 +679,7 @@ class GameHost extends EventEmitter {
       return {
         terain: this.terain,
         myTank: this.redTank,
-        myBullet: this.redBullet,
+        myBullet: this.redBullet.filter(obj => this.terain[obj.y][obj.x] !== 2),
         enemyTank: this.blueTank.filter(obj => this.terain[obj.y][obj.x] !== 2),
         enemyBullet: this.blueBullet.filter(obj => this.terain[obj.y][obj.x] !== 2),
         events: this.redEvents,
