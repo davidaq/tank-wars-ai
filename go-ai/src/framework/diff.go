@@ -306,7 +306,7 @@ func searchForest(preState *GameState, watchList *ObservationList, state *GameSt
 				}
 			}
 		case DirectionDown:
-			if curItemPos.Y + bulletSpeed > state.Terain.Height+1 {
+			if curItemPos.Y + bulletSpeed > state.Terain.Height-1 {
 				step = state.Terain.Height-curItemPos.Y-1
 			} else {
 				step = bulletSpeed
