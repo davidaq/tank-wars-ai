@@ -17,7 +17,6 @@ type PlayerServer struct {
 	terain *f.Terain
 	flagX, flagY, flagWait int
 	myTank map[int32]bool
-	bulletTrack map[string]f.Position
 	play chan []*player.Order
 }
 
@@ -84,6 +83,7 @@ func (self *PlayerServer) AssignTanks(tanks []int32) (err error) {
 
 func (self *PlayerServer) LatestState(raw *player.GameState) (err error) {
 	if self.player == nil {
+		self.play = make(chan []*player.Order)
 		tactics := t.StartTactics(os.Getenv("TACTICS"))
 		self.player = f.NewPlayer(tactics)
 		self.params.FlagTime = 50
@@ -91,6 +91,7 @@ func (self *PlayerServer) LatestState(raw *player.GameState) (err error) {
 		self.params.FlagY = self.terain.Height / 2
 	}
 	state := &f.GameState {
+		Ended: false,
 		Params: self.params,
 		Terain: self.terain,
 		FlagWait: 1,
@@ -167,7 +168,8 @@ func (self *PlayerServer) LatestState(raw *player.GameState) (err error) {
 	} else {
 		go (func () {
 			var orders []*player.Order
-			for tankId, action := range self.player.Play(state, true) {
+			commands := self.player.Play(state, true)
+			for tankId, action := range commands {
 				numId, _ := strconv.Atoi(tankId[1:])
 				order := &player.Order {
 					TankId: int32(numId),
