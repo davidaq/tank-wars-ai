@@ -648,7 +648,7 @@ class GameHost extends EventEmitter {
       from: bullet.from,
       target: hitTank.id,
     });
-    // hitTank.hp--;
+    hitTank.hp--;
   }
   getState (side) {
     const ended = this.blueTank.length === 0 || this.redTank.length === 0 || this.stepsMoved + 1 >= this.MaxMoves;
