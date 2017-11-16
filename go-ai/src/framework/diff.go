@@ -2,7 +2,6 @@
 package framework
 
 import (
-	"fmt"
 )
 
 type Diff struct {
