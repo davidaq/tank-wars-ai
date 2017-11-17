@@ -122,7 +122,15 @@ func ActionToStr (action int) string {
 	case ActionRight:
 		return "right"
 	case ActionBack:
-		return "right"
+		return "back"
+	case ActionTurnUp:
+		return "t-up"
+	case ActionTurnLeft:
+		return "t-left"
+	case ActionTurnDown:
+		return "t-down"
+	case ActionTurnRight:
+		return "t-right"
 	case ActionFireUp:
 		return "fire-up"
 	case ActionFireLeft:

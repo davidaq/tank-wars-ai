@@ -17,12 +17,11 @@ func main() {
 	gameid := os.Getenv("GAME")
 	side := os.Getenv("SIDE")
 	tactics := t.StartTactics(os.Getenv("TACTICS"))
-	// tactics := t.NewRandom()
 	player := f.NewPlayer(tactics)
 	var state *f.GameState = setup(host, gameid, side)
 	i := 0
 	for !state.Ended {
-		state = act(host, gameid, side, player.Play(state, false))
+		state = act(host, gameid, side, player.Play(state))
 		i++
 		fmt.Print(i, "\tmy:", len(state.MyTank), "\tenemy:", len(state.EnemyTank), "\t\t\n")
 	}

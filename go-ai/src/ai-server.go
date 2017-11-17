@@ -168,7 +168,7 @@ func (self *PlayerServer) LatestState(raw *player.GameState) (err error) {
 	} else {
 		go (func () {
 			var orders []*player.Order
-			commands := self.player.Play(state, true)
+			commands := self.player.Play(state)
 			for tankId, action := range commands {
 				numId, _ := strconv.Atoi(tankId[1:])
 				order := &player.Order {
@@ -182,13 +182,13 @@ func (self *PlayerServer) LatestState(raw *player.GameState) (err error) {
 						order.Order = "turnTo"
 						order.Dir = player.Direction_UP
 					case f.ActionTurnLeft:
-						order.Order = "fire"
+						order.Order = "turnTo"
 						order.Dir = player.Direction_LEFT
 					case f.ActionTurnDown:
-						order.Order = "fire"
+						order.Order = "turnTo"
 						order.Dir = player.Direction_DOWN
 					case f.ActionTurnRight:
-						order.Order = "fire"
+						order.Order = "turnTo"
 						order.Dir = player.Direction_RIGHT
 					case f.ActionFireUp:
 						order.Order = "fire"

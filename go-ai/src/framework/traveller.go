@@ -267,12 +267,5 @@ func toAction (source Position, target Position) int {
 	if targetDirection == source.Direction {
 		return ActionMove
 	}
-	switch ((targetDirection - 1) - (source.Direction - 1) + 4) % 4 {
-	case 1:
-		return ActionLeft
-	case 2:
-		return ActionBack
-	default:
-		return ActionRight
-	}
+	return targetDirection - DirectionUp + ActionTurnUp
 }
