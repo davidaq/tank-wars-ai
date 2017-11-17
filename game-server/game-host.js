@@ -209,11 +209,11 @@ class GameHost extends EventEmitter {
     }
   }
   assignTank (x, y) {
-    if (this.terain[this.MapHeight - y - 1][x] !== 0 || this.terain[y][this.MapWidth - x - 1] !== 0 || this.blueTank.length >= this.InitTank) {
+    if (this.terain[y][x] === 1 || this.terain[this.MapHeight - y - 1][this.MapWidth - x - 1] === 1 || this.blueTank.length >= this.InitTank) {
       return false;
     }
-    this.blueTank.push({ bullet: '', hp: this.TankHP, color: 'blue', x, y: this.MapHeight - y - 1, direction: 'down', id: shortid.generate() });
-    this.redTank.push({ bullet: '', hp: this.TankHP, color: 'red', x: this.MapWidth - x - 1, y, direction: 'up', id: shortid.generate() });
+    this.blueTank.push({ bullet: '', hp: this.TankHP, color: 'blue', x, y, direction: 'down', id: shortid.generate() });
+    this.redTank.push({ bullet: '', hp: this.TankHP, color: 'red', x: this.MapWidth - x - 1, y: this.MapHeight - y - 1, direction: 'up', id: shortid.generate() });
     return true;
   }
   *calcState () {
