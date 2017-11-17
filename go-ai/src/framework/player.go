@@ -15,6 +15,8 @@ type Player struct {
 	round int
 	firstFlagGenerated bool
 	initTank int
+	nextFlag int
+	rotated bool
 }
 
 func NewPlayer(tactics Tactics) *Player {
@@ -28,6 +30,7 @@ func NewPlayer(tactics Tactics) *Player {
 		round: 0,
 		firstFlagGenerated: false,
 		initTank: 0,
+		nextFlag: 0,
 	}
 	return inst
 }
@@ -36,27 +39,31 @@ func (self *Player) Play(state *GameState, absTurn bool) map[string]int {
 	start := time.Now()
 	if self.initTank == 0 {
 		self.initTank = len(state.MyTank)
+		if state.MyTank[0].X > state.Terain.Width / 2 {
+			self.rotated = true
+		}
 	}
 	if state.FlagWait > 0 {
 		state.FlagWait = 999999
-		fmt.Println(state.Params.MaxRound)
-		if self.round < state.Params.MaxRound / 2 {
+		if self.round <= state.Params.MaxRound / 2 {
 			if len(state.MyTank) == self.initTank {
 				state.FlagWait = state.Params.MaxRound / 2 - self.round
 			}
 		} else if self.firstFlagGenerated {
-			base := (state.Params.MaxRound / 2 / self.initTank + 1)
-			next := ((self.round - state.Params.MaxRound / 2) / base + 1) * base
-			if self.round < next {
-				state.FlagWait = next - self.round
-			} else {
-				state.FlagWait = 1
+			if self.nextFlag == 0 {
+				base := (state.Params.MaxRound / 2 / self.initTank + 1)
+				self.nextFlag = ((self.round - state.Params.MaxRound / 2) / base + 1) * base + state.Params.MaxRound / 2
 			}
+			state.FlagWait = self.nextFlag - self.round
+		}
+		if state.FlagWait <= 0 {
+			state.FlagWait = 1
 		}
 	} else {
 		self.firstFlagGenerated = true
+		self.nextFlag = 0
+		state.FlagWait = 0
 	}
-	fmt.Println(state.FlagWait)
 	if !self.inited {
 		self.inited = true
 		self.tactics.Init(state)
