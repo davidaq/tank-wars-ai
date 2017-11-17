@@ -496,6 +496,12 @@ class GameHost extends EventEmitter {
             advances.push({ oTank, tank });
             break;
           }
+          case 't-up':
+          case 't-left':
+          case 't-down':
+          case 't-right':
+            tank.direction = move.substr(2);
+            break;
           case 'left':
             switch (tank.direction) {
               case 'up':
