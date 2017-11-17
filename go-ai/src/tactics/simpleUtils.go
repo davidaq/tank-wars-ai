@@ -5,6 +5,10 @@ import (
 	"math"
 )
 
+const (
+    Pi  = 3.1415927
+)
+
 // 按离P点距离给一组位置排序
 func SortByPos(p f.Position, ps []f.Position) (arrPos []f.Position) {
 	var distance int
@@ -69,6 +73,7 @@ func IsReachable(p f.Position, terain f.Terain) bool {
     if terain.Data[p.Y][p.X] == 1 {
         return false
     }
+    // TODO 要不要限制不进草丛呢
     // TODO 暂时不考虑是否有坦克
     return true
 }
@@ -98,6 +103,12 @@ func IsBulletReachable(startpos f.Position, endpos f.Position, terain f.Terain) 
     return true
 }
 
+// 寻找合适追击的坦克
+// func FindTargetTanks(tanks []f.Tank) []f.Tank {
+//     result := make([]f.Tank)
+//     return result
+// }
+
 // 寻找合适开火地点
 func FindShootPos(emypos f.Position, terain f.Terain, bspeed int) (result []f.Position) {
     // 周围合适的攻击地点
@@ -117,4 +128,18 @@ func FindShootPos(emypos f.Position, terain f.Terain, bspeed int) (result []f.Po
         }
     }
     return result
+}
+
+// 根据敌我位置，计算开火方向
+func FireDirection(mypos f.Position, emypos f.Position) int {
+    angle := int(math.Atan2(float64(emypos.Y - mypos.Y), float64(mypos.X - mypos.X)) * (180/Pi))
+    if angle >= -45  && angle < 45 {
+        return f.ActionFireRight
+    } else if angle >= 45  && angle < 135 {
+        return f.ActionFireUp
+    } else if angle >= 135  ||  angle < -135 {
+        return f.ActionFireLeft
+    } else {
+        return f.ActionFireDown
+    }
 }

@@ -10,13 +10,15 @@ type Observation struct {
     Side         string
     CurSteps     int
     CurState     *f.GameState
-    MyTank      map[string]f.Tank // 我方存活坦克
-    EmyTank     map[string]f.Tank // 敌方存活坦克
+    PreState     *f.GameState
+    MyTank       map[string]f.Tank // 我方存活坦克
+    EmyTank      map[string]f.Tank // 敌方存活坦克
     Radar        *f.RadarResult
     HasFlag      bool
     Flag         Flag
-	Kps          []f.Position  // killer的苟点（提前分析地图）
-    FlagKps      []f.Position  // 旗手的苟点（提前分析地图）
+	Kps          []f.Position  // snipers 的苟点（提前分析地图）
+    FlagKps      []f.Position  // flagmen 的苟点（提前分析地图）
+    ShootPos     []f.Position  // killers 的射击目标点
 	Fcnt, Scnt, Kcnt int       // 各类角色分配数量
 }
 
@@ -76,9 +78,10 @@ func (o *Observation) observeTank(state *f.GameState) {
 }
 
 func (o *Observation) observeFlag(state *f.GameState) {
-    // TODO 判断条件暂时不明确，暂时当做始终有旗
-    if false {
+    // TODO 这个数值靠谱么
+    if state.FlagWait > 50 {
         o.HasFlag = false
+        o.Flag = Flag { Pos: f.Position{ X: state.Params.FlagX, Y:state.Params.FlagY }, Exist: false, Occupied: false }
         return
     }
 	o.HasFlag = true
@@ -99,18 +102,23 @@ func (o *Observation) observeFlag(state *f.GameState) {
 
 // 观察苟点
 func (o *Observation) observeKps(state *f.GameState) {
-    o.FlagKps = []f.Position{}
-    o.Kps = []f.Position{}
-
+    o.FlagKps  = []f.Position{}
+    o.Kps      = []f.Position{}
     // 判断红蓝方
     if state.MyTank[0].Pos.X < state.Terain.Width / 2 {
         o.Side    = "blue"
-        o.FlagKps = append(o.Kps, f.Position { X:9, Y:11})
-        o.Kps     = append(o.Kps, f.Position { X:10, Y:11})
+        o.FlagKps = append(o.Kps, f.Position { X:9, Y:12})
+        o.Kps     = append(o.Kps, f.Position { X:10, Y:12})
     } else {
         o.Side    = "red"
-        o.FlagKps = append(o.Kps, f.Position { X:9, Y:7})
-        o.Kps     = append(o.Kps, f.Position { X:8, Y:7})
+        o.FlagKps = append(o.Kps, f.Position { X:9, Y:6})
+        o.Kps     = append(o.Kps, f.Position { X:8, Y:6})
+    }
+    o.ShootPos = []f.Position{
+        f.Position { X: 5, Y: 8},
+        f.Position { X: 5, Y: 9},
+        f.Position { X: 13, Y: 10},
+        f.Position { X: 13, Y: 9},
     }
 }
 
@@ -118,9 +126,10 @@ func (o *Observation) observeKps(state *f.GameState) {
 func (o *Observation) assignRole(state *f.GameState) {
     if o.HasFlag {
         o.Fcnt = 1
+        o.Scnt = len(o.Kps)
     } else {
         o.Fcnt = 0
+        o.Scnt = 0
     }
-    o.Scnt = len(o.Kps)
     o.Kcnt = len(state.MyTank) - o.Scnt - o.Fcnt
 }

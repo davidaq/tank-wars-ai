@@ -54,7 +54,7 @@ func (s *SimpleFlagMan) occupyFlag(tanks []f.Tank, objs map[string]f.Objective) 
         }
         // 自由坦克判断能否开火
         if len(ftanks) > 0 {
-            s.policy.FreeFire(ftanks, s.obs, objs)
+            s.policy.FireToFlag(ftanks, s.obs, objs)
         }
     }
 }

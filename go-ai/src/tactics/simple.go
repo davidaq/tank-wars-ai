@@ -150,13 +150,14 @@ func (s *Simple) makeObservation(state *f.GameState, radar *f.RadarResult) {
 
 // 根据雷达结果, 决定躲避/开火
 func (s *Simple) checkRadar(radar *f.RadarResult, objs map[string]f.Objective) {
+    // fmt.Printf("DiffResult: %+v\n", radar.DiffResult.ForestThreat)
 	var mrf *f.RadarFire
 	var rfs []*f.RadarFire
 	for _, tank := range s.obs.CurState.MyTank {
-        // TODO 躲避判断(根据血量提高躲避敏感度)
-        if false {
-		// if radar.Dodge[tank.Id].Threat == 1 {
+        // fmt.Println("----------------------------", tank.Id, radar.Dodge[tank.Id].Threat)
+		if radar.Dodge[tank.Id].Threat > 0.3 && radar.Dodge[tank.Id].Threat < 1 {
 			objs[tank.Id] = f.Objective{ Action: f.ActionTravel, Target: radar.Dodge[tank.Id].SafePos }
+
         // 开火判断
         } else {
 			mrf = nil
@@ -168,12 +169,12 @@ func (s *Simple) checkRadar(radar *f.RadarResult, objs map[string]f.Objective) {
 				}
 			}
 			if mrf == nil { continue; }
-			if mrf.Faith >= 0.5 && mrf.Sin <= 0.3 {
+			if mrf.Faith > 0.5 && mrf.Sin <= 0.3 {
 				objs[tank.Id] = f.Objective{ Action: mrf.Action }
 			}
 		}
 	}
-    fmt.Printf("radar objectives: %+v\n", objs)
+    // fmt.Printf("radar objectives: %+v\n", objs)
 }
 
 // 更新角色信息
@@ -195,7 +196,7 @@ func (s *Simple) UpdateRoles(state *f.GameState) {
 
 // 重分配角色
 func (s *Simple) ReassignRoles(state *f.GameState) {
-    // 旗手死亡
+    // 开始有旗/旗手死亡
     if s.obs.HasFlag && len(s.flagmen.Tanks) == 0 {
         var tanky f.Tank
         if len(s.snipers.Tanks) > 0 {

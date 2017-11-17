@@ -47,6 +47,6 @@ func (s *SimpleSniper) HideAndFire(tanks []f.Tank, objs map[string]f.Objective) 
     }
     // 已抵达目的地坦克，根据友伤选择是否开火
     if len(ftanks) > 0 {
-        s.policy.FreeFire(ftanks, s.obs, objs)
+        s.policy.FireToFlag(ftanks, s.obs, objs)
     }
 }

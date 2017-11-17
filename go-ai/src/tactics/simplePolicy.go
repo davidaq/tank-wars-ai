@@ -32,24 +32,56 @@ func (p *SimplePolicy) Dispatch(tanks []f.Tank, pos []f.Position, objs map[strin
     return ftanks
 }
 
-// 自由开火
-func (p *SimplePolicy) FreeFire(ftanks map[string]f.Tank, obs *Observation, objs map[string]f.Objective ) {
+// FireToFlag(地图针对策略，有固定朝向的射击)
+func (p *SimplePolicy) FireToFlag(ftanks map[string]f.Tank, obs *Observation, objs map[string]f.Objective ) {
     var radarFire f.RadarFireAll
     for id, _ := range ftanks {
         radarFire = obs.Radar.Fire[id]
         // 无友伤则开火
         if obs.Side == "red" {
-            if radarFire == (f.RadarFireAll{}) || radarFire.Down.Sin <= 0.3 {
+            if radarFire == (f.RadarFireAll{}) || radarFire.Down.Sin < 0.3 {
                 objs[id] = f.Objective{ Action: f.ActionFireDown}
             } else {
                 objs[id] = f.Objective{ Action: f.ActionStay}
             }
         } else {
-            if radarFire == (f.RadarFireAll{}) || radarFire.Up.Sin <= 0.3 {
+            if radarFire == (f.RadarFireAll{}) || radarFire.Up.Sin < 0.3 {
                 objs[id] = f.Objective{ Action: f.ActionFireUp}
             } else {
                 objs[id] = f.Objective{ Action: f.ActionStay}
             }
+        }
+    }
+}
+
+// FireTowardsFlag(地图针对策略，需要计算朝向后射击)
+func (p *SimplePolicy) FireTowardsFlag(ftanks map[string]f.Tank, obs *Observation, objs map[string]f.Objective ) {
+    var radarFire f.RadarFireAll
+    for id, tank := range ftanks {
+        radarFire = obs.Radar.Fire[id]
+        if radarFire == (f.RadarFireAll{}) || radarFire.Up.Sin < 0.3 {
+            objs[id] = f.Objective{ Action: FireDirection(tank.Pos, obs.Flag.Pos) }
+        }
+    }
+}
+
+// FreeFire
+func (p *SimplePolicy) FreeFire(ftanks map[string]f.Tank, obs *Observation, objs map[string]f.Objective ) {
+    var radarFire f.RadarFireAll
+    var rfs       []*f.RadarFire
+    var mrf       *f.RadarFire
+    for id, _ := range ftanks {
+        radarFire = obs.Radar.Fire[id]
+        rfs       = []*f.RadarFire{ radarFire.Up, radarFire.Down, radarFire.Left, radarFire.Right }
+        for _, rf := range rfs {
+            if rf == nil { continue }
+            if mrf == nil || mrf.Faith - mrf.Sin < rf.Faith - rf.Sin {
+                mrf = rf
+            }
+        }
+        if mrf == nil { continue; }
+        if mrf.Faith > 0.5 && mrf.Sin <= 0.3 {
+            objs[id] = f.Objective{ Action: mrf.Action }
         }
     }
 }
