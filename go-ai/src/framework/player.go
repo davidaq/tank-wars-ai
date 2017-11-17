@@ -39,7 +39,7 @@ func (self *Player) Play(state *GameState, absTurn bool) map[string]int {
 	start := time.Now()
 	if self.initTank == 0 {
 		self.initTank = len(state.MyTank)
-		if state.MyTank[0].X > state.Terain.Width / 2 {
+		if state.MyTank[0].Pos.X > state.Terain.Width / 2 {
 			self.rotated = true
 		}
 	}
