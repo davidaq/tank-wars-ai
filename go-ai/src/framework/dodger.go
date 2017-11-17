@@ -83,18 +83,22 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                     // 非火线的情况
                     // 这里计算 如果目前朝向 正好被击中 则为1 如不会被击中 则参与下面计算 计算只记录面向的象限
                     if b.Quadrant == QUADRANT_L_U && b.BulletPosition.Direction == DirectionRight {
-                        bulletMove := math.Ceil(float64(b.Distances[QUADRANT_L]) / float64(state.Params.TankSpeed)) * float64(state.Params.BulletSpeed)
-                        if bulletMove - float64(state.Params.BulletSpeed / 2) <= float64(b.Distances[QUADRANT_U]) && bulletMove + float64(state.Params.BulletSpeed / 2) > float64(b.Distances[QUADRANT_U]) {
+                        tankMove := math.Ceil(float64(b.Distances[QUADRANT_U]) / float64(state.Params.BulletSpeed)) * float64(state.Params.TankSpeed)
+                        if tankMove - float64(state.Params.TankSpeed) < float64(b.Distances[QUADRANT_L]) && tankMove >= float64(b.Distances[QUADRANT_L]) {
                             // 如果直行，则被侧面的子弹干掉
+                            tmpMoveUrgent[ActionMove] = b.Distances[QUADRANT_U]
                             tmpUrgent = 1
+                            continue
                         }
                     }
 
                     if b.Quadrant == QUADRANT_R_U && b.BulletPosition.Direction == DirectionLeft {
-                        bulletMove := math.Ceil(float64(b.Distances[QUADRANT_R]) / float64(state.Params.TankSpeed)) * float64(state.Params.BulletSpeed)
-                        if bulletMove - float64(state.Params.BulletSpeed / 2) <= float64(b.Distances[QUADRANT_U]) && bulletMove + float64(state.Params.BulletSpeed / 2) > float64(b.Distances[QUADRANT_U]) {
+                        tankMove := math.Ceil(float64(b.Distances[QUADRANT_U]) / float64(state.Params.BulletSpeed)) * float64(state.Params.TankSpeed)
+                        if tankMove - float64(state.Params.TankSpeed) < float64(b.Distances[QUADRANT_R]) && tankMove >= float64(b.Distances[QUADRANT_R]) {
                             // 如果直行，则被侧面的子弹干掉
+                            tmpMoveUrgent[ActionMove] = b.Distances[QUADRANT_U]
                             tmpUrgent = 1
+                            continue
                         }
                     }
 
@@ -173,18 +177,22 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
 				} else {
                     // 敌军在其他象限的处理
                     if e.Quadrant == QUADRANT_L_U {
-                        bulletMove := math.Ceil(float64(e.Distances[QUADRANT_L]) / float64(state.Params.TankSpeed)) * float64(state.Params.BulletSpeed)
-                        if bulletMove - float64(state.Params.BulletSpeed / 2) <= float64(e.Distances[QUADRANT_U]) && bulletMove + float64(state.Params.BulletSpeed / 2) > float64(e.Distances[QUADRANT_U]) {
+                        tankMove := math.Ceil(float64(e.Distances[QUADRANT_U]) / float64(state.Params.BulletSpeed)) * float64(state.Params.TankSpeed)
+                        if tankMove - float64(state.Params.TankSpeed) < float64(e.Distances[QUADRANT_L]) && tankMove >= float64(e.Distances[QUADRANT_L]) {
                             // 如果直行，则被侧面的子弹干掉
+                            tmpMoveUrgent[ActionMove] = e.Distances[QUADRANT_U]
                             tmpUrgent = 1
+                            continue
                         }
                     }
 
                     if e.Quadrant == QUADRANT_R_U {
-                        bulletMove := math.Ceil(float64(e.Distances[QUADRANT_R]) / float64(state.Params.TankSpeed)) * float64(state.Params.BulletSpeed)
-                        if bulletMove - float64(state.Params.BulletSpeed / 2) <= float64(e.Distances[QUADRANT_U]) && bulletMove + float64(state.Params.BulletSpeed / 2) > float64(e.Distances[QUADRANT_U]) {
+                        tankMove := math.Ceil(float64(e.Distances[QUADRANT_U]) / float64(state.Params.BulletSpeed)) * float64(state.Params.TankSpeed)
+                        if tankMove - float64(state.Params.TankSpeed) < float64(e.Distances[QUADRANT_R]) && tankMove >= float64(e.Distances[QUADRANT_R]) {
                             // 如果直行，则被侧面的子弹干掉
+                            tmpMoveUrgent[ActionMove] = e.Distances[QUADRANT_U]
                             tmpUrgent = 1
+                            continue
                         }
                     }
 
