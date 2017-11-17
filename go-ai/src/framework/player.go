@@ -17,6 +17,7 @@ type Player struct {
 	initTank int
 	nextFlag int
 	rotated bool
+	rotatedTerain *Terain
 }
 
 func NewPlayer(tactics Tactics) *Player {
@@ -42,6 +43,13 @@ func (self *Player) Play(state *GameState, absTurn bool) map[string]int {
 		if state.MyTank[0].Pos.X > state.Terain.Width / 2 {
 			self.rotated = true
 		}
+	}
+	if self.rotated {
+		state.Terain = self.rotateTerain(state.Terain, state)
+		state.MyTank = self.rotateTank(state.MyTank, state)
+		state.EnemyTank = self.rotateTank(state.EnemyTank, state)
+		state.MyBullet = self.rotateBullet(state.MyBullet, state)
+		state.EnemyBullet = self.rotateBullet(state.EnemyBullet, state)
 	}
 	if state.FlagWait > 0 {
 		state.FlagWait = 999999
@@ -126,12 +134,74 @@ func (self *Player) Play(state *GameState, absTurn bool) map[string]int {
 			}
 		}
 	}
+	if self.rotated {
+		for tankId, action := range movement {
+			switch action {
+			case ActionTurnUp: fallthrough
+			case ActionTurnLeft: fallthrough
+			case ActionTurnDown: fallthrough
+			case ActionTurnRight:
+				movement[tankId] = (action - ActionTurnUp + 2) % 4 + ActionTurnUp
+			case ActionFireUp: fallthrough
+			case ActionFireLeft: fallthrough
+			case ActionFireDown: fallthrough
+			case ActionFireRight:
+				movement[tankId] = (action - ActionFireUp + 2) % 4 + ActionFireUp
+			}
+		}
+	}
+	self.round++
 	elapsed := time.Since(start)
 	fmt.Println("Play function took ", elapsed)
-	self.round++
 	return movement
 }
 
 func (self *Player) End(state *GameState) {
 	self.tactics.End(state)
+}
+
+func (self *Player) rotateTerain (terain *Terain, state *GameState) *Terain {
+	// terain is asymetric, no need to rotate
+	return terain
+	// if self.rotatedTerain == nil {
+	// 	self.rotatedTerain = &Terain {
+	// 		Width: terain.Width,
+	// 		Height: terain.Height,
+	// 		Data: make([][]int, terain.Height),
+	// 	}
+	// 	for y, line := range terain.Data {
+	// 		xline := make([]int, terain.Width)
+	// 		for x, val := range line {
+	// 			xline[terain.Width - x - 1] = val
+	// 		}
+	// 		self.rotatedTerain[terain.Height - y - 1] = xline
+	// 	}
+	// }
+	// return self.rotatedTerain
+}
+
+func (self *Player) rotateTank (tank []Tank, state *GameState) []Tank {
+	ret := make([]Tank, len(tank))
+	for i, ot := range tank {
+		nt := ot
+		self.rotatePos(&nt.Pos, state)
+		ret[i] = nt
+	}
+	return ret
+}
+
+func (self *Player) rotateBullet (bullet []Bullet, state *GameState) []Bullet {
+	ret := make([]Bullet, len(bullet))
+	for i, ot := range bullet {
+		nt := ot
+		self.rotatePos(&nt.Pos, state)
+		ret[i] = nt
+	}
+	return ret
+}
+
+func (self *Player) rotatePos (pos *Position, state *GameState) {
+	pos.X = state.Terain.Width - pos.X - 1
+	pos.Y = state.Terain.Height - pos.Y - 1
+	pos.Direction = (pos.Direction - DirectionUp + 2) % 4 + DirectionUp
 }
