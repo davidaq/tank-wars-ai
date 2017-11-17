@@ -200,6 +200,7 @@ func ParseGameState (bytes []byte) (*GameState, error) {
 	ret.Params.FlagTime = int(params["flagTime"].(float64))
 	ret.Params.FlagX = int(params["flagX"].(float64))
 	ret.Params.FlagY = int(params["flagY"].(float64))
+	ret.Params.MaxRound = int(params["maxRound"].(float64))
 	// parse events
 	for _, ievent := range dat["events"].([]interface{}) {
 		event := ievent.(map[string]interface{})

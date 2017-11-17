@@ -658,6 +658,7 @@ class GameHost extends EventEmitter {
       flagTime: this.FlagTime,
       tankSpeed: this.TankSpeed,
       bulletSpeed: this.BulletSpeed,
+      maxRound: this.MaxMoves,
       flagX: this.flagX,
       flagY: this.flagY,
     };
