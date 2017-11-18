@@ -12,12 +12,14 @@ func StartTactics (name string) f.Tactics {
 		return NewProxy()
 	case "nearest":
 		return NewNearest()
-	case "simple":
-		return NewSimple()
+	// case "simple":
+	// 	return NewSimple()
 	case "killall":
 		return NewKillAll()
     case "cattycat":
         return NewCatty()
+	case "forest-patrol":
+		return NewForestPatrol()
 	default:
 		return NewRandom()
 	}

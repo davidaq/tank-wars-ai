@@ -69,6 +69,22 @@ type Position struct {
 	X, Y, Direction int
 }
 
+func (s Position) SDist (other Position) int {
+	dx := s.X - other.X
+	dy := s.Y - other.Y
+	if dx < 0 {
+		dx = -dx
+	}
+	if dy < 0 {
+		dy = -dy
+	}
+	ret := dx + dy + 1
+	if s.Direction == DirectionNone || other.Direction == DirectionNone || s.Direction == other.Direction {
+		ret--
+	}
+	return ret
+}
+
 func DirectionFromStr (str string) int {
 	switch (str) {
 	case "up":
