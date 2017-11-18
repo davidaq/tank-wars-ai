@@ -60,19 +60,19 @@ func (self *ForestPatrol) Plan(state *f.GameState, radar *f.RadarResult, objecti
 		if obj := self.stateMachine[tank.Id].Run(self, &tank, state, radar); obj != nil {
 			switch obj.Action {
 			case f.ActionFireUp:
-				if fireRadar.Up.Sin > 0.1 || self.round < 35 {
+				if (fireRadar.Up != nil && fireRadar.Up.Sin > 0.1) || self.round < 35 {
 					obj.Action = f.ActionStay
 				}
 			case f.ActionFireLeft:
-				if fireRadar.Left.Sin > 0.1 || self.round < 35 {
+				if (fireRadar.Left != nil && fireRadar.Left.Sin > 0.1) || self.round < 35 {
 					obj.Action = f.ActionStay
 				}
 			case f.ActionFireDown:
-				if fireRadar.Down.Sin > 0.1 || self.round < 35 {
+				if (fireRadar.Down != nil && fireRadar.Down.Sin > 0.1) || self.round < 35 {
 					obj.Action = f.ActionStay
 				}
 			case f.ActionFireRight:
-				if fireRadar.Right.Sin > 0.1 || self.round < 35 {
+				if (fireRadar.Right != nil && fireRadar.Right.Sin > 0.1) || self.round < 35 {
 					obj.Action = f.ActionStay
 				}
 			}
