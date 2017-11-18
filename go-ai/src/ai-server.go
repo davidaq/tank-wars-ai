@@ -56,6 +56,9 @@ func (self *PlayerServer) UploadMap(gamemap [][]int32) (err error) {
 		}
 		self.terain.Data[y] = line
 	}
+	for _, line := range self.terain.Data {
+		fmt.Println(line)
+	}
 	// fmt.Println(self.terain)
 	return nil
 }
@@ -170,7 +173,7 @@ func (self *PlayerServer) LatestState(raw *player.GameState) (err error) {
 		go (func () {
 			var orders []*player.Order
 			commands := self.player.Play(state)
-			fmt.Println(state.MyTank, commands)
+			fmt.Println(state.MyTank, state.EnemyTank, commands)
 			for tankId, action := range commands {
 				numId, _ := strconv.Atoi(tankId[1:])
 				order := &player.Order {
