@@ -125,17 +125,17 @@ func (self *StateMachine) Run (ctx *ForestPatrol, tank *f.Tank, state *f.GameSta
 				ctx.role["side-patrol"] = tank.Id
 				return self.Run(ctx, tank, state, radar)
 			}
-			if _, ok := ctx.role["side-shooter"]; !ok {
-				self.currentState = "side-shooter-init"
-				ctx.role["side-shooter"] = tank.Id
-				return self.Run(ctx, tank, state, radar)
-			}
 			if _, ok := ctx.role["double-shooter"]; !ok {
 				self.currentState = "double-shooter-init"
 				ctx.role["double"] = tank.Id
 				return self.Run(ctx, tank, state, radar)
 			}
-			self.currentState = "patrol-1"
+			if _, ok := ctx.role["side-shooter"]; !ok {
+				self.currentState = "side-shooter-init"
+				ctx.role["side-shooter"] = tank.Id
+				return self.Run(ctx, tank, state, radar)
+			}
+			self.currentState = "nearest"
 			return self.Run(ctx, tank, state, radar)
 		}
 		return &f.Objective {
@@ -309,6 +309,22 @@ func (self *StateMachine) Run (ctx *ForestPatrol, tank *f.Tank, state *f.GameSta
 			Action: f.ActionTravel,
 		}
 		
+	case "nearest":
+		least := 99999
+		var ttank *f.Tank
+		for _, etank := range state.EnemyTank {
+			dist := tank.Pos.SDist(etank.Pos)
+			if dist < least {
+				ttank = &etank
+				least = dist
+			}
+		}
+		if ttank != nil {
+			return &f.Objective {
+				Action: f.ActionTravelWithDodge,
+				Target: ttank.Pos,
+			}
+		}
 	}
 	return nil
 }
