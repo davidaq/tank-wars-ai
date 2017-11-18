@@ -8,12 +8,14 @@ import (
 type ForestPatrol struct {
 	stateMachine map[string]*StateMachine
 	role map[string]string
+	round int
 }
 
 func NewForestPatrol() *ForestPatrol {
 	inst := &ForestPatrol {
 		stateMachine: make(map[string]*StateMachine),
 		role: make(map[string]string),
+		round: 0,
 	}
 	return inst
 }
@@ -24,7 +26,13 @@ func (self *ForestPatrol) Init(state *f.GameState) {
 	}
 }
 
+type FireForest struct {
+	tankId string
+	action int
+}
+
 func (self *ForestPatrol) Plan(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
+	self.round++
 	alive := make(map[string]bool)
 	for _, tank := range state.MyTank {
 		alive[tank.Id] = true
@@ -34,10 +42,15 @@ func (self *ForestPatrol) Plan(state *f.GameState, radar *f.RadarResult, objecti
 			delete(self.role, role)
 		}
 	}
+	fireForest := make(map[f.Position]FireForest)
 	tankloop: for _, tank := range state.MyTank {
+		fireForest[f.Position { X: tank.Pos.X - 1, Y: tank.Pos.Y }] = FireForest { tank.Id, f.ActionFireLeft }
+		fireForest[f.Position { X: tank.Pos.X + 1, Y: tank.Pos.Y }] = FireForest { tank.Id, f.ActionFireRight }
+		fireForest[f.Position { X: tank.Pos.X, Y: tank.Pos.Y - 1 }] = FireForest { tank.Id, f.ActionFireUp }
+		fireForest[f.Position { X: tank.Pos.X, Y: tank.Pos.Y + 1}] = FireForest { tank.Id, f.ActionFireDown }
 		fireRadar := radar.Fire[tank.Id]
 		for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
-			if fire != nil && fire.Sin < 0.2 && fire.Faith > 0.5 {
+			if fire != nil && fire.Sin < 0.1 && fire.Faith > 0.7 {
 				objective[tank.Id] = f.Objective {
 					Action: fire.Action,
 				}
@@ -47,23 +60,32 @@ func (self *ForestPatrol) Plan(state *f.GameState, radar *f.RadarResult, objecti
 		if obj := self.stateMachine[tank.Id].Run(self, &tank, state, radar); obj != nil {
 			switch obj.Action {
 			case f.ActionFireUp:
-				if fireRadar.Up.Sin > 0.1 {
+				if fireRadar.Up.Sin > 0.1 || self.round < 35 {
 					obj.Action = f.ActionStay
 				}
 			case f.ActionFireLeft:
-				if fireRadar.Left.Sin > 0.1 {
+				if fireRadar.Left.Sin > 0.1 || self.round < 35 {
 					obj.Action = f.ActionStay
 				}
 			case f.ActionFireDown:
-				if fireRadar.Down.Sin > 0.1 {
+				if fireRadar.Down.Sin > 0.1 || self.round < 35 {
 					obj.Action = f.ActionStay
 				}
 			case f.ActionFireRight:
-				if fireRadar.Right.Sin > 0.1 {
+				if fireRadar.Right.Sin > 0.1 || self.round < 35 {
 					obj.Action = f.ActionStay
 				}
 			}
 			objective[tank.Id] = *obj
+		}
+	}
+	for position, posibility := range radar.ForestThreat {
+		if posibility > 0.9 {
+			if fire, ok := fireForest[f.Position { X: position.X, Y: position.Y }]; ok {
+				objective[fire.tankId] = f.Objective {
+					Action: fire.action,
+				}
+			}
 		}
 	}
 }
@@ -86,7 +108,7 @@ func NewStateMachine (initialState string) *StateMachine {
 func (self *StateMachine) Run (ctx *ForestPatrol, tank *f.Tank, state *f.GameState, radar *f.RadarResult) *f.Objective {
 	switch self.currentState {
 	case "init":
-		target := f.Position { X: 7, Y: 8 }
+		target := f.Position { X: 3, Y: 8 }
 		if target.SDist(tank.Pos) < 2 {
 			if _, ok := ctx.role["center-shooter"]; !ok {
 				self.currentState = "center-shooter-init"
@@ -261,11 +283,13 @@ func (self *StateMachine) Run (ctx *ForestPatrol, tank *f.Tank, state *f.GameSta
 		}
 
 	case "double-shooter-init":
-		target := f.Position { X: 7, Y: 12 }
+		target := f.Position { X: 7, Y: 9, Direction: f.DirectionDown }
 		if target.SDist(tank.Pos) < state.Params.TankSpeed {
-			self.currentState = "double-shooter-A"
-			return &f.Objective {
-				Action: f.ActionFireLeft,
+			if state.FlagWait > 2 {
+				self.currentState = "double-shooter-A"
+				return &f.Objective {
+					Action: f.ActionFireRight,
+				}
 			}
 		}
 		return &f.Objective {
@@ -273,11 +297,11 @@ func (self *StateMachine) Run (ctx *ForestPatrol, tank *f.Tank, state *f.GameSta
 			Action: f.ActionTravel,
 		}
 	case "double-shooter-A":
-		target := f.Position { X: 7, Y: 9, Direction: f.DirectionDown }
+		target := f.Position { X: 7, Y: 12, Direction: f.DirectionUp }
 		if target.SDist(tank.Pos) < state.Params.TankSpeed {
 			self.currentState = "double-shooter-init"
 			return &f.Objective {
-				Action: f.ActionFireRight,
+				Action: f.ActionFireLeft,
 			}
 		}
 		return &f.Objective {

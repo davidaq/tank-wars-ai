@@ -78,7 +78,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 	var lock sync.Mutex
 	occupy := make(map[Position]bool)
 	a := self.astar.Clone()
-	lw := state.Terain.Width * state.Terain.Height
+	lw := 10
 	for _, tank := range state.MyTank {
 		a.FillTile(astar.Point{ Col: tank.Pos.X, Row: tank.Pos.Y }, lw)
 	}
@@ -91,8 +91,9 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 		if _, exists := travel[tank.Id]; exists {
 			t := tank
 			myTanks = append(myTanks, &t)
-		} else {
-			// occupy[Position{ Y: tank.Pos.Y, X: tank.Pos.X }] = true
+		} else if cache, hasCache := self.cache[tank.Id]; hasCache {
+			cache.expect = nil
+			cache.path = nil
 		}
 	}
 	if len(myTanks) > maxPathCalc {
