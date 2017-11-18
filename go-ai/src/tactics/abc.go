@@ -16,6 +16,8 @@ func StartTactics (name string) f.Tactics {
 		return NewSimple()
 	case "killall":
 		return NewKillAll()
+	case "forest-patrol":
+		return NewForestPatrol()
 	default:
 		return NewRandom()
 	}

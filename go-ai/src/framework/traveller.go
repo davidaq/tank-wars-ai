@@ -78,10 +78,9 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 	var lock sync.Mutex
 	occupy := make(map[Position]bool)
 	a := self.astar.Clone()
-	lw := state.Terain.Width
+	lw := state.Terain.Width * state.Terain.Height
 	for _, tank := range state.MyTank {
-		w := 8 + lw * self.collide[tank.Id]
-		a.FillTile(astar.Point{ Col: tank.Pos.X, Row: tank.Pos.Y }, w)
+		a.FillTile(astar.Point{ Col: tank.Pos.X, Row: tank.Pos.Y }, lw)
 	}
 	for _, tank := range state.EnemyTank {
 		a.FillTile(astar.Point{ Col: tank.Pos.X, Row: tank.Pos.Y }, lw)
@@ -93,7 +92,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 			t := tank
 			myTanks = append(myTanks, &t)
 		} else {
-			occupy[Position{ Y: tank.Pos.Y, X: tank.Pos.X }] = true
+			// occupy[Position{ Y: tank.Pos.Y, X: tank.Pos.X }] = true
 		}
 	}
 	if len(myTanks) > maxPathCalc {
@@ -126,11 +125,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 					collide := self.collide[tank.Id]
 					if cache.expect.Y != from.Y || cache.expect.X != from.X {
 						self.collide[tank.Id] = collide + 10
-						if abs(from.X - to.X) + abs(from.Y - to.Y) > state.Params.TankSpeed {
-							cache.path = nil
-						} else {
-							cache.path = []Position { *cache.expect }
-						}
+						cache.path = nil
 					} else if collide > 0 {
 						self.collide[tank.Id] = collide - 1
 					}
