@@ -170,6 +170,7 @@ func (self *PlayerServer) LatestState(raw *player.GameState) (err error) {
 		go (func () {
 			var orders []*player.Order
 			commands := self.player.Play(state)
+			fmt.Println(state.MyTank, commands)
 			for tankId, action := range commands {
 				numId, _ := strconv.Atoi(tankId[1:])
 				order := &player.Order {
