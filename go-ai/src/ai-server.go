@@ -173,6 +173,8 @@ func (self *PlayerServer) LatestState(raw *player.GameState) (err error) {
 				numId, _ := strconv.Atoi(tankId[1:])
 				order := &player.Order {
 					TankId: int32(numId),
+					Order: "move",
+					Dir: player.Direction_UP,
 				}
 				if self.myTank[order.TankId] {
 					switch (action) {
