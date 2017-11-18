@@ -56,6 +56,7 @@ func (self *PlayerServer) UploadMap(gamemap [][]int32) (err error) {
 		}
 		self.terain.Data[y] = line
 	}
+	// fmt.Println(self.terain)
 	return nil
 }
 
@@ -222,6 +223,7 @@ func (self *PlayerServer) LatestState(raw *player.GameState) (err error) {
 
 func (self *PlayerServer) GetNewOrders() (r []*player.Order, err error) {
 	orders := <- self.play
+	fmt.Println(orders)
 	return orders, nil
 }
 
