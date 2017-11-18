@@ -51,11 +51,11 @@ func (self *Traveller) CollidedTankInForest(state *GameState) []Position {
 		}
 	}
 	var ret []Position
-	// for _, pos := range candidate {
-	// 	if !myTankPos[pos] {
-	// 		ret = append(ret, pos)
-	// 	}
-	// }
+	for _, pos := range candidate {
+		if !myTankPos[pos] {
+			ret = append(ret, pos)
+		}
+	}
 	return ret
 }
 

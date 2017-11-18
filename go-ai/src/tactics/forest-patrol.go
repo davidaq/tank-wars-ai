@@ -50,7 +50,7 @@ func (self *ForestPatrol) Plan(state *f.GameState, radar *f.RadarResult, objecti
 		fireForest[f.Position { X: tank.Pos.X, Y: tank.Pos.Y + 1}] = FireForest { tank.Id, f.ActionFireDown }
 		fireRadar := radar.Fire[tank.Id]
 		for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
-			if false && fire != nil && fire.Sin < 0.1 && fire.Faith > 0.7 {
+			if fire != nil && fire.Sin < 0.1 && fire.Faith > 0.7 {
 				objective[tank.Id] = f.Objective {
 					Action: fire.Action,
 				}

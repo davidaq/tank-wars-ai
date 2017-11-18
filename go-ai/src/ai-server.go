@@ -115,8 +115,8 @@ func (self *PlayerServer) LatestState(raw *player.GameState) (err error) {
 			Id: "B" + id,
 			From: "T" + id,
 			Pos: f.Position {
-				X: int(bulletIn.Pos.X),
-				Y: int(bulletIn.Pos.Y),
+				Y: int(bulletIn.Pos.X),
+				X: int(bulletIn.Pos.Y),
 				Direction: (func () int {
 					switch bulletIn.Dir {
 					case player.Direction_UP: return f.DirectionUp
@@ -169,64 +169,60 @@ func (self *PlayerServer) LatestState(raw *player.GameState) (err error) {
 	self.latestState = state
 	if state.Ended {
 		go self.player.End(state)
-	} else {
-		go (func () {
-			var orders []*player.Order
-			commands := self.player.Play(state)
-			fmt.Println(state.MyTank, state.EnemyTank, commands)
-			for tankId, action := range commands {
-				numId, _ := strconv.Atoi(tankId[1:])
-				order := &player.Order {
-					TankId: int32(numId),
-					Order: "move",
-					Dir: player.Direction_UP,
-				}
-				if self.myTank[order.TankId] {
-					switch (action) {
-					case f.ActionMove:
-						order.Order = "move"
-					case f.ActionTurnUp:
-						order.Order = "turnTo"
-						order.Dir = player.Direction_UP
-					case f.ActionTurnLeft:
-						order.Order = "turnTo"
-						order.Dir = player.Direction_LEFT
-					case f.ActionTurnDown:
-						order.Order = "turnTo"
-						order.Dir = player.Direction_DOWN
-					case f.ActionTurnRight:
-						order.Order = "turnTo"
-						order.Dir = player.Direction_RIGHT
-					case f.ActionFireUp:
-						order.Order = "fire"
-						order.Dir = player.Direction_UP
-					case f.ActionFireLeft:
-						order.Order = "fire"
-						order.Dir = player.Direction_LEFT
-					case f.ActionFireDown:
-						order.Order = "fire"
-						order.Dir = player.Direction_DOWN
-					case f.ActionFireRight:
-						order.Order = "fire"
-						order.Dir = player.Direction_RIGHT
-					default:
-						order = nil
-					}
-				} else {
-					order = nil
-				}
-				if order != nil {
-					orders = append(orders, order)
-				}
-			}
-			self.play <- orders
-		})()
 	}
 	return nil
 }
 
 func (self *PlayerServer) GetNewOrders() (r []*player.Order, err error) {
-	orders := <- self.play
+	var orders []*player.Order
+	state := self.latestState
+	commands := self.player.Play(state)
+	fmt.Println(state.MyTank, state.EnemyTank, commands)
+	for tankId, action := range commands {
+		numId, _ := strconv.Atoi(tankId[1:])
+		order := &player.Order {
+			TankId: int32(numId),
+			Order: "move",
+			Dir: player.Direction_UP,
+		}
+		if self.myTank[order.TankId] {
+			switch (action) {
+			case f.ActionMove:
+				order.Order = "move"
+			case f.ActionTurnUp:
+				order.Order = "turnTo"
+				order.Dir = player.Direction_UP
+			case f.ActionTurnLeft:
+				order.Order = "turnTo"
+				order.Dir = player.Direction_LEFT
+			case f.ActionTurnDown:
+				order.Order = "turnTo"
+				order.Dir = player.Direction_DOWN
+			case f.ActionTurnRight:
+				order.Order = "turnTo"
+				order.Dir = player.Direction_RIGHT
+			case f.ActionFireUp:
+				order.Order = "fire"
+				order.Dir = player.Direction_UP
+			case f.ActionFireLeft:
+				order.Order = "fire"
+				order.Dir = player.Direction_LEFT
+			case f.ActionFireDown:
+				order.Order = "fire"
+				order.Dir = player.Direction_DOWN
+			case f.ActionFireRight:
+				order.Order = "fire"
+				order.Dir = player.Direction_RIGHT
+			default:
+				order = nil
+			}
+		} else {
+			order = nil
+		}
+		if order != nil {
+			orders = append(orders, order)
+		}
+	}
 	fmt.Println(orders)
 	return orders, nil
 }
