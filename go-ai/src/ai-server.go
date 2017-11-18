@@ -141,8 +141,8 @@ func (self *PlayerServer) LatestState(raw *player.GameState) (err error) {
 			Id: "T" + strconv.Itoa(int(tankIn.ID)),
 			Hp: int(tankIn.Hp),
 			Pos: f.Position {
-				X: int(tankIn.Pos.X),
-				Y: int(tankIn.Pos.Y),
+				Y: int(tankIn.Pos.X),
+				X: int(tankIn.Pos.Y),
 				Direction: (func () int {
 					switch tankIn.Dir {
 					case player.Direction_UP: return f.DirectionUp
