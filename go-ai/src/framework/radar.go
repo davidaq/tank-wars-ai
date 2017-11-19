@@ -224,6 +224,7 @@ func (self *Radar) avoidBullet(state *GameState) (bulletApproach bool, bulletThr
 
 				tmpBullet = append(tmpBullet, BulletThreat{
 					BulletPosition: bullet.Pos,
+					BulletId: bullet.From,
 					Quadrant: tmpQuadrant,
 					Direction: tmpDirection,
 					Distances: tmpBulletQuadrantThreat,

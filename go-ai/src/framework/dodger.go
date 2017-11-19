@@ -185,9 +185,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                 }
 			}
 		}
-        fmt.Println("###")
-        fmt.Println(tmpMoveUrgent)
-        fmt.Println("###")
+
         // 处理敌军情况 如果自己在草里，不用考虑敌军 威胁
 		if enemyApproach == true && len((*enemys)[tank.Id]) > 0 && state.Terain.Get(tank.Pos.X, tank.Pos.Y) != TerainForest {
 			for _, e := range ((*enemys)[tank.Id]) {
