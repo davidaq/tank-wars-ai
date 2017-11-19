@@ -39,7 +39,8 @@ type BulletThreat struct {
 
 type EnemyThreat struct {
 	Enemy 		Position
-    Quadrant    int // 敌军坦克所在的象限
+	EnemyId		string 	// 敌军id
+    Quadrant    int 	// 敌军坦克所在的象限
     Distances   map[int]int // 坦克火线象限 - 垂直坦克火线的距离，如果敌军在坦克火线上，则为水平距离
 }
 
@@ -250,10 +251,11 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 	for _, tank := range state.MyTank {
 		var tmpEnemyThreat []EnemyThreat
 		for _, enemyTank := range state.EnemyTank {
-			// 检查是否需要关注 圆形雷达
+			// 检查是否需要关注 方型雷达
 			if math.Abs(float64(enemyTank.Pos.X - tank.Pos.X)) <= float64(radius) && math.Abs(float64(enemyTank.Pos.Y - tank.Pos.Y)) <= float64(radius) {
 				tmpEnemyThreat = append(tmpEnemyThreat, EnemyThreat{
 					Enemy: enemyTank.Pos,
+					EnemyId: enemyTank.Id,
 				})
 			}
 		}
