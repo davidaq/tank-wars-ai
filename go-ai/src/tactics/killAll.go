@@ -17,7 +17,7 @@ func (self *KillAll) Init(state *f.GameState) {
 
 func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
 	count := 0
-	targetX := 5
+	targetX := 6
 	targetY := 8
 	tankloop: for _, tank := range state.MyTank {
 		delete(objective, tank.Id)
@@ -89,25 +89,25 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 		}
 		count += 1
 	}
-	bottomTank := state.MyTank[0]
-	maxY := 0	
-	count = 0
-	for _, tank := range state.MyTank {		
-		if tank.Pos.X == targetX && tank.Pos.Y == targetY + count {
-			if tank.Pos.Y > maxY {
-				maxY = tank.Pos.Y
-				bottomTank = tank
-			}
-		}
-		count += 1
-	}
-	if bottomTank.Pos.X == targetX && bottomTank.Pos.Y == maxY {	
-		if _, has := objective[bottomTank.Id]; !has {
-			objective[bottomTank.Id] = f.Objective {
-				Action: f.ActionFireDown,
-			}
-		}
-	}
+	// bottomTank := state.MyTank[0]
+	// maxY := 0	
+	// count = 0
+	// for _, tank := range state.MyTank {		
+	// 	if tank.Pos.X == targetX && tank.Pos.Y == targetY + count {
+	// 		if tank.Pos.Y > maxY {
+	// 			maxY = tank.Pos.Y
+	// 			bottomTank = tank
+	// 		}
+	// 	}
+	// 	count += 1
+	// }
+	// if bottomTank.Pos.X == targetX && bottomTank.Pos.Y == maxY {	
+	// 	if _, has := objective[bottomTank.Id]; !has {
+	// 		objective[bottomTank.Id] = f.Objective {
+	// 			Action: f.ActionFireDown,
+	// 		}
+	// 	}
+	// }
 }
 
 func (self *KillAll) End(state *f.GameState) {
