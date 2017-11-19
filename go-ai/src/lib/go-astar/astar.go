@@ -113,6 +113,8 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movele
 
     var closest *PathPoint
     closestDist := 0
+    var passBy *PathPoint
+    passByDist := 0
     var current *PathPoint
     for {
         current = a.getMinWeight(openList)
@@ -142,6 +144,22 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movele
                 pdirection = 4
             } else if current.Col < prev.Col {      // left
                 pdirection = 2
+            }
+            bypass := false
+            if prev.Row == current.Row && tpoint.Row == current.Row {
+                if sign(tpoint.Col - prev.Col) == sign(current.Col - tpoint.Col) {
+                    bypass = true
+                }
+            } else if prev.Col == current.Col && tpoint.Col == current.Col {
+                if sign(tpoint.Row - prev.Row) == sign(current.Row - tpoint.Row) {
+                    bypass = true
+                }
+            }
+            if bypass {
+                if passBy == nil || passByDist > current.DistTraveled {
+                    passByDist = current.DistTraveled
+                    passBy = current
+                }
             }
         } else {
             pdirection = startdir
@@ -212,6 +230,11 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movele
     }
     if current == nil {
         current = closest
+    }
+    if movelen > 1 && passBy != nil {
+        if passBy.DistTraveled + 1 < current.DistTraveled {
+            current = passBy
+        }
     }
 
     current = config.PostProcess(current, a.rows, a.cols, a.filledTiles)
@@ -319,5 +342,15 @@ func abs (v int) int {
         return -v
     } else {
         return v
+    }
+}
+
+func sign (v int) int {
+    if v < 0 {
+        return -1
+    } else if v > 0 {
+        return 1
+    } else {
+        return 0
     }
 }
