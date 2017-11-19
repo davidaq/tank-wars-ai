@@ -92,7 +92,17 @@ func (self *Less) Plan(state *f.GameState, radar *f.RadarResult, objective map[s
 			} else {
 				pos.X = tank.Pos.X
 				if tank.Pos.Y > 3 && tank.Pos.Y < 12 {
-					pos.Y = tank.Pos.Y - 1
+					if tank.Pos.Y == 9 {
+						if tank.Pos.Direction == f.DirectionUp {
+							pos.Y = tank.Pos.Y - 1
+						} else {
+							pos.Y = tank.Pos.Y + 1
+						}
+					} else if tank.Pos.Y >= 10 {
+						pos.Y = tank.Pos.Y + 1
+					} else {
+						pos.Y = tank.Pos.Y - 1
+					}
 				} else {
 					pos.Y = tank.Pos.Y + 1
 				}
