@@ -8,7 +8,7 @@ export TACTICS=nearest
 # export TACTICS=proxy PROXY_PORT=8776
 
 go run src/ai-client.go > /dev/null 2>&1 &
-SIDE=red TACTICS=killall go run src/ai-client.go
+SIDE=red TACTICS=less go run src/ai-client.go
 
 # run forever
 # yes|while read x; do go run src/ai-client.go; done
