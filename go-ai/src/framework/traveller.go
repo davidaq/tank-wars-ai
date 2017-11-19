@@ -106,6 +106,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 			myTanks[i] = full[j]
 		}
 	}
+	firstColide := true
 	for _, tank := range myTanks {
 		id := tank.Id
 		from := tank.Pos
@@ -185,7 +186,10 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 				}
 				if _, exists := occupy[p]; exists {
 					action = ActionStay
-					cache.path = nil
+					if firstColide {
+						cache.path = nil
+						firstColide = false
+					}
 					p = Position { Y: from.Y, X: from.X }
 				} else {
 					cache.expect = &nextPoint
