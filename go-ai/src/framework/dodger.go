@@ -7,13 +7,52 @@ package framework
 import (
 	"math"
     "sort"
-    // "fmt"
 )
 
 type Dodger struct {
 }
 
 const MAX = 10000
+
+/**
+ * 获取隔墙数量
+ */
+func (self *Radar) getWallSum(state *GameState, my Tank, enemy EnemyThreat) int {
+    wallSum := 0
+    // 注意方向和象限系问题
+    if enemy.Enemy.Y < my.Pos.Y {
+        for y := enemy.Enemy.Y; y < my.Pos.Y; y++ {
+            if state.Terain.Get(my.Pos.X, y) == TerainObstacle {
+                wallSum++
+            }
+        }
+    }
+
+    if enemy.Enemy.X < my.Pos.X {
+        for x := enemy.Enemy.X; x < my.Pos.X; x++ {
+            if state.Terain.Get(x, my.Pos.Y) == TerainObstacle {
+                wallSum++
+            }
+        }
+    }
+
+    if enemy.Enemy.Y > my.Pos.Y {
+        for y := enemy.Enemy.Y; y > my.Pos.Y; y-- {
+            if state.Terain.Get(my.Pos.X, y) == TerainObstacle {
+                wallSum++
+            }
+        }
+    }
+
+    if enemy.Enemy.X > my.Pos.X {
+        for x := enemy.Enemy.X; x > my.Pos.X; x-- {
+            if state.Terain.Get(x, my.Pos.Y) == TerainObstacle {
+                wallSum++
+            }
+        }
+    }
+    return wallSum
+}
 
 /**
  * 躲避系统
@@ -144,34 +183,41 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
         // 处理敌军情况 如果自己在草里，不用考虑敌军 威胁
 		if enemyApproach == true && len((*enemys)[tank.Id]) > 0 && state.Terain.Get(tank.Pos.X, tank.Pos.Y) != TerainForest {
 			for _, e := range ((*enemys)[tank.Id]) {
+                // 加权
+                weight := 0
+                // 对墙判定，如果隔墙则威胁度降低
+                wallSum := self.getWallSum(state, tank, e) // 隔几面墙
+                // 墙加权
+                weight += state.Params.TankSpeed * wallSum
+
 				if e.Quadrant == QUADRANT_U || e.Quadrant == QUADRANT_L || e.Quadrant == QUADRANT_D || e.Quadrant == QUADRANT_R {
                     // 敌军在火线上的处理
                     // 两回合炮弹距离则为紧急
-                    if e.Distances[e.Quadrant] <= state.Params.BulletSpeed * 2 + 1 {
+                    if e.Distances[e.Quadrant] <= state.Params.BulletSpeed * 2 + 1 && wallSum == 0 {
                         tmpUrgent = 1
                     }
 
                     // 影响直行、后退、停止
                     if e.Quadrant == QUADRANT_U || e.Quadrant == QUADRANT_D {
                         if tmpMoveUrgent[ActionMove] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgent[ActionMove] = e.Distances[e.Quadrant]
+                            tmpMoveUrgent[ActionMove] = e.Distances[e.Quadrant] + weight
                         }
                         if tmpMoveUrgent[ActionBack] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgent[ActionBack] = e.Distances[e.Quadrant] - state.Params.BulletSpeed //后退需要加一步
+                            tmpMoveUrgent[ActionBack] = e.Distances[e.Quadrant] + weight
                         }
                         if tmpMoveUrgent[ActionStay] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgent[ActionStay] = e.Distances[e.Quadrant] - state.Params.BulletSpeed
+                            tmpMoveUrgent[ActionStay] = e.Distances[e.Quadrant] + weight
                         }
                     } else {
                         // 影响左转、右转、停止
                         if tmpMoveUrgent[ActionLeft] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgent[ActionLeft] = e.Distances[e.Quadrant] - state.Params.BulletSpeed
+                            tmpMoveUrgent[ActionLeft] = e.Distances[e.Quadrant] + weight
                         }
                         if tmpMoveUrgent[ActionRight] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgent[ActionRight] = e.Distances[e.Quadrant] - state.Params.BulletSpeed
+                            tmpMoveUrgent[ActionRight] = e.Distances[e.Quadrant] + weight
                         }
                         if tmpMoveUrgent[ActionStay] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgent[ActionStay] = e.Distances[e.Quadrant] - state.Params.BulletSpeed
+                            tmpMoveUrgent[ActionStay] = e.Distances[e.Quadrant] + weight
                         }
                     }
 				} else {
@@ -180,7 +226,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         tankMove := math.Ceil(float64(e.Distances[QUADRANT_U]) / float64(state.Params.BulletSpeed)) * float64(state.Params.TankSpeed)
                         if tankMove - float64(state.Params.TankSpeed) < float64(e.Distances[QUADRANT_L]) && tankMove >= float64(e.Distances[QUADRANT_L]) {
                             // 如果直行，则被侧面的子弹干掉
-                            tmpMoveUrgent[ActionMove] = e.Distances[QUADRANT_U]
+                            tmpMoveUrgent[ActionMove] = e.Distances[QUADRANT_U] + weight
                             tmpUrgent = 1
                             continue
                         }
@@ -190,7 +236,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         tankMove := math.Ceil(float64(e.Distances[QUADRANT_U]) / float64(state.Params.BulletSpeed)) * float64(state.Params.TankSpeed)
                         if tankMove - float64(state.Params.TankSpeed) < float64(e.Distances[QUADRANT_R]) && tankMove >= float64(e.Distances[QUADRANT_R]) {
                             // 如果直行，则被侧面的子弹干掉
-                            tmpMoveUrgent[ActionMove] = e.Distances[QUADRANT_U]
+                            tmpMoveUrgent[ActionMove] = e.Distances[QUADRANT_U] + weight
                             tmpUrgent = 1
                             continue
                         }
@@ -206,43 +252,59 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                     if e.Quadrant == QUADRANT_R_U {
                         // 影响直行和右转
                         if tmpMoveUrgent[ActionMove] > distance {
-                            tmpMoveUrgent[ActionMove] = distance
+                            tmpMoveUrgent[ActionMove] = distance + weight
                         }
                         if tmpMoveUrgent[ActionRight] > distance {
-                            tmpMoveUrgent[ActionRight] = distance
+                            tmpMoveUrgent[ActionRight] = distance + weight
                         }
                     }
 
                     if e.Quadrant == QUADRANT_L_U {
                         // 影响直行和左转
                         if tmpMoveUrgent[ActionMove] > distance {
-                            tmpMoveUrgent[ActionMove] = distance
+                            tmpMoveUrgent[ActionMove] = distance + weight
                         }
                         if tmpMoveUrgent[ActionLeft] > distance {
-                            tmpMoveUrgent[ActionLeft] = distance
+                            tmpMoveUrgent[ActionLeft] = distance + weight
                         }
                     }
 
                     if e.Quadrant == QUADRANT_L_D {
                         // 影响左转和后退
                         if tmpMoveUrgent[ActionLeft] > distance {
-                            tmpMoveUrgent[ActionLeft] = distance
+                            tmpMoveUrgent[ActionLeft] = distance + weight
                         }
                         if tmpMoveUrgent[ActionBack] > distance {
-                            tmpMoveUrgent[ActionBack] = distance
+                            tmpMoveUrgent[ActionBack] = distance + weight
                         }
                     }
 
                     if e.Quadrant == QUADRANT_R_D {
                         // 影响右转和后退
                         if tmpMoveUrgent[ActionRight] > distance {
-                            tmpMoveUrgent[ActionRight] = distance
+                            tmpMoveUrgent[ActionRight] = distance + weight
                         }
                         if tmpMoveUrgent[ActionBack] > distance {
-                            tmpMoveUrgent[ActionBack] = distance
+                            tmpMoveUrgent[ActionBack] = distance + weight
                         }
                     }
 				}
+                //
+                //if tmpMoveUrgent[ActionLeft] != 0 && wallSum == 0 {
+                //    tmpMoveUrgent[ActionLeft] -= state.Params.BulletSpeed
+                //}
+                //
+                //if tmpMoveUrgent[ActionRight] != 0 && wallSum == 0 {
+                //    tmpMoveUrgent[ActionRight] -= state.Params.BulletSpeed
+                //}
+                //
+                //if tmpMoveUrgent[ActionBack] != 0 && wallSum == 0 {
+                //    tmpMoveUrgent[ActionBack] -= state.Params.BulletSpeed
+                //}
+                //
+                //if tmpMoveUrgent[ActionStay] != 0 && wallSum == 0 {
+                //    tmpMoveUrgent[ActionStay] -= state.Params.BulletSpeed
+                //}
 			}
 		}
         threat[tank.Id] = tmpUrgent
