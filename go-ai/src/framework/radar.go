@@ -30,6 +30,12 @@ const (
 	QUADRANT_R_D = 4	// 第四象限 右下角
 )
 
+const (
+	BULLET_THREAT = 1
+	ENEMY_THREAT  = 2
+)
+
+
 type BulletThreat struct {
 	BulletPosition Position
 	BulletId	string // 子弹id
@@ -43,6 +49,13 @@ type EnemyThreat struct {
 	EnemyId		string 	// 敌军id
     Quadrant    int 	// 敌军坦克所在的象限
     Distances   map[int]int // 坦克火线象限 - 垂直坦克火线的距离，如果敌军在坦克火线上，则为水平距离
+}
+
+type ExtDangerSrc struct {
+	Source		string 	// 威胁来源
+	Type		int     // 威胁来源种类 BULLET_THREAT = 1 ENEMY_THREAT = 2
+	Urgent 		int		// 威胁度
+	Distance 	int		// 距离
 }
 
 // 侦测几回合的威胁
@@ -441,13 +454,15 @@ func (self *Radar) Scan(state *GameState, diff *DiffResult) *RadarResult {
 
 	// 准备躲避返回字段
 	radarDodge := make(map[string]RadarDodge)
+	extDangerSrc := make(map[string][]ExtDangerSrc)
 	if bulletApproach != true && enemyApproach != true {
 		for _, tank := range state.MyTank {
 			radarDodge[tank.Id] = RadarDodge{}
+			extDangerSrc[tank.Id] = []ExtDangerSrc{}
 		}
 	} else {
 		// 躲避系统（撞墙、友军、草丛警戒）
-		radarDodge = self.dodge(state, bulletApproach, &bullets, enemyApproach, &enemy)
+		radarDodge, extDangerSrc = self.dodge(state, bulletApproach, &bullets, enemyApproach, &enemy)
 	}
 
 	// 开火系统
@@ -459,6 +474,7 @@ func (self *Radar) Scan(state *GameState, diff *DiffResult) *RadarResult {
 		Fire: make(map[string]RadarFireAll),
 		Bullet: make(map[string][]BulletThreat),
 		Enemy: make(map[string][]EnemyThreat),
+		ExtDangerSrc: make(map[string][]ExtDangerSrc),
 	}
 	for _, tank := range state.MyTank {
 		if atk, ok := attack[tank.Id]; ok {
@@ -467,6 +483,7 @@ func (self *Radar) Scan(state *GameState, diff *DiffResult) *RadarResult {
 		ret.Dodge[tank.Id] = radarDodge[tank.Id]
 		ret.Bullet[tank.Id] = bullets[tank.Id]
 		ret.Enemy[tank.Id] = enemy[tank.Id]
+		ret.ExtDangerSrc[tank.Id] = extDangerSrc[tank.Id]
 	}
 	return ret
 }

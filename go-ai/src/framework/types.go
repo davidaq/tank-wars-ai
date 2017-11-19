@@ -42,6 +42,7 @@ type RadarResult struct {
 	Fire	map[string]RadarFireAll			`json:"fire"`
 	Bullet 	map[string][]BulletThreat		`json:"bullet"`
 	Enemy  	map[string][]EnemyThreat		`json:"enemy"`
+	ExtDangerSrc map[string][]ExtDangerSrc  `json:"extdangersrc"`	//躲不掉的威胁源
 }
 
 type RadarDodge struct {
