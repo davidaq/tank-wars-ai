@@ -17,24 +17,80 @@ func NewCatty() *Catty{
 func (c *Catty) Init(state *f.GameState) {
     c.obs     = NewObservation(state)
 
-    var target f.Position
-    if len(state.MyTank) > 0 {
+    var target CattyTarget
+    if len(state.MyTank) == 4 {
         for _, tank := range state.MyTank {
             c.Roles[tank.Id] = &CattyRole { obs: c.obs}
             c.Roles[tank.Id].SetTank(tank)
+
             if tank.Pos.X == 1 && tank.Pos.Y == 2 {
-                target = f.Position { X: 2, Y:1, Direction: f.ActionFireRight }
+                target = CattyTarget {
+                    Pos:    f.Position { X: 2, Y:1, Direction: f.DirectionLeft },
+                    Action: f.ActionFireRight,
+                }
             } else if tank.Pos.X == 1 && tank.Pos.Y == 1 {
-                target = f.Position { X: 3, Y:4, Direction: f.ActionFireRight }
+                target = CattyTarget {
+                    Pos:    f.Position { X: 3, Y:4, Direction: f.DirectionRight },
+                    Action: f.ActionFireLeft,
+                }
             } else if tank.Pos.X == 2 && tank.Pos.Y == 1 {
-                target = f.Position { X: 5, Y:6, Direction: f.ActionFireLeft }
+                target = CattyTarget {
+                    Pos:    f.Position { X: 5, Y:6, Direction: f.DirectionRight },
+                    Action: f.ActionFireLeft,
+                }
             } else {
-                target = f.Position { X: 5, Y:7, Direction: f.ActionFireLeft }
+                target = CattyTarget {
+                    Pos:    f.Position { X: 5, Y:7, Direction: f.DirectionRight },
+                    Action: f.ActionFireLeft,
+                }
+            }
+            c.Roles[tank.Id].SetTarget(target)
+        }
+    } else if len(state.MyTank) == 5 {
+        for _, tank := range state.MyTank {
+            c.Roles[tank.Id] = &CattyRole { obs: c.obs}
+            c.Roles[tank.Id].SetTank(tank)
+
+            if tank.Pos.X == 1 && tank.Pos.Y == 2 {
+                target = CattyTarget {
+                    Pos:    f.Position { X: 3, Y:4, Direction: f.DirectionRight },
+                    Action: f.ActionFireLeft,
+                }
+            } else if tank.Pos.X == 2 && tank.Pos.Y == 2 {
+                target = CattyTarget {
+                    Pos:    f.Position { X: 8, Y:1, Direction: f.DirectionLeft },
+                    Action: f.ActionFireRight,
+                    After:  &CattyTarget {
+                        Pos:    f.Position { X: 2, Y:1, Direction: f.DirectionLeft },
+                        Action: f.ActionFireRight,
+                    },
+                }
+            } else if tank.Pos.X == 1 && tank.Pos.Y == 1 {
+                target = CattyTarget {
+                    Pos:    f.Position { X: 5, Y:6, Direction: f.DirectionRight },
+                    Action: f.ActionFireLeft,
+                }
+            } else if tank.Pos.X == 2 && tank.Pos.Y == 1 {
+                target = CattyTarget {
+                    Pos:    f.Position { X: 5, Y:7, Direction: f.DirectionRight },
+                    Action: f.ActionFireLeft,
+                }
+            } else if tank.Pos.X == 3 && tank.Pos.Y == 1 {
+                target = CattyTarget {
+                    Pos:    f.Position { X: 5, Y:8, Direction: f.DirectionRight },
+                    Action: f.ActionFireLeft,
+                }
             }
             c.Roles[tank.Id].SetTarget(target)
         }
     }
 }
+
+
+
+
+
+
 
 // 执行计划
 func (c *Catty) Plan(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {

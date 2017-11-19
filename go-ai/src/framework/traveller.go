@@ -91,9 +91,12 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 		if _, exists := travel[tank.Id]; exists {
 			t := tank
 			myTanks = append(myTanks, &t)
-		} else if cache, hasCache := self.cache[tank.Id]; hasCache {
-			cache.expect = nil
-			cache.path = nil
+		} else {
+			occupy[Position { X: tank.Pos.X, Y: tank.Pos.Y }] = true
+			if cache, hasCache := self.cache[tank.Id]; hasCache {
+				cache.expect = nil
+				cache.path = nil
+			}
 		}
 	}
 	if len(myTanks) > maxPathCalc {
@@ -182,6 +185,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 				}
 				if _, exists := occupy[p]; exists {
 					action = ActionStay
+					cache.path = nil
 					p = Position { Y: from.Y, X: from.X }
 				} else {
 					cache.expect = &nextPoint
