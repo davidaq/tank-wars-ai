@@ -7,13 +7,53 @@ package framework
 import (
 	"math"
     "sort"
-    // "fmt"
+    "fmt"
 )
 
 type Dodger struct {
 }
 
 const MAX = 10000
+
+/**
+ * 获取隔墙数量
+ */
+func (self *Radar) getWallSum(state *GameState, my Tank, enemy EnemyThreat) int {
+    wallSum := 0
+    // 注意方向和象限系问题
+    if enemy.Enemy.Y < my.Pos.Y {
+        for y := enemy.Enemy.Y; y < my.Pos.Y; y++ {
+            if state.Terain.Get(my.Pos.X, y) == TerainObstacle {
+                wallSum++
+            }
+        }
+    }
+
+    if enemy.Enemy.X < my.Pos.X {
+        for x := enemy.Enemy.X; x < my.Pos.X; x++ {
+            if state.Terain.Get(x, my.Pos.Y) == TerainObstacle {
+                wallSum++
+            }
+        }
+    }
+
+    if enemy.Enemy.Y > my.Pos.Y {
+        for y := enemy.Enemy.Y; y > my.Pos.Y; y-- {
+            if state.Terain.Get(my.Pos.X, y) == TerainObstacle {
+                wallSum++
+            }
+        }
+    }
+
+    if enemy.Enemy.X > my.Pos.X {
+        for x := enemy.Enemy.X; x > my.Pos.X; x-- {
+            if state.Terain.Get(x, my.Pos.Y) == TerainObstacle {
+                wallSum++
+            }
+        }
+    }
+    return wallSum
+}
 
 /**
  * 躲避系统
@@ -79,6 +119,11 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                             tmpMoveUrgent[ActionStay] = b.Distances[b.Quadrant] - state.Params.BulletSpeed
                         }
                     }
+                    // 火线上躲不掉的情况
+                    if b.Distances[b.Quadrant] <= state.Params.BulletSpeed {
+                        tmpUrgent = -1
+                    }
+
 				} else {
                     // 非火线的情况
                     // 这里计算 如果目前朝向 正好被击中 则为1 如不会被击中 则参与下面计算 计算只记录面向的象限
@@ -144,35 +189,47 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
         // 处理敌军情况 如果自己在草里，不用考虑敌军 威胁
 		if enemyApproach == true && len((*enemys)[tank.Id]) > 0 && state.Terain.Get(tank.Pos.X, tank.Pos.Y) != TerainForest {
 			for _, e := range ((*enemys)[tank.Id]) {
+                // 加权
+                weight := 0
+                // 对墙判定，如果隔墙则威胁度降低
+                wallSum := self.getWallSum(state, tank, e) // 隔几面墙
+                // 墙加权
+                weight += state.Params.TankSpeed * wallSum
+
 				if e.Quadrant == QUADRANT_U || e.Quadrant == QUADRANT_L || e.Quadrant == QUADRANT_D || e.Quadrant == QUADRANT_R {
                     // 敌军在火线上的处理
                     // 两回合炮弹距离则为紧急
-                    if e.Distances[e.Quadrant] <= state.Params.BulletSpeed * 2 + 1 {
+                    if e.Distances[e.Quadrant] <= state.Params.BulletSpeed * 2 + 1 && wallSum == 0 {
                         tmpUrgent = 1
                     }
 
                     // 影响直行、后退、停止
                     if e.Quadrant == QUADRANT_U || e.Quadrant == QUADRANT_D {
                         if tmpMoveUrgent[ActionMove] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgent[ActionMove] = e.Distances[e.Quadrant]
+                            tmpMoveUrgent[ActionMove] = e.Distances[e.Quadrant] + weight
                         }
                         if tmpMoveUrgent[ActionBack] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgent[ActionBack] = e.Distances[e.Quadrant] - state.Params.BulletSpeed //后退需要加一步
+                            tmpMoveUrgent[ActionBack] = e.Distances[e.Quadrant] + weight
                         }
                         if tmpMoveUrgent[ActionStay] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgent[ActionStay] = e.Distances[e.Quadrant] - state.Params.BulletSpeed
+                            tmpMoveUrgent[ActionStay] = e.Distances[e.Quadrant] + weight
                         }
                     } else {
                         // 影响左转、右转、停止
                         if tmpMoveUrgent[ActionLeft] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgent[ActionLeft] = e.Distances[e.Quadrant] - state.Params.BulletSpeed
+                            tmpMoveUrgent[ActionLeft] = e.Distances[e.Quadrant] + weight
                         }
                         if tmpMoveUrgent[ActionRight] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgent[ActionRight] = e.Distances[e.Quadrant] - state.Params.BulletSpeed
+                            tmpMoveUrgent[ActionRight] = e.Distances[e.Quadrant] + weight
                         }
                         if tmpMoveUrgent[ActionStay] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgent[ActionStay] = e.Distances[e.Quadrant] - state.Params.BulletSpeed
+                            tmpMoveUrgent[ActionStay] = e.Distances[e.Quadrant] + weight
                         }
+                    }
+
+                    // 火线上躲不掉的情况
+                    if e.Distances[e.Quadrant] <= state.Params.BulletSpeed {
+                        tmpUrgent = -1
                     }
 				} else {
                     // 敌军在其他象限的处理
@@ -180,7 +237,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         tankMove := math.Ceil(float64(e.Distances[QUADRANT_U]) / float64(state.Params.BulletSpeed)) * float64(state.Params.TankSpeed)
                         if tankMove - float64(state.Params.TankSpeed) < float64(e.Distances[QUADRANT_L]) && tankMove >= float64(e.Distances[QUADRANT_L]) {
                             // 如果直行，则被侧面的子弹干掉
-                            tmpMoveUrgent[ActionMove] = e.Distances[QUADRANT_U]
+                            tmpMoveUrgent[ActionMove] = e.Distances[QUADRANT_U] + weight
                             tmpUrgent = 1
                             continue
                         }
@@ -190,7 +247,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         tankMove := math.Ceil(float64(e.Distances[QUADRANT_U]) / float64(state.Params.BulletSpeed)) * float64(state.Params.TankSpeed)
                         if tankMove - float64(state.Params.TankSpeed) < float64(e.Distances[QUADRANT_R]) && tankMove >= float64(e.Distances[QUADRANT_R]) {
                             // 如果直行，则被侧面的子弹干掉
-                            tmpMoveUrgent[ActionMove] = e.Distances[QUADRANT_U]
+                            tmpMoveUrgent[ActionMove] = e.Distances[QUADRANT_U] + weight
                             tmpUrgent = 1
                             continue
                         }
@@ -206,43 +263,59 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                     if e.Quadrant == QUADRANT_R_U {
                         // 影响直行和右转
                         if tmpMoveUrgent[ActionMove] > distance {
-                            tmpMoveUrgent[ActionMove] = distance
+                            tmpMoveUrgent[ActionMove] = distance + weight
                         }
                         if tmpMoveUrgent[ActionRight] > distance {
-                            tmpMoveUrgent[ActionRight] = distance
+                            tmpMoveUrgent[ActionRight] = distance + weight
                         }
                     }
 
                     if e.Quadrant == QUADRANT_L_U {
                         // 影响直行和左转
                         if tmpMoveUrgent[ActionMove] > distance {
-                            tmpMoveUrgent[ActionMove] = distance
+                            tmpMoveUrgent[ActionMove] = distance + weight
                         }
                         if tmpMoveUrgent[ActionLeft] > distance {
-                            tmpMoveUrgent[ActionLeft] = distance
+                            tmpMoveUrgent[ActionLeft] = distance + weight
                         }
                     }
 
                     if e.Quadrant == QUADRANT_L_D {
                         // 影响左转和后退
                         if tmpMoveUrgent[ActionLeft] > distance {
-                            tmpMoveUrgent[ActionLeft] = distance
+                            tmpMoveUrgent[ActionLeft] = distance + weight
                         }
                         if tmpMoveUrgent[ActionBack] > distance {
-                            tmpMoveUrgent[ActionBack] = distance
+                            tmpMoveUrgent[ActionBack] = distance + weight
                         }
                     }
 
                     if e.Quadrant == QUADRANT_R_D {
                         // 影响右转和后退
                         if tmpMoveUrgent[ActionRight] > distance {
-                            tmpMoveUrgent[ActionRight] = distance
+                            tmpMoveUrgent[ActionRight] = distance + weight
                         }
                         if tmpMoveUrgent[ActionBack] > distance {
-                            tmpMoveUrgent[ActionBack] = distance
+                            tmpMoveUrgent[ActionBack] = distance + weight
                         }
                     }
 				}
+                //
+                //if tmpMoveUrgent[ActionLeft] != 0 && wallSum == 0 {
+                //    tmpMoveUrgent[ActionLeft] -= state.Params.BulletSpeed
+                //}
+                //
+                //if tmpMoveUrgent[ActionRight] != 0 && wallSum == 0 {
+                //    tmpMoveUrgent[ActionRight] -= state.Params.BulletSpeed
+                //}
+                //
+                //if tmpMoveUrgent[ActionBack] != 0 && wallSum == 0 {
+                //    tmpMoveUrgent[ActionBack] -= state.Params.BulletSpeed
+                //}
+                //
+                //if tmpMoveUrgent[ActionStay] != 0 && wallSum == 0 {
+                //    tmpMoveUrgent[ActionStay] -= state.Params.BulletSpeed
+                //}
 			}
 		}
         threat[tank.Id] = tmpUrgent
@@ -332,8 +405,8 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
 
         // 尽可能去行动，而非停止
         if fin == false {
-        //    // 没有被命中，继续执行
-        //    // 最大的一堆中，如果行动也是MAX，则优先行动
+            // 没有被命中，继续执行
+            // 最大的一堆中，如果行动也是MAX，则优先行动
             maxset := []int{}
             tmp := MAX
             for _, action := range actionSequence {
@@ -360,8 +433,8 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
         }
 
         // 计算最小的威胁作为闪避威胁度
-        if threat[tankId] != 1 {
-            // 如果不是1，则需要计算
+        if threat[tankId] != 1 && threat[tankId] != -1{
+            // 如果不是1或-1，则需要计算
             for i := 0; i < len(actionSequence); i++ {
                 if threat[tankId] > urgent[actionSequence[i]] {
                     threat[tankId] = urgent[actionSequence[i]]

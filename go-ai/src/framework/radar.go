@@ -32,6 +32,7 @@ const (
 
 type BulletThreat struct {
 	BulletPosition Position
+	BulletId	string // 子弹id
 	Quadrant	int	// 相对于坦克的第几象限
 	Direction 	int // 朝向哪个象限（能判断出转换后的方向）
 	Distances 	map[int]int	// 距离四方向火线的威胁度
@@ -39,7 +40,8 @@ type BulletThreat struct {
 
 type EnemyThreat struct {
 	Enemy 		Position
-    Quadrant    int // 敌军坦克所在的象限
+	EnemyId		string 	// 敌军id
+    Quadrant    int 	// 敌军坦克所在的象限
     Distances   map[int]int // 坦克火线象限 - 垂直坦克火线的距离，如果敌军在坦克火线上，则为水平距离
 }
 
@@ -222,6 +224,7 @@ func (self *Radar) avoidBullet(state *GameState) (bulletApproach bool, bulletThr
 
 				tmpBullet = append(tmpBullet, BulletThreat{
 					BulletPosition: bullet.Pos,
+					BulletId: bullet.From,
 					Quadrant: tmpQuadrant,
 					Direction: tmpDirection,
 					Distances: tmpBulletQuadrantThreat,
@@ -250,10 +253,11 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 	for _, tank := range state.MyTank {
 		var tmpEnemyThreat []EnemyThreat
 		for _, enemyTank := range state.EnemyTank {
-			// 检查是否需要关注 圆形雷达
+			// 检查是否需要关注 方型雷达
 			if math.Abs(float64(enemyTank.Pos.X - tank.Pos.X)) <= float64(radius) && math.Abs(float64(enemyTank.Pos.Y - tank.Pos.Y)) <= float64(radius) {
 				tmpEnemyThreat = append(tmpEnemyThreat, EnemyThreat{
 					Enemy: enemyTank.Pos,
+					EnemyId: enemyTank.Id,
 				})
 			}
 		}
@@ -453,12 +457,16 @@ func (self *Radar) Scan(state *GameState, diff *DiffResult) *RadarResult {
 	ret := &RadarResult {
 		Dodge: make(map[string]RadarDodge),
 		Fire: make(map[string]RadarFireAll),
+		Bullet: make(map[string][]BulletThreat),
+		Enemy: make(map[string][]EnemyThreat),
 	}
 	for _, tank := range state.MyTank {
 		if atk, ok := attack[tank.Id]; ok {
 			ret.Fire[tank.Id] = *atk
 		}
 		ret.Dodge[tank.Id] = radarDodge[tank.Id]
+		ret.Bullet[tank.Id] = bullets[tank.Id]
+		ret.Enemy[tank.Id] = enemy[tank.Id]
 	}
 	return ret
 }
