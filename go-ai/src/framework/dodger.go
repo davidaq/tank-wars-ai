@@ -61,7 +61,7 @@ func (self *Radar) getWallSum(state *GameState, my Tank, enemy EnemyThreat) int 
  * 其他象限的威胁为躲避判断参考
  * 同时参考墙、草、队友阻挡调度	队友在一格范围内，同步协调
  */
-func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[string][]BulletThreat, enemyApproach bool, enemys *map[string][]EnemyThreat) (map[string]RadarDodge) {
+func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[string][]BulletThreat, enemyApproach bool, enemys *map[string][]EnemyThreat) (map[string]RadarDodge, map[string][]ExtDangerSrc) {
 	radarDodge := make(map[string]RadarDodge)
 
     // 各种操作的紧急度
@@ -73,8 +73,12 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
     // 预存坦克威胁度
     threat := make(map[string]int)
 
+    // 各个躲不掉威胁的来源 ID - threat
+    extDangerSrc := make(map[string][]ExtDangerSrc)
+
 	for _, tank := range state.MyTank {
         tankData[tank.Id] = tank
+        extDangerSrc[tank.Id] = []ExtDangerSrc{}
         // STEP0 初始化各种操作的威胁程度
         tmpMoveUrgent := make(map[int]int)
         tmpMoveUrgent[ActionStay] = MAX
@@ -181,6 +185,14 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                             tmpMoveUrgent[ActionRight] = distance
                         }
                     }
+                }
+                if tmpUrgent == 1 || tmpUrgent == -1 {
+                    extDangerSrc[tank.Id] = append(extDangerSrc[tank.Id], ExtDangerSrc{
+                        Source: b.BulletId,
+                        Type:   BULLET_THREAT,
+                        Urgent: tmpUrgent,
+                        Distance: b.Distances[b.Quadrant],
+                    })
                 }
 			}
 		}
@@ -299,6 +311,15 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         }
                     }
 				}
+
+                if tmpUrgent == 1 || tmpUrgent == -1 {
+                    extDangerSrc[tank.Id] = append(extDangerSrc[tank.Id], ExtDangerSrc{
+                        Source: e.EnemyId,
+                        Type:   ENEMY_THREAT,
+                        Urgent: tmpUrgent,
+                        Distance: e.Distances[e.Quadrant],
+                    })
+                }
                 //
                 //if tmpMoveUrgent[ActionLeft] != 0 && wallSum == 0 {
                 //    tmpMoveUrgent[ActionLeft] -= state.Params.BulletSpeed
@@ -457,7 +478,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
         // 查找是否有阻挡的己方坦克
     }
 
-	return radarDodge
+	return radarDodge, extDangerSrc
 }
 
 /**

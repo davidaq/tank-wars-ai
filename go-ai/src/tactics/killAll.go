@@ -19,31 +19,24 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 	count := 0
 	targetX := 5
 	targetY := 8
-	if state.MyTank[0].Pos.X > 20 {
-		targetX = 13
-		targetY = 6
-	}
 	tankloop: for _, tank := range state.MyTank {
-		fmt.Println("----------------------------", tank.Id, radar.Dodge[tank.Id].Threat)
-		if radar.Dodge[tank.Id].Threat >= 0.2 && radar.Dodge[tank.Id].Threat < 1 && (tank.Pos.X != targetX && tank.Pos.Y != targetY + count) {
-			ifDodge := true
-			for _, oTank := range state.MyTank {
-				if oTank.Id == tank.Id {
-					continue
-				}
-				if oTank.Pos.X == radar.Dodge[tank.Id].SafePos.X && oTank.Pos.Y == radar.Dodge[tank.Id].SafePos.Y {
-					ifDodge = false
-					break
-				}
+		delete(objective, tank.Id)
+		if radar.Dodge[tank.Id].Threat >= 0.2 && radar.Dodge[tank.Id].Threat < 0.7 && (tank.Pos.X != targetX && tank.Pos.Y != targetY + count) {
+		// if radar.Dodge[tank.Id].Threat >= 0.4 && radar.Dodge[tank.Id].Threat < 1 {
+			objective[tank.Id] = f.Objective {
+				Action: f.ActionTravel,
+				Target: radar.Dodge[tank.Id].SafePos,
 			}
-			if ifDodge {
-				objective[tank.Id] = f.Objective {
-					Action: f.ActionTravel,
-					Target: radar.Dodge[tank.Id].SafePos,
-				}
-				continue tankloop
-			}
+			continue tankloop
+		} else if radar.Dodge[tank.Id].Threat == -1 {
+			// for _, bullet := range radar.Bullet[tank.Id] {
+			// 	if bullet.Id == 
+			// 	for _, EnemyTank := range state.EnemyTank {
+					
+			// 	}
+			// }
 		}
+
 		fireRadar := radar.Fire[tank.Id]
 		for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
 			if fire != nil && fire.Sin < 0.5 && fire.Faith > 0 {
@@ -71,15 +64,11 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 		// 	}
 		// }
 
+		fmt.Println(tank.Pos.X, targetX, tank.Pos.Y, targetY + count, objective[tank.Id])
+
 		if tank.Pos.X == targetX && tank.Pos.Y == targetY + count {
-			if targetX == 5 {
-				objective[tank.Id] = f.Objective {
-					Action: f.ActionFireRight,
-				}
-			} else {
-				objective[tank.Id] = f.Objective {
-					Action: f.ActionFireLeft,
-				}
+			objective[tank.Id] = f.Objective {
+				Action: f.ActionFireRight,
 			}
 		} else {
 			objective[tank.Id] = f.Objective {
