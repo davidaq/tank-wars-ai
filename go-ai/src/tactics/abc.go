@@ -24,6 +24,8 @@ func StartTactics (name string) f.Tactics {
 		return NewForestPatrol()
 	case "sweep":
 		return NewSweep()
+	case "waitsweep":
+		return NewWaitSweep()
 	default:
 		return NewRandom()
 	}
