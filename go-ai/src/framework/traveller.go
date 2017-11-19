@@ -11,12 +11,14 @@ type PathCache struct {
 	path []Position
 	target Position
 	expect *Position
+	round int
 }
 
 type Traveller struct {
 	astar astar.AStar
 	cache map[string]*PathCache
 	collide map[string]int
+	round int
 }
 
 func NewTraveller() *Traveller {
@@ -24,6 +26,7 @@ func NewTraveller() *Traveller {
 		astar: nil,
 		cache: make(map[string]*PathCache),
 		collide: make(map[string]int),
+		round: 0,
 	}
 	return inst
 }
@@ -61,6 +64,7 @@ func (self *Traveller) CollidedTankInForest(state *GameState) []Position {
 
 func (self *Traveller) Search(travel map[string]*Position, state *GameState, movements map[string]int) {
 	maxPathCalc := 9
+	self.round++
 	if self.astar == nil {
 		self.astar = astar.NewAStar(state.Terain.Height, state.Terain.Width)
 		for y := 0; y < state.Terain.Height; y++ {
@@ -78,7 +82,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 	var lock sync.Mutex
 	occupy := make(map[Position]bool)
 	a := self.astar.Clone()
-	lw := 10
+	lw := 5
 	for _, tank := range state.MyTank {
 		a.FillTile(astar.Point{ Col: tank.Pos.X, Row: tank.Pos.Y }, lw)
 	}
@@ -121,7 +125,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 			}
 			lock.Unlock()
 			if from.X != to.X || from.Y != to.Y {
-				if cache.target.X != to.X || cache.target.Y != to.Y {
+				if cache.target.X != to.X || cache.target.Y != to.Y || self.round - cache.round > 4 {
 					cache.path = nil
 				}
 				cache.target = to
@@ -158,6 +162,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 							p := cache.path[0]
 							if p.X == from.X && p.Y == from.Y {
 								cache.path = cache.path[1:]
+								cache.round = self.round
 							} else {
 								break
 							}
