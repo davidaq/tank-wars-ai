@@ -109,7 +109,12 @@ func (self *StateMachine) Run (ctx *ForestPatrol, tank *f.Tank, state *f.GameSta
 	switch self.currentState {
 	case "init":
 		target := f.Position { X: 3, Y: 8 }
-		if target.SDist(tank.Pos) < 2 {
+		if target.SDist(tank.Pos) < state.Params.TankSpeed {
+			if _, ok := ctx.role["side-shooter"]; !ok {
+				self.currentState = "side-shooter-init"
+				ctx.role["side-shooter"] = tank.Id
+				return self.Run(ctx, tank, state, radar)
+			}
 			if _, ok := ctx.role["center-shooter"]; !ok {
 				self.currentState = "center-shooter-init"
 				ctx.role["center-shooter"] = tank.Id
@@ -127,12 +132,7 @@ func (self *StateMachine) Run (ctx *ForestPatrol, tank *f.Tank, state *f.GameSta
 			}
 			if _, ok := ctx.role["double-shooter"]; !ok {
 				self.currentState = "double-shooter-init"
-				ctx.role["double"] = tank.Id
-				return self.Run(ctx, tank, state, radar)
-			}
-			if _, ok := ctx.role["side-shooter"]; !ok {
-				self.currentState = "side-shooter-init"
-				ctx.role["side-shooter"] = tank.Id
+				ctx.role["double-shooter"] = tank.Id
 				return self.Run(ctx, tank, state, radar)
 			}
 			self.currentState = "nearest"
@@ -167,8 +167,10 @@ func (self *StateMachine) Run (ctx *ForestPatrol, tank *f.Tank, state *f.GameSta
 		}
 		target := f.Position { X: 9, Y: 9 }
 		if target.SDist(tank.Pos) < state.Params.TankSpeed {
-			return &f.Objective {
-				Action: f.ActionFireUp + rand.Int() % 4,
+			if rand.Int() % 3 == 0 {
+				return &f.Objective {
+					Action: f.ActionFireDown,
+				}
 			}
 		}
 		return &f.Objective {
@@ -177,9 +179,8 @@ func (self *StateMachine) Run (ctx *ForestPatrol, tank *f.Tank, state *f.GameSta
 		}
 
 	case "side-shooter-init":
-		target := f.Position { X: 10, Y: 12 }
+		target := f.Position { X: 7, Y: 8 }
 		if target.SDist(tank.Pos) < state.Params.TankSpeed {
-			self.counter = 0
 			self.currentState = "side-shooter-A"
 			return self.Run(ctx, tank, state, radar)
 		}
@@ -188,19 +189,21 @@ func (self *StateMachine) Run (ctx *ForestPatrol, tank *f.Tank, state *f.GameSta
 			Action: f.ActionTravel,
 		}
 	case "side-shooter-A":
-		if self.counter == 1 {
-			self.currentState = "side-shooter-B"
-			return self.Run(ctx, tank, state, radar)
-		}
-		self.counter++
-		return &f.Objective {
-			Action: f.ActionFireUp,
-		}
-	case "side-shooter-B":
 		target := f.Position { X: 10, Y: 11 }
 		if target.SDist(tank.Pos) < state.Params.TankSpeed {
-			self.counter = 0
-			self.currentState = "side-shooter-init"
+			self.currentState = "side-shooter-B"
+			return &f.Objective {
+				Action: f.ActionFireUp,
+			}
+		}
+		return &f.Objective {
+			Target: target,
+			Action: f.ActionTravel,
+		}
+	case "side-shooter-B":
+		target := f.Position { X: 10, Y: 12 }
+		if target.SDist(tank.Pos) < 1 {
+			self.currentState = "side-shooter-A"
 			return self.Run(ctx, tank, state, radar)
 		}
 		return &f.Objective {
@@ -230,7 +233,7 @@ func (self *StateMachine) Run (ctx *ForestPatrol, tank *f.Tank, state *f.GameSta
 			Action: f.ActionFireDown,
 		}
 	case "center-patrol-B":
-		target := f.Position { X: 9, Y: 6, Direction: f.DirectionLeft }
+		target := f.Position { X: 8, Y: 6, Direction: f.DirectionLeft }
 		if target.SDist(tank.Pos) < state.Params.TankSpeed {
 			self.counter = 0
 			self.currentState = "center-patrol-C"
@@ -245,9 +248,11 @@ func (self *StateMachine) Run (ctx *ForestPatrol, tank *f.Tank, state *f.GameSta
 			self.currentState = "center-patrol-init"
 			return self.Run(ctx, tank, state, radar)
 		}
-		self.counter++
-		return &f.Objective {
-			Action: f.ActionFireRight,
+		if state.FlagWait < 4 {
+			self.counter++
+			return &f.Objective {
+				Action: f.ActionFireRight,
+			}
 		}
 
 	case "side-patrol-init":
