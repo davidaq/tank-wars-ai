@@ -21,39 +21,51 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 	targetY := 8
 	tankloop: for _, tank := range state.MyTank {
 		delete(objective, tank.Id)
-		if radar.Dodge[tank.Id].Threat >= 0.2 && radar.Dodge[tank.Id].Threat < 0.7 && (tank.Pos.X != targetX && tank.Pos.Y != targetY + count) {
-		// if radar.Dodge[tank.Id].Threat >= 0.4 && radar.Dodge[tank.Id].Threat < 1 {
+		// if radar.Dodge[tank.Id].Threat >= 0.4 && radar.Dodge[tank.Id].Threat < 1 && (tank.Pos.X != targetX && tank.Pos.Y != targetY + count) {
+		if radar.Dodge[tank.Id].Threat >= 0.4 && radar.Dodge[tank.Id].Threat <= 0.7 {
 			objective[tank.Id] = f.Objective {
 				Action: f.ActionTravel,
 				Target: radar.Dodge[tank.Id].SafePos,
 			}
 			continue tankloop
-		} else if radar.Dodge[tank.Id].Threat == -1 {
-			// for _, bullet := range radar.Bullet[tank.Id] {
-			// 	if bullet.Id == 
-			// 	for _, EnemyTank := range state.EnemyTank {
-					
-			// 	}
-			// }
-		}
+		} 
+		// else if radar.Dodge[tank.Id].Threat == -1 {
+		// 	for _, bullet := range radar.ExtDangerSrc[tank.Id] {
+		// 		if bullet.Urgent == -1 {
+		// 			tankInVis := true
+		// 			for _, e := range state.EnemyTank {
+		// 				if bullet.Source == e.Id {
+		// 					tankInVis = false
+		// 					break
+		// 				}
+		// 			}
+		// 			if tankInVis {
+		// 				objective[tank.Id] = f.Objective {
+		// 					Action: f.ActionTravel,
+		// 					Target: radar.Dodge[tank.Id].SafePos,
+		// 				}
+		// 				continue tankloop
+		// 			}
+		// 		}
+		// 	}
+		// }
 
 		fireRadar := radar.Fire[tank.Id]
 		for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
+			fmt.Println(fire.Faith)
 			if fire != nil && fire.Sin < 0.5 && fire.Faith > 0 {
 				objective[tank.Id] = f.Objective {
 					Action: fire.Action,
 				}
 				continue tankloop
 			}
-		}
+		}	
 
-		// least := 99999
 		// var ttank *f.Tank
 		// for _, etank := range state.EnemyTank {
-		// 	dist := abs(tank.Pos.X - etank.Pos.X) + abs(tank.Pos.Y - etank.Pos.Y)
-		// 	if dist < least {
+		// 	if etank.Pos.X < (state.Terain.Width / 2) {
 		// 		ttank = &etank
-		// 		least = dist
+		// 		break
 		// 	}
 		// }
 
@@ -62,10 +74,9 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 		// 		Action: f.ActionTravel,
 		// 		Target: ttank.Pos,
 		// 	}
+		// 	continue tankloop
 		// }
-
-		fmt.Println(tank.Pos.X, targetX, tank.Pos.Y, targetY + count, objective[tank.Id])
-
+					
 		if tank.Pos.X == targetX && tank.Pos.Y == targetY + count {
 			objective[tank.Id] = f.Objective {
 				Action: f.ActionFireRight,
