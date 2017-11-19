@@ -74,11 +74,13 @@ func (self *Less) Plan(state *f.GameState, radar *f.RadarResult, objective map[s
 
 		least := 99999
 		var ttank *f.Tank
-		for _, etank := range state.EnemyTank {
-			dist := abs(tank.Pos.X - etank.Pos.X) + abs(tank.Pos.Y - etank.Pos.Y)
-			if dist < least {
-				ttank = &etank
-				least = dist
+		if self.round > 20 {
+			for _, etank := range state.EnemyTank {
+				dist := abs(tank.Pos.X - etank.Pos.X) + abs(tank.Pos.Y - etank.Pos.Y)
+				if dist < least {
+					ttank = &etank
+					least = dist
+				}
 			}
 		}
 		pos := f.Position {}
@@ -145,34 +147,38 @@ func (self *Less) Plan(state *f.GameState, radar *f.RadarResult, objective map[s
 				}
 			}
 			target := self.prevTarget[tank.Id]
-			if target == nil || target.SDist(tank.Pos) < state.Params.TankSpeed || rand.Int() % 8 == 0 {
+			if target == nil || target.SDist(tank.Pos) < state.Params.TankSpeed || rand.Int() % 5 == 0 {
+				y := rand.Int() % (12 - 8) + 8
+				if self.round < 20 {
+					fmt.Println("hurry")
+					if y > 8 {
+						y = 8
+					}
+				}
 				target = &f.Position {
 					X: 5,
-					Y: rand.Int() % (12 - 8) + 8,
+					Y: y,
 					Direction: f.DirectionRight,
 				}
 				self.prevTarget[tank.Id] = target
 			}
 			pos = *target
-			if tank.Pos.X > 4 && tank.Pos.X < 7 && state.Terain.Get(tank.Pos.X, tank.Pos.Y) == 2 && rand.Int() % 4 == 0 {
-				fires := []*f.RadarFire { fireRadar.Right }
-				for _, i := range rand.Perm(1) {
-					fire := fires[i]
-					if fire != nil && fire.Sin < 0.1 {
-						objective[tank.Id] = f.Objective {
-							Action: fire.Action,
-						}
-						self.justFired[tank.Id] = self.round
-						continue tankloop
+			if tank.Pos.X > 4 && tank.Pos.X < 7 && state.Terain.Get(tank.Pos.X, tank.Pos.Y) == 2 && rand.Int() % 3 == 0 {
+				if fireRadar.Right != nil && fireRadar.Right.Sin < 0.1 {
+					objective[tank.Id] = f.Objective {
+						Action: f.ActionFireRight,
 					}
+					self.justFired[tank.Id] = self.round
+					continue tankloop
 				}
 			}
 			fmt.Println(pos)
 		}
 		action := f.ActionTravel
-		if preferDodge {
+		_ = preferDodge
+		// if preferDodge {
 			action = f.ActionTravelWithDodge
-		}
+		// }
 		objective[tank.Id] = f.Objective {
 			Action: action,
 			Target: pos,
