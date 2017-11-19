@@ -33,8 +33,8 @@ func (self *Sweep) Init(state *f.GameState) {
 	for _, tank := range state.MyTank {
 		temp := TankGroup {
 			fireStatus: false,
-			target: f.Position {X:4,Y:10-i},
-			leave: f.Position {X:4,Y:8-i},
+			target: f.Position {X:4,Y:7+i},
+			leave: f.Position {X:4,Y:6+i},
 		}
 		self.tankGroup[tank.Id] = &temp
 		i++
@@ -46,7 +46,7 @@ func (self *Sweep) Plan(state *f.GameState, radar *f.RadarResult, objective map[
 		if tank.Pos.X == self.tankGroup[tank.Id].leave.X && tank.Pos.Y == self.tankGroup[tank.Id].leave.Y {
 			self.tankGroup[tank.Id].fireStatus = true
 		}
-		if !self.tankGroup[tank.Id].fireStatus && self.gameCount>10 {
+		if !self.tankGroup[tank.Id].fireStatus && self.gameCount>20 {
 			objective[tank.Id] = f.Objective {
 				Action: f.ActionTravelWithDodge,
 				Target: f.Position { X: self.tankGroup[tank.Id].leave.X, Y: self.tankGroup[tank.Id].leave.Y },
