@@ -38,6 +38,7 @@ func (self *Less) Plan(state *f.GameState, radar *f.RadarResult, objective map[s
 	}
 	isFirst := true
 	tankloop: for _, tank := range state.MyTank {
+		preferDodge := false
 		fireRadar := radar.Fire[tank.Id]
 		if fired, ok := self.justFired[tank.Id]; !ok || self.round - fired > 1 {
 			fireForest[f.Position { X: tank.Pos.X - 1, Y: tank.Pos.Y }] = FireForest { tank.Id, f.ActionFireLeft }
@@ -83,6 +84,7 @@ func (self *Less) Plan(state *f.GameState, radar *f.RadarResult, objective map[s
 		pos := f.Position {}
 		if fired, ok := self.justFired[tank.Id]; ok && self.round - fired < 12 / state.Params.BulletSpeed {
 			if self.justFiredY[tank.Id] {
+				preferDodge = true
 				pos.Y = tank.Pos.Y
 				if tank.Pos.X > 5 {
 					pos.X = tank.Pos.X - 1
@@ -167,8 +169,12 @@ func (self *Less) Plan(state *f.GameState, radar *f.RadarResult, objective map[s
 			}
 			fmt.Println(pos)
 		}
+		action := f.ActionTravel
+		if preferDodge {
+			action = f.ActionTravelWithDodge
+		}
 		objective[tank.Id] = f.Objective {
-			Action: f.ActionTravelWithDodge,
+			Action: action,
 			Target: pos,
 		}
 	}

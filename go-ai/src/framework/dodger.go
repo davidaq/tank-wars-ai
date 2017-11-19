@@ -7,10 +7,6 @@ package framework
 import (
 	"math"
     "sort"
-<<<<<<< HEAD
-    // "fmt"
-=======
->>>>>>> 32fb8224692bce83760fe4006a9f56c102d245b7
 )
 
 type Dodger struct {
