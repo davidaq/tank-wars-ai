@@ -61,170 +61,170 @@ func caculateForestRange(terain [][]int, pos Position) int {
 }
 
 func searchForest(preState *GameState, watchList *ObservationList, state *GameState, collision []Position, ret *DiffResult ) {
-	bulletSpeed := state.Params.BulletSpeed
+	// bulletSpeed := state.Params.BulletSpeed
 	tankSpeed := state.Params.TankSpeed
 	terain := state.Terain.Data
 
 	// 检查观察列表中子弹的状态
-	if watchList.bullet != nil {
-		for k,v := range(watchList.bullet) {
-			live := false
-			var curBullet Bullet
-			for i:=0;i<len(state.MyBullet);i++ {
-				if state.MyBullet[i].Id == k {
-					live = true
-					curBullet = state.MyBullet[i]
-				}
-			}
-			if live {
-				if terain[v.Pos.Y][v.Pos.X] != 2 {
-					// 子弹存活，并飞出草丛
-					delete(watchList.bullet,k)
-				} else {
-					// 子弹存活，仍在草丛
-					watchList.bullet[k] = curBullet
-				}
-			} else {
-				forestRange := caculateForestRange(terain, v.Pos)
-				// 子弹消失
-				if forestRange == 0 {
-					// 草丛边缘，即将离开草丛
-					delete(watchList.bullet, k)
-				} else if forestRange < bulletSpeed {
-					// 有干扰项障碍物/坦克
-					maybeHit := false
-					var chance int
+	// if watchList.bullet != nil {
+	// 	for k,v := range(watchList.bullet) {
+	// 		live := false
+	// 		var curBullet Bullet
+	// 		for i:=0;i<len(state.MyBullet);i++ {
+	// 			if state.MyBullet[i].Id == k {
+	// 				live = true
+	// 				curBullet = state.MyBullet[i]
+	// 			}
+	// 		}
+	// 		if live {
+	// 			if terain[v.Pos.Y][v.Pos.X] != 2 {
+	// 				// 子弹存活，并飞出草丛
+	// 				delete(watchList.bullet,k)
+	// 			} else {
+	// 				// 子弹存活，仍在草丛
+	// 				watchList.bullet[k] = curBullet
+	// 			}
+	// 		} else {
+	// 			forestRange := caculateForestRange(terain, v.Pos)
+	// 			// 子弹消失
+	// 			if forestRange == 0 {
+	// 				// 草丛边缘，即将离开草丛
+	// 				delete(watchList.bullet, k)
+	// 			} else if forestRange < bulletSpeed {
+	// 				// 有干扰项障碍物/坦克
+	// 				maybeHit := false
+	// 				var chance int
 
-					switch v.Pos.Direction {
-					case DirectionUp:
-						// 判断是否撞在障碍物上
-						for i:=forestRange+1;i<=bulletSpeed;i++ {
-							// 前方存在可能击中的障碍物
-							if terain[v.Pos.Y-i][v.Pos.X] == 1 {
-								maybeHit = true
-								break
-							}
-						}
-						if maybeHit {
-							chance = bulletSpeed+1
-						} else {
-							chance = bulletSpeed
-						}
-						for i:=1;i<=forestRange;i++ {
-							tempPos := Position {
-								X: v.Pos.X,
-								Y: v.Pos.Y-i,
-								Direction: v.Pos.Direction,
-							}
-							ret.ForestThreat[tempPos] = float64(1./chance)
-						}
-					case DirectionLeft:
-						for i:=forestRange+1;i<=bulletSpeed;i++ {
-							if terain[v.Pos.Y][v.Pos.X-i] == 1 {
-								maybeHit = true
-								break
-							}
-						}
-						if maybeHit {
-							chance = bulletSpeed+1
-						} else {
-							chance = bulletSpeed
-						}
-						for i:=1;i<=forestRange;i++ {
-							tempPos := Position {
-								X: v.Pos.X-i,
-								Y: v.Pos.Y,
-								Direction: v.Pos.Direction,
-							}
-							ret.ForestThreat[tempPos] = float64(1./chance)
-						}
-					case DirectionDown:
-						for i:=forestRange+1;i<=bulletSpeed;i++ {
-							if terain[v.Pos.Y+i][v.Pos.X] == 1 {
-								maybeHit = true
-								break
-							}
-						}
-						if maybeHit {
-							chance = bulletSpeed+1
-						} else {
-							chance = bulletSpeed
-						}
-						for i:=1;i<=forestRange;i++ {
-							tempPos := Position {
-								X: v.Pos.X,
-								Y: v.Pos.Y+i,
-								Direction: v.Pos.Direction,
-							}
-							ret.ForestThreat[tempPos] = float64(1./chance)
-						}
-					case DirectionRight:
-						for i:=forestRange+1;i<=bulletSpeed;i++ {
-							if terain[v.Pos.Y][v.Pos.X+i] == 1 {
-								maybeHit = true
-								break
-							}
-						}
-						if maybeHit {
-							chance = bulletSpeed+1
-						} else {
-							chance = bulletSpeed
-						}
-						for i:=1;i<=forestRange;i++ {
-							tempPos := Position {
-								X: v.Pos.X+i,
-								Y: v.Pos.Y,
-								Direction: v.Pos.Direction,
-							}
-							ret.ForestThreat[tempPos] = float64(1./chance)
-						}
-					}
-					delete(watchList.bullet, k)
-				} else {
-					// 纯草丛击中
-					switch v.Pos.Direction {
-					case DirectionUp:
-						for i:=1;i<=bulletSpeed;i++ {
-							tempPos := Position {
-								X: v.Pos.X,
-								Y: v.Pos.Y-i,
-								Direction: v.Pos.Direction,
-							}
-							ret.ForestThreat[tempPos] = float64(1./bulletSpeed)
-						}
-					case DirectionLeft:
-						for i:=1;i<=bulletSpeed;i++ {
-							tempPos := Position {
-								X: v.Pos.X-i,
-								Y: v.Pos.Y,
-								Direction: v.Pos.Direction,
-							}
-							ret.ForestThreat[tempPos] = float64(1./bulletSpeed)
-						}
-					case DirectionDown:
-						for i:=1;i<=bulletSpeed;i++ {
-							tempPos := Position {
-								X: v.Pos.X,
-								Y: v.Pos.Y+i,
-								Direction: v.Pos.Direction,
-							}
-							ret.ForestThreat[tempPos] = float64(1./bulletSpeed)
-						}
-					case DirectionRight:
-						for i:=1;i<=bulletSpeed;i++ {
-							tempPos := Position {
-								X: v.Pos.X+i,
-								Y: v.Pos.Y,
-								Direction: v.Pos.Direction,
-							}
-							ret.ForestThreat[tempPos] = float64(1./bulletSpeed)
-						}
-					}
-					delete(watchList.bullet, k)
-				}
-			}
-		}
-	}
+	// 				switch v.Pos.Direction {
+	// 				case DirectionUp:
+	// 					// 判断是否撞在障碍物上
+	// 					for i:=forestRange+1;i<=bulletSpeed;i++ {
+	// 						// 前方存在可能击中的障碍物
+	// 						if terain[v.Pos.Y-i][v.Pos.X] == 1 {
+	// 							maybeHit = true
+	// 							break
+	// 						}
+	// 					}
+	// 					if maybeHit {
+	// 						chance = bulletSpeed+1
+	// 					} else {
+	// 						chance = bulletSpeed
+	// 					}
+	// 					for i:=1;i<=forestRange;i++ {
+	// 						tempPos := Position {
+	// 							X: v.Pos.X,
+	// 							Y: v.Pos.Y-i,
+	// 							Direction: v.Pos.Direction,
+	// 						}
+	// 						ret.ForestThreat[tempPos] = float64(1./chance)
+	// 					}
+	// 				case DirectionLeft:
+	// 					for i:=forestRange+1;i<=bulletSpeed;i++ {
+	// 						if terain[v.Pos.Y][v.Pos.X-i] == 1 {
+	// 							maybeHit = true
+	// 							break
+	// 						}
+	// 					}
+	// 					if maybeHit {
+	// 						chance = bulletSpeed+1
+	// 					} else {
+	// 						chance = bulletSpeed
+	// 					}
+	// 					for i:=1;i<=forestRange;i++ {
+	// 						tempPos := Position {
+	// 							X: v.Pos.X-i,
+	// 							Y: v.Pos.Y,
+	// 							Direction: v.Pos.Direction,
+	// 						}
+	// 						ret.ForestThreat[tempPos] = float64(1./chance)
+	// 					}
+	// 				case DirectionDown:
+	// 					for i:=forestRange+1;i<=bulletSpeed;i++ {
+	// 						if terain[v.Pos.Y+i][v.Pos.X] == 1 {
+	// 							maybeHit = true
+	// 							break
+	// 						}
+	// 					}
+	// 					if maybeHit {
+	// 						chance = bulletSpeed+1
+	// 					} else {
+	// 						chance = bulletSpeed
+	// 					}
+	// 					for i:=1;i<=forestRange;i++ {
+	// 						tempPos := Position {
+	// 							X: v.Pos.X,
+	// 							Y: v.Pos.Y+i,
+	// 							Direction: v.Pos.Direction,
+	// 						}
+	// 						ret.ForestThreat[tempPos] = float64(1./chance)
+	// 					}
+	// 				case DirectionRight:
+	// 					for i:=forestRange+1;i<=bulletSpeed;i++ {
+	// 						if terain[v.Pos.Y][v.Pos.X+i] == 1 {
+	// 							maybeHit = true
+	// 							break
+	// 						}
+	// 					}
+	// 					if maybeHit {
+	// 						chance = bulletSpeed+1
+	// 					} else {
+	// 						chance = bulletSpeed
+	// 					}
+	// 					for i:=1;i<=forestRange;i++ {
+	// 						tempPos := Position {
+	// 							X: v.Pos.X+i,
+	// 							Y: v.Pos.Y,
+	// 							Direction: v.Pos.Direction,
+	// 						}
+	// 						ret.ForestThreat[tempPos] = float64(1./chance)
+	// 					}
+	// 				}
+	// 				delete(watchList.bullet, k)
+	// 			} else {
+	// 				// 纯草丛击中
+	// 				switch v.Pos.Direction {
+	// 				case DirectionUp:
+	// 					for i:=1;i<=bulletSpeed;i++ {
+	// 						tempPos := Position {
+	// 							X: v.Pos.X,
+	// 							Y: v.Pos.Y-i,
+	// 							Direction: v.Pos.Direction,
+	// 						}
+	// 						ret.ForestThreat[tempPos] = float64(1./bulletSpeed)
+	// 					}
+	// 				case DirectionLeft:
+	// 					for i:=1;i<=bulletSpeed;i++ {
+	// 						tempPos := Position {
+	// 							X: v.Pos.X-i,
+	// 							Y: v.Pos.Y,
+	// 							Direction: v.Pos.Direction,
+	// 						}
+	// 						ret.ForestThreat[tempPos] = float64(1./bulletSpeed)
+	// 					}
+	// 				case DirectionDown:
+	// 					for i:=1;i<=bulletSpeed;i++ {
+	// 						tempPos := Position {
+	// 							X: v.Pos.X,
+	// 							Y: v.Pos.Y+i,
+	// 							Direction: v.Pos.Direction,
+	// 						}
+	// 						ret.ForestThreat[tempPos] = float64(1./bulletSpeed)
+	// 					}
+	// 				case DirectionRight:
+	// 					for i:=1;i<=bulletSpeed;i++ {
+	// 						tempPos := Position {
+	// 							X: v.Pos.X+i,
+	// 							Y: v.Pos.Y,
+	// 							Direction: v.Pos.Direction,
+	// 						}
+	// 						ret.ForestThreat[tempPos] = float64(1./bulletSpeed)
+	// 					}
+	// 				}
+	// 				delete(watchList.bullet, k)
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	// 检查观察列表中坦克的状态
 	if watchList.tank != nil {
@@ -276,61 +276,61 @@ func searchForest(preState *GameState, watchList *ObservationList, state *GameSt
 	}
 
 	// 检测我方即将进入草丛的子弹，列入监视名单
-	for i:=0; i<len(state.MyBullet); i++ {
-		curItemPos := state.MyBullet[i].Pos
-		step := 0
+	// for i:=0; i<len(state.MyBullet); i++ {
+	// 	curItemPos := state.MyBullet[i].Pos
+	// 	step := 0
 
-		switch curItemPos.Direction {
-		case DirectionUp:
-			if curItemPos.Y - bulletSpeed < 0 {
-				step = curItemPos.Y
-			} else {
-				step = bulletSpeed
-			}
-			for j:= 1; j<=step; j++ {
-				if terain[curItemPos.Y-j][curItemPos.X] == 2 {
-					watchList.bullet[state.MyBullet[i].Id] = state.MyBullet[i]
-					break
-				}
-			}
-		case DirectionLeft:
-			if curItemPos.X - bulletSpeed < 0 {
-				step = curItemPos.X
-			} else {
-				step = bulletSpeed
-			}
-			for j:= 1; j<=step; j++ {
-				if terain[curItemPos.Y][curItemPos.X-j] == 2 {
-					watchList.bullet[state.MyBullet[i].Id] = state.MyBullet[i]
-					break
-				}
-			}
-		case DirectionDown:
-			if curItemPos.Y + bulletSpeed > state.Terain.Height-1 {
-				step = state.Terain.Height-curItemPos.Y-1
-			} else {
-				step = bulletSpeed
-			}
-			for j:= 1; j<=step; j++ {
-				if terain[curItemPos.Y+j][curItemPos.X] == 2 {
-					watchList.bullet[state.MyBullet[i].Id] = state.MyBullet[i]
-					break
-				}
-			}
-		case DirectionRight:
-			if curItemPos.X + bulletSpeed > state.Terain.Width-1 {
-				step = state.Terain.Width-curItemPos.X-1
-			} else {
-				step = bulletSpeed
-			}
-			for j:= 1; j<=step; j++ {
-				if terain[curItemPos.Y][curItemPos.X+j] == 2 {
-					watchList.bullet[state.MyBullet[i].Id] = state.MyBullet[i]
-					break
-				}
-			}
-		}
-	}
+	// 	switch curItemPos.Direction {
+	// 	case DirectionUp:
+	// 		if curItemPos.Y - bulletSpeed < 0 {
+	// 			step = curItemPos.Y
+	// 		} else {
+	// 			step = bulletSpeed
+	// 		}
+	// 		for j:= 1; j<=step; j++ {
+	// 			if terain[curItemPos.Y-j][curItemPos.X] == 2 {
+	// 				watchList.bullet[state.MyBullet[i].Id] = state.MyBullet[i]
+	// 				break
+	// 			}
+	// 		}
+	// 	case DirectionLeft:
+	// 		if curItemPos.X - bulletSpeed < 0 {
+	// 			step = curItemPos.X
+	// 		} else {
+	// 			step = bulletSpeed
+	// 		}
+	// 		for j:= 1; j<=step; j++ {
+	// 			if terain[curItemPos.Y][curItemPos.X-j] == 2 {
+	// 				watchList.bullet[state.MyBullet[i].Id] = state.MyBullet[i]
+	// 				break
+	// 			}
+	// 		}
+	// 	case DirectionDown:
+	// 		if curItemPos.Y + bulletSpeed > state.Terain.Height-1 {
+	// 			step = state.Terain.Height-curItemPos.Y-1
+	// 		} else {
+	// 			step = bulletSpeed
+	// 		}
+	// 		for j:= 1; j<=step; j++ {
+	// 			if terain[curItemPos.Y+j][curItemPos.X] == 2 {
+	// 				watchList.bullet[state.MyBullet[i].Id] = state.MyBullet[i]
+	// 				break
+	// 			}
+	// 		}
+	// 	case DirectionRight:
+	// 		if curItemPos.X + bulletSpeed > state.Terain.Width-1 {
+	// 			step = state.Terain.Width-curItemPos.X-1
+	// 		} else {
+	// 			step = bulletSpeed
+	// 		}
+	// 		for j:= 1; j<=step; j++ {
+	// 			if terain[curItemPos.Y][curItemPos.X+j] == 2 {
+	// 				watchList.bullet[state.MyBullet[i].Id] = state.MyBullet[i]
+	// 				break
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	// 检测地方可能进入草丛的坦克，进入监视名单
 	for i:= 0; i<len(state.EnemyTank); i++ {

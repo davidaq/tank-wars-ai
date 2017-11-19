@@ -20,6 +20,8 @@ func StartTactics (name string) f.Tactics {
         return NewCatty()
 	case "forest-patrol":
 		return NewForestPatrol()
+	case "sweep":
+		return NewSweep()
 	default:
 		return NewRandom()
 	}
