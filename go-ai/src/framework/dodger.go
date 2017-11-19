@@ -7,7 +7,6 @@ package framework
 import (
 	"math"
     "sort"
-    _ "fmt"
 )
 
 type Dodger struct {
@@ -511,5 +510,3 @@ func (self *Radar) convertActionToPosition(state *GameState, tank Tank, action i
 
     return true, positionRet
 }
-
-

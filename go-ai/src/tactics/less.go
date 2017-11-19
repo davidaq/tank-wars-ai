@@ -28,7 +28,7 @@ func (self *Less) Plan(state *f.GameState, radar *f.RadarResult, objective map[s
 		fireForest[f.Position { X: tank.Pos.X, Y: tank.Pos.Y + 1}] = FireForest { tank.Id, f.ActionFireDown }
 		fireRadar := radar.Fire[tank.Id]
 		for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
-			if fire != nil && fire.Sin < 0.2 && fire.Faith > 0.2 {
+			if fire != nil && fire.Sin < 0.2 && fire.Faith > 0 {
 				objective[tank.Id] = f.Objective {
 					Action: fire.Action,
 				}
