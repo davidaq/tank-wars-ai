@@ -32,6 +32,7 @@ const (
 
 type BulletThreat struct {
 	BulletPosition Position
+	BulletId	string // 子弹id
 	Quadrant	int	// 相对于坦克的第几象限
 	Direction 	int // 朝向哪个象限（能判断出转换后的方向）
 	Distances 	map[int]int	// 距离四方向火线的威胁度
@@ -455,12 +456,16 @@ func (self *Radar) Scan(state *GameState, diff *DiffResult) *RadarResult {
 	ret := &RadarResult {
 		Dodge: make(map[string]RadarDodge),
 		Fire: make(map[string]RadarFireAll),
+		Bullet: make(map[string][]BulletThreat),
+		Enemy: make(map[string][]EnemyThreat),
 	}
 	for _, tank := range state.MyTank {
 		if atk, ok := attack[tank.Id]; ok {
 			ret.Fire[tank.Id] = *atk
 		}
 		ret.Dodge[tank.Id] = radarDodge[tank.Id]
+		ret.Bullet[tank.Id] = bullets[tank.Id]
+		ret.Enemy[tank.Id] = enemy[tank.Id]
 	}
 	return ret
 }
