@@ -18,7 +18,7 @@ func NewAttacker() *Attacker {
 	return inst
 }
 
-func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, bulletSpeed int) float64 {
+func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, bulletSpeed int, tankSpeed int) float64 {
 	for _, otherTank := range tanks {
 		if theTank.Id == otherTank.Id {
 			continue
@@ -36,6 +36,13 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 					return float64(0)
 				} 
 				return float64(1)
+			} else if fy > oy {
+				if ox - fx == tankSpeed && otherTank.Pos.Direction == DirectionLeft {
+					return float64(0.5)
+				}
+				if fx - ox == tankSpeed && otherTank.Pos.Direction == DirectionRight {
+					return float64(0.5)
+				}
 			}
 		case DirectionLeft:
 			if oy == fy && fx > ox {
@@ -43,6 +50,13 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 					return float64(0)
 				}
 				return float64(1)
+			} else if fx > ox {
+				if oy - fy == tankSpeed && otherTank.Pos.Direction == DirectionUp {
+					return float64(0.5)
+				}
+				if fy - oy == tankSpeed && otherTank.Pos.Direction == DirectionDown {
+					return float64(0.5)
+				}
 			}
 		case DirectionDown:
 			if ox == fx && oy > fy {
@@ -50,6 +64,13 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 					return float64(0)
 				}
 				return float64(1)
+			} else if oy > fy {
+				if ox - fx == tankSpeed && otherTank.Pos.Direction == DirectionLeft {
+					return float64(0.5)
+				}
+				if fx - ox == tankSpeed && otherTank.Pos.Direction == DirectionRight {
+					return float64(0.5)
+				}
 			}
 		case DirectionRight:
 			if oy == fy && ox > fx {
@@ -57,6 +78,13 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 					return float64(0)
 				}
 				return float64(1)
+			} else if ox > fx {
+				if oy - fy == tankSpeed && otherTank.Pos.Direction == DirectionUp {
+					return float64(0.5)
+				}
+				if fy - oy == tankSpeed && otherTank.Pos.Direction == DirectionDown {
+					return float64(0.5)
+				}
 			}
 		}
 	}
@@ -212,20 +240,20 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 		noEnemy.X = -1
 		noEnemy.Y = -1
 
-		sin := calcSin(tank, state.MyTank, noEnemy, DirectionUp, state.Params.BulletSpeed)
+		sin := calcSin(tank, state.MyTank, noEnemy, DirectionUp, state.Params.BulletSpeed, state.Params.TankSpeed)
 		cost := calcCost(tank, DirectionUp, state.Params.BulletSpeed, state.Terain)
 		
 		radarFireAlls[tank.Id].Up = &RadarFire {Faith: 0, Cost: cost, Sin: sin, Action: ActionFireUp}
 
-		sin = calcSin(tank, state.MyTank, noEnemy, DirectionLeft, state.Params.BulletSpeed)
+		sin = calcSin(tank, state.MyTank, noEnemy, DirectionLeft, state.Params.BulletSpeed, state.Params.TankSpeed)
 		cost = calcCost(tank, DirectionLeft, state.Params.BulletSpeed, state.Terain)
 		radarFireAlls[tank.Id].Left = &RadarFire {Faith: 0, Cost: cost, Sin: sin, Action: ActionFireLeft}
 
-		sin = calcSin(tank, state.MyTank, noEnemy, DirectionDown, state.Params.BulletSpeed)
+		sin = calcSin(tank, state.MyTank, noEnemy, DirectionDown, state.Params.BulletSpeed, state.Params.TankSpeed)
 		cost = calcCost(tank, DirectionDown, state.Params.BulletSpeed, state.Terain)		
 		radarFireAlls[tank.Id].Down = &RadarFire {Faith: 0, Cost: cost, Sin: sin, Action: ActionFireDown}
 
-		sin = calcSin(tank, state.MyTank, noEnemy, DirectionRight, state.Params.BulletSpeed)
+		sin = calcSin(tank, state.MyTank, noEnemy, DirectionRight, state.Params.BulletSpeed, state.Params.TankSpeed)
 		cost = calcCost(tank, DirectionRight, state.Params.BulletSpeed, state.Terain)		
 		radarFireAlls[tank.Id].Right = &RadarFire {Faith: 0, Cost: cost, Sin: sin, Action: ActionFireRight}
 
@@ -255,7 +283,7 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 				// fmt.Println("0 ------- DIRECTION", "real", realDirection, "fire", fireDirection)
 				
 				faith = calcFaith(verticalDist, state.Params.BulletSpeed, state.Params.TankSpeed, false, realDirection, enemyThreat.Enemy, tank.Pos, state.Terain)
-				sin = calcSin(tank, state.MyTank, enemyThreat.Enemy, realDirection, state.Params.BulletSpeed)
+				sin = calcSin(tank, state.MyTank, enemyThreat.Enemy, realDirection, state.Params.BulletSpeed, state.Params.TankSpeed)
 				cost = calcCost(tank, realDirection, state.Params.BulletSpeed, state.Terain)
 				
 				if cost < verticalDist {
@@ -299,7 +327,7 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 					// fmt.Println("0 ------- DIRECTION", "real", realDirection, "fire", fireDirection)
 
 					faith = calcFaith(dist, state.Params.BulletSpeed, state.Params.TankSpeed, true, realDirection, enemyThreat.Enemy, tank.Pos, state.Terain)
-					sin = calcSin(tank, state.MyTank, enemyThreat.Enemy, realDirection, state.Params.BulletSpeed)
+					sin = calcSin(tank, state.MyTank, enemyThreat.Enemy, realDirection, state.Params.BulletSpeed, state.Params.TankSpeed)
 					cost = calcCost(tank, realDirection, state.Params.BulletSpeed, state.Terain)
 
 					if cost < dist {

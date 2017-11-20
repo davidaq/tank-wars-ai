@@ -60,7 +60,7 @@ type ExtDangerSrc struct {
 
 // 侦测几回合的威胁
 const RADAR_BULLET_STEP = 4
-const RADAR_ENEMY_STEP	= 3
+const RADAR_ENEMY_STEP	= 4
 
 func (self *Radar) avoidBullet(state *GameState) (bulletApproach bool, bulletThreat map[string][]BulletThreat){
 	// 雷达半径由步数实际算出
