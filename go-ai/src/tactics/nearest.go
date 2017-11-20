@@ -23,7 +23,7 @@ func (self *Nearest) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 	tankloop: for _, tank := range state.MyTank {
 		fireRadar := radar.Fire[tank.Id]
 		for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
-			if fire != nil && fire.Sin < 0.5 && fire.Faith > 0.5 {
+			if fire != nil && fire.Sin < 0.5 && fire.Faith > 0.2 && tank.Bullet == "" {
 				objective[tank.Id] = f.Objective {
 					Action: fire.Action,
 				}
