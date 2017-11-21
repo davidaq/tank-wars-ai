@@ -1,7 +1,7 @@
 package tactics
 
 import (
-	// "fmt";
+	"fmt"
 	f "framework";
 )
 
@@ -15,14 +15,23 @@ func NewKillAll() *KillAll {
 func (self *KillAll) Init(state *f.GameState) {
 }
 
+var count = 0
 func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
+	count++
 	// count := 0
 	// targetX := 6
 	// targetY := 8
 	tankloop: for _, tank := range state.MyTank {
 		delete(objective, tank.Id)
 		// if radar.Dodge[tank.Id].Threat >= 0.4 && radar.Dodge[tank.Id].Threat < 1 && (tank.Pos.X != targetX && tank.Pos.Y != targetY + count) {
-		if radar.Dodge[tank.Id].Threat >= 0.6 && radar.Dodge[tank.Id].Threat <= 1 {
+		fmt.Println("-----------------------", count, tank.Id, radar.Dodge[tank.Id].Threat)
+		if tank.Bullet != "" {
+			objective[tank.Id] = f.Objective {
+				Action: f.ActionTravelWithDodge,
+			}
+			continue tankloop
+		}
+		if radar.Dodge[tank.Id].Threat >= 0.4 && radar.Dodge[tank.Id].Threat <= 1 {
 			objective[tank.Id] = f.Objective {
 				Action: f.ActionTravel,
 				Target: radar.Dodge[tank.Id].SafePos,
