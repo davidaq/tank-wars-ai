@@ -103,7 +103,7 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 	} else if verticalDistance <= bulletSpeed * 4 + 1 {
 		faith = 0.4
 	} else if verticalDistance <= bulletSpeed * 10 + 1 {
-		faith = 0.15
+		faith = 0.3
 	} else {
 		return faith
 	}
@@ -141,7 +141,7 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 				return faith - 0.15
 			}
 			// 敌方坦克朝向与火线相反或不朝向火线
-			return float64(0)
+			return faith - 0.2
 		}
 
 		// 开火方向是左或右
@@ -161,7 +161,7 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 				return faith - 0.15
 			}
 			// 敌方坦克朝向与火线相反或不朝向火线
-			return float64(0)
+			return faith - 0.3
 		}
 	}
 
