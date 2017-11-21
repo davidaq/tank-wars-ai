@@ -294,7 +294,7 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 				sin = calcSin(tank, state.MyTank, enemyThreat.Enemy, realDirection, state.Params.BulletSpeed, state.Params.TankSpeed)
 				cost = calcCost(tank, realDirection, state.Params.BulletSpeed, state.Terain)
 				
-				if cost < verticalDist {
+				if cost <= verticalDist {
 					faith = float64(0)
 					sin = float64(0)
 				}
@@ -338,7 +338,7 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 					sin = calcSin(tank, state.MyTank, enemyThreat.Enemy, realDirection, state.Params.BulletSpeed, state.Params.TankSpeed)
 					cost = calcCost(tank, realDirection, state.Params.BulletSpeed, state.Terain)
 
-					if cost < dist {
+					if cost <= dist {
 						faith = float64(0)
 						sin = float64(0)
 					}
