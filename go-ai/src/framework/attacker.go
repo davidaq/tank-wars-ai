@@ -125,6 +125,7 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 		return faith / float64(2)
 	} else {
 		// 敌方不在火线，开火方向是上或下
+		faith = faith / float64(3)
 		if fireDirection == DirectionUp || fireDirection == DirectionDown {
 
 			// 坦克下回合走不到火线上
@@ -222,12 +223,12 @@ func directionConvert(fireDirection int, tank Tank) int {
 	return DirectionUp + ((realDirection - DirectionUp) + (tank.Pos.Direction - DirectionUp) + 4) % 4
 }
 
-// var count = 0
+var count = 0
 
 func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThreat) (map[string]*RadarFireAll) {
 	radarFireAlls := make(map[string]*RadarFireAll)
 	
-	// count += 1
+	count += 1
 
 	for _, tank := range state.MyTank {
 		if tank.Bullet != "" {
