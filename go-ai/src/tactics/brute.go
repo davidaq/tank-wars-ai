@@ -78,7 +78,8 @@ func around(pos f.Position, counter *int) f.Position {
 	return ret
 }
 
-func (self *Brute) nearestRelay(p f.Position) f.Position {
+func (self *Brute) nearestRelay(x, y int) f.Position {
+	p := f.Position { X: x, Y : y }
 	ret := p
 	dist := -1
 	for _, c := range self.relays {
@@ -92,12 +93,27 @@ func (self *Brute) nearestRelay(p f.Position) f.Position {
 
 func (self *Brute) PlanFarShoot(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
 	aroundRelay := 0
+	sumX := 0
+	sumY := 0
+	count := 0
+	for _, tank := range state.MyTank {
+		sumX += tank.Pos.X
+		sumY += tank.Pos.Y
+		count++
+	}
+	for _, tank := range state.EnemyTank {
+		sumX += state.Terain.Width - tank.Pos.X - 1
+		sumY += state.Terain.Height - tank.Pos.Y - 1
+		count++
+	}
+	avgX := sumX / count
+	avgY := sumY / count
 	for _, tank := range state.MyTank {
 		travel := f.ActionTravel
 		if radar.Dodge[tank.Id].Threat > 0.4 || tank.Bullet != "" {
 			travel = f.ActionTravelWithDodge
 		}
-		target := around(self.nearestRelay(tank.Pos), &aroundRelay)
+		target := around(self.nearestRelay((tank.Pos.X + avgX) / 2, (tank.Pos.Y + avgY) / 2), &aroundRelay)
 		objective[tank.Id] = f.Objective {
 			Action: travel,
 			Target: target,
