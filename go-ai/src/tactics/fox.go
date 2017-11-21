@@ -4,28 +4,29 @@ import (
 	f "framework"
 )
 
-type Nearest struct {
-	round int
+type Fox struct {
 }
 
-func NewNearest() *Nearest {
-	return &Nearest { round: 0 }
+func NewFox() *Fox {
+	return &Fox {}
 }
 
-func (self *Nearest) Init(state *f.GameState) {
+func (self *Fox) Init(state *f.GameState) {
 }
 
-func (self *Nearest) Plan(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
-	self.round++
-	// if self.round < 5 {
-	// 	return
-	// }
+func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
 	tankloop: for _, tank := range state.MyTank {
 		fireRadar := radar.Fire[tank.Id]
 		for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
-			if fire != nil && fire.Sin < 0.5 && fire.Faith > 0.2 && tank.Bullet == "" {
+			if fire != nil && fire.Sin < 0.4 && fire.Faith >= 0.3 && tank.Bullet == "" {
 				objective[tank.Id] = f.Objective {
 					Action: fire.Action,
+				}
+				if radar.Dodge[tank.Id].Threat == 1 {
+					objective[tank.Id] = f.Objective {
+						Action: f.ActionTravel,
+						Target: radar.Dodge[tank.Id].SafePos,
+					}
 				}
 				continue tankloop
 			}
@@ -50,13 +51,5 @@ func (self *Nearest) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 	}
 }
 
-func (self *Nearest) End(state *f.GameState) {
-}
-
-func abs (val int) int {
-	if val < 0 {
-		return -val
-	} else {
-		return val
-	}
+func (self *Fox) End(state *f.GameState) {
 }
