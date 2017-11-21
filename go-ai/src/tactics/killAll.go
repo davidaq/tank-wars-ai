@@ -1,7 +1,7 @@
 package tactics
 
 import (
-	"fmt";
+	// "fmt";
 	f "framework";
 )
 
@@ -16,9 +16,9 @@ func (self *KillAll) Init(state *f.GameState) {
 }
 
 func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
-	count := 0
-	targetX := 6
-	targetY := 8
+	// count := 0
+	// targetX := 6
+	// targetY := 8
 	tankloop: for _, tank := range state.MyTank {
 		delete(objective, tank.Id)
 		// if radar.Dodge[tank.Id].Threat >= 0.4 && radar.Dodge[tank.Id].Threat < 1 && (tank.Pos.X != targetX && tank.Pos.Y != targetY + count) {
@@ -52,10 +52,7 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 
 		fireRadar := radar.Fire[tank.Id]
 		for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
-			if fire != nil {
-				fmt.Println(fire.Faith)
-			}
-			if fire != nil && fire.Sin < 0.5 && fire.Faith > 0 {
+			if fire != nil && fire.Sin < 0.5 && fire.Faith > 0.2 {
 				objective[tank.Id] = f.Objective {
 					Action: fire.Action,
 				}
@@ -63,33 +60,35 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 			}
 		}	
 
-		// var ttank *f.Tank
-		// for _, etank := range state.EnemyTank {
-		// 	if etank.Pos.X < (state.Terain.Width / 2) {
-		// 		ttank = &etank
-		// 		break
-		// 	}
-		// }
-
-		// if ttank != nil {
-		// 	objective[tank.Id] = f.Objective {
-		// 		Action: f.ActionTravel,
-		// 		Target: ttank.Pos,
-		// 	}
-		// 	continue tankloop
-		// }
-					
-		if tank.Pos.X == targetX && tank.Pos.Y == targetY + count {
-			objective[tank.Id] = f.Objective {
-				Action: f.ActionFireRight,
-			}
-		} else {
-			objective[tank.Id] = f.Objective {
-				Action: f.ActionTravel,
-				Target: f.Position { X: targetX, Y:targetY + count, Direction: f.DirectionLeft },
+		var ttank *f.Tank
+		least := 99999		
+		for _, etank := range state.EnemyTank {
+			dist := abs(tank.Pos.X - etank.Pos.X) + abs(tank.Pos.Y - etank.Pos.Y)
+			if dist < least {
+				ttank = &etank
+				least = dist
 			}
 		}
-		count += 1
+
+		if ttank != nil {
+			objective[tank.Id] = f.Objective {
+				Action: f.ActionTravel,
+				Target: ttank.Pos,
+			}
+			continue tankloop
+		}
+					
+		// if tank.Pos.X == targetX && tank.Pos.Y == targetY + count {
+		// 	objective[tank.Id] = f.Objective {
+		// 		Action: f.ActionFireRight,
+		// 	}
+		// } else {
+		// 	objective[tank.Id] = f.Objective {
+		// 		Action: f.ActionTravel,
+		// 		Target: f.Position { X: targetX, Y:targetY + count, Direction: f.DirectionLeft },
+		// 	}
+		// }
+		// count += 1
 	}
 	// bottomTank := state.MyTank[0]
 	// maxY := 0	
