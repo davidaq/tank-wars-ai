@@ -110,7 +110,7 @@ func (self *Brute) PlanFarShoot(state *f.GameState, radar *f.RadarResult, object
 	avgY := sumY / count
 	for _, tank := range state.MyTank {
 		travel := f.ActionTravel
-		if radar.Dodge[tank.Id].Threat > 0.4 || tank.Bullet != "" {
+		if radar.Dodge[tank.Id].Threat > 0.8 || tank.Bullet != "" {
 			travel = f.ActionTravelWithDodge
 		}
 		target := around(self.nearestRelay((tank.Pos.X + avgX) / 2, (tank.Pos.Y + avgY) / 2), &aroundRelay)
