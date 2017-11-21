@@ -276,8 +276,9 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 				for direction, dist := range enemyThreat.Distances {
 					if dist <= state.Params.TankSpeed && dist >= 1 {
 						fireDirection = direction
-						verticalDist = dist
 						needToCal = true
+					} else if needToCal {
+						verticalDist = dist
 					}
 				}
 
