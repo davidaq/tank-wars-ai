@@ -3,6 +3,7 @@ package tactics
 import (
 	f "framework"
 	"fmt"
+	"math/rand"
 )
 
 type Brute struct {
@@ -124,7 +125,7 @@ func (self *Brute) PlanFarShoot(state *f.GameState, radar *f.RadarResult, object
 func (self *Brute) PlanCatchFlag(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
 	for _, tank := range state.MyTank {
 		travel := f.ActionTravel
-		if radar.Dodge[tank.Id].Threat > 0.9 {
+		if radar.Dodge[tank.Id].Threat > 0.9 && rand.Int() % 3 == 0 {
 			travel = f.ActionTravelWithDodge
 		}
 		objective[tank.Id] = f.Objective {
