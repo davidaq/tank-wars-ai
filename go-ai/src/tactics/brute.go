@@ -14,7 +14,7 @@ func NewBrute() *Brute {
 	inst := &Brute {
 		round: 0,
 	}
-	inst.relays = append(inst.relays, f.Position { X: 7, Y: 15 }, f.Position { X: 15, Y: 7 }, f.Position { X: 23, Y: 15 }, f.Position { X: 15, Y: 23 })
+	inst.relays = append(inst.relays, f.Position { X: 6, Y: 15 }, f.Position { X: 15, Y: 6 }, f.Position { X: 24, Y: 15 }, f.Position { X: 15, Y: 24 })
 	return inst
 }
 
