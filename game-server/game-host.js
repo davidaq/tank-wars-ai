@@ -618,6 +618,7 @@ class GameHost extends EventEmitter {
     }
   }
   hitTank (scene, bullet, tankSet, tankI) {
+    if (!bullet) return;
     const hitTank = tankSet[tankI];
     const isFriendlyFire = bullet.color === hitTank.color;
     let blueEventType;

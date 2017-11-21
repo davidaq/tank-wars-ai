@@ -52,7 +52,9 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 
 		fireRadar := radar.Fire[tank.Id]
 		for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
-			fmt.Println(fire.Faith)
+			if fire != nil {
+				fmt.Println(fire.Faith)
+			}
 			if fire != nil && fire.Sin < 0.5 && fire.Faith > 0 {
 				objective[tank.Id] = f.Objective {
 					Action: fire.Action,

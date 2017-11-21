@@ -38,13 +38,14 @@ func (self *Nearest) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 			if dist < least {
 				ttank = &etank
 				least = dist
+				break
 			}
 		}
 		if ttank != nil {
 			objective[tank.Id] = f.Objective {
 				Action: f.ActionTravel,
 				Target: ttank.Pos,
-				// Target: f.Position { X: 14, Y: 9 },
+				// Target: f.Position { X: 0, Y: 0 },
 			}
 		}
 	}

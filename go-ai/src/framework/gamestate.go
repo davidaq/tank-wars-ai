@@ -190,7 +190,7 @@ func ParseGameState (bytes []byte) (*GameState, error) {
 			FlagTime: 0,
 			FlagX: 0,
 			FlagY: 0,
-			// Timeout: 1000,
+			Timeout: 500,
 		},
 		Events: nil,
 		Ended: dat["ended"].(bool),
@@ -243,6 +243,7 @@ func parseTank(dat []interface{}, tanks *[]Tank) {
 		tank := itank.(map[string]interface{})
 		*tanks = append(*tanks, Tank {
 			Id: tank["id"].(string),
+			Bullet: tank["bullet"].(string),
 			Pos: Position {
 				X: int(tank["x"].(float64)),
 				Y: int(tank["y"].(float64)),
