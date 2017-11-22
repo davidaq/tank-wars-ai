@@ -16,6 +16,7 @@ type Observation struct {
     MyTank       map[string]f.Tank // 我方存活坦克
     EmyTank      map[string]f.Tank // 敌方存活坦克
     Flag         Flag
+	Terain       *f.Terain
 }
 
 type Flag struct {
@@ -25,7 +26,7 @@ type Flag struct {
 }
 
 func NewObservation(state *f.GameState) (obs *Observation) {
-    obs = &Observation{ TotalSteps: state.Params.MaxRound, Steps: 0, State: state}
+    obs = &Observation{ TotalSteps: state.Params.MaxRound, Steps: 0, State: state, Terain: state.Terain}
 
     // 观察坦克
     obs.observeTank()
@@ -41,9 +42,16 @@ func (o *Observation) makeObservation(state *f.GameState, radar *f.RadarResult, 
     o.State  = state
     o.Radar  = radar
     o.Objs   = objective
+	o.Terain = state.Terain
+
+	// 观察坦克
+    o.observeTank()
 
     // 观察战旗
     o.observeFlag()
+
+	// 观察地图
+	o.observeTerain()
 }
 
 func (o *Observation) observeTank() {
@@ -63,4 +71,20 @@ func (o *Observation) observeFlag() {
     } else {
         o.Flag = Flag{ Pos: f.Position{ X: o.State.Params.FlagX, Y:o.State.Params.FlagY }, Exist: true, Next: o.State.FlagWait }
     }
+}
+
+// 将坦克和子弹渲染到地图上
+func (o *Observation) observeTerain() {
+	for _, tank := range o.MyTank {
+		o.Terain.Data[tank.Pos.Y][tank.Pos.X] = 4 // 我方坦克
+	}
+	for _, tank := range o.EmyTank {
+		o.Terain.Data[tank.Pos.Y][tank.Pos.X] = 5 // 敌方坦克
+	}
+	for _, bullet := range o.State.MyBullet {
+		o.Terain.Data[bullet.Pos.Y][bullet.Pos.X] = 6 // 子弹
+	}
+	for _, bullet := range o.State.EnemyBullet {
+		o.Terain.Data[bullet.Pos.Y][bullet.Pos.X] = 6 // 子弹
+	}
 }

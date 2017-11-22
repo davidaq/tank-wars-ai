@@ -619,13 +619,13 @@ func (self *Radar) convertActionToPosition(state *GameState, tank Tank, action i
     if positionRet.X == tank.Pos.X {
         if positionRet.Y >= tank.Pos.Y {
             for y := tank.Pos.Y; y <= positionRet.Y; y++ {
-                if state.Terain.Get(positionRet.X, positionRet.Y) == TerainObstacle {
+                if state.Terain.Get(positionRet.X, y) == TerainObstacle {
                     return false, Position{}
                 }
             }
         } else {
             for y := tank.Pos.Y; y >= positionRet.Y; y-- {
-                if state.Terain.Get(positionRet.X, positionRet.Y) == TerainObstacle {
+                if state.Terain.Get(positionRet.X, y) == TerainObstacle {
                     return false, Position{}
                 }
             }
@@ -634,13 +634,13 @@ func (self *Radar) convertActionToPosition(state *GameState, tank Tank, action i
     if positionRet.Y == tank.Pos.Y {
         if positionRet.X >= tank.Pos.X {
             for x := tank.Pos.X; x <= positionRet.X; x++ {
-                if state.Terain.Get(positionRet.X, positionRet.Y) == TerainObstacle {
+                if state.Terain.Get(x, positionRet.Y) == TerainObstacle {
                     return false, Position{}
                 }
             }
         } else {
             for x := tank.Pos.X; x >= positionRet.X; x-- {
-                if state.Terain.Get(positionRet.X, positionRet.Y) == TerainObstacle {
+                if state.Terain.Get(x, positionRet.Y) == TerainObstacle {
                     return false, Position{}
                 }
             }
@@ -657,13 +657,13 @@ func (self *Radar) convertActionToPosition(state *GameState, tank Tank, action i
         if positionRet.X == tank.Pos.X {
             if positionRet.Y >= tank.Pos.Y {
                 for y := tank.Pos.Y; y <= positionRet.Y; y++ {
-                    if positionRet.X == s.Pos.X && positionRet.Y == s.Pos.Y {
+                    if positionRet.X == s.Pos.X && y == s.Pos.Y {
                         return false, Position{}
                     }
                 }
             } else {
                 for y := tank.Pos.Y; y >= positionRet.Y; y-- {
-                    if positionRet.X == s.Pos.X && positionRet.Y == s.Pos.Y {
+                    if positionRet.X == s.Pos.X && y == s.Pos.Y {
                         return false, Position{}
                     }
                 }
@@ -672,13 +672,13 @@ func (self *Radar) convertActionToPosition(state *GameState, tank Tank, action i
         if positionRet.Y == tank.Pos.Y {
             if positionRet.X >= tank.Pos.X {
                 for x := tank.Pos.X; x <= positionRet.X; x++ {
-                    if positionRet.X == s.Pos.X && positionRet.Y == s.Pos.Y {
+                    if x == s.Pos.X && positionRet.Y == s.Pos.Y {
                         return false, Position{}
                     }
                 }
             } else {
                 for x := tank.Pos.X; x >= positionRet.X; x-- {
-                    if positionRet.X == s.Pos.X && positionRet.Y == s.Pos.Y {
+                    if x == s.Pos.X && positionRet.Y == s.Pos.Y {
                         return false, Position{}
                     }
                 }
@@ -690,13 +690,13 @@ func (self *Radar) convertActionToPosition(state *GameState, tank Tank, action i
         if positionRet.X == tank.Pos.X {
             if positionRet.Y >= tank.Pos.Y {
                 for y := tank.Pos.Y; y <= positionRet.Y; y++ {
-                    if positionRet.X == e.Pos.X && positionRet.Y == e.Pos.Y {
+                    if positionRet.X == e.Pos.X && y == e.Pos.Y {
                         return false, Position{}
                     }
                 }
             } else {
                 for y := tank.Pos.Y; y >= positionRet.Y; y-- {
-                    if positionRet.X == e.Pos.X && positionRet.Y == e.Pos.Y {
+                    if positionRet.X == e.Pos.X && y == e.Pos.Y {
                         return false, Position{}
                     }
                 }
@@ -705,13 +705,13 @@ func (self *Radar) convertActionToPosition(state *GameState, tank Tank, action i
         if positionRet.Y == tank.Pos.Y {
             if positionRet.X >= tank.Pos.X {
                 for x := tank.Pos.X; x <= positionRet.X; x++ {
-                    if positionRet.X == e.Pos.X && positionRet.Y == e.Pos.Y {
+                    if x == e.Pos.X && positionRet.Y == e.Pos.Y {
                         return false, Position{}
                     }
                 }
             } else {
                 for x := tank.Pos.X; x >= positionRet.X; x-- {
-                    if positionRet.X == e.Pos.X && positionRet.Y == e.Pos.Y {
+                    if x == e.Pos.X && positionRet.Y == e.Pos.Y {
                         return false, Position{}
                     }
                 }
