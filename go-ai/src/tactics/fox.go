@@ -35,7 +35,7 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 		// 躲避
 		if radar.DodgeBullet[tank.Id].Threat > 0.7 {
 			objective[tank.Id] = f.Objective {
-				Action: f.ActionTravel,
+				Action: f.ActionTravelWithDodge,
 				Target: radar.DodgeBullet[tank.Id].SafePos,
 			}
 			continue tankloop
