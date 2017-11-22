@@ -110,21 +110,21 @@ func (self *Brute) Plan(state *f.GameState, radar *f.RadarResult, objective map[
 	}
 }
 
-func around(pos f.Position, counter *int) f.Position {
+func around(state *f.GameState, pos f.Position, counter *int) f.Position {
 	ret := pos
-	for i, j := 0, 0; i < *counter; i++ {
-		switch j {
-		case 0:
-			ret.X++
-			j = 1
-		case 1:
-			ret.X--
-			ret.Y++
-			j = 2
-		case 2:
-			ret.X++
-			j = 0
-		}
+	switch *counter {
+	case 1:
+		ret.X -= state.Params.TankSpeed
+		ret.Y -= state.Params.TankSpeed
+	case 2:
+		ret.X -= state.Params.TankSpeed
+		ret.Y += state.Params.TankSpeed
+	case 3:
+		ret.X += state.Params.TankSpeed
+		ret.Y -= state.Params.TankSpeed
+	case 4:
+		ret.X += state.Params.TankSpeed
+		ret.Y += state.Params.TankSpeed
 	}
 	(*counter)++
 	fmt.Println(ret)
@@ -166,7 +166,8 @@ func (self *Brute) PlanFarShoot(state *f.GameState, radar *f.RadarResult, object
 		if radar.Dodge[tank.Id].Threat > 0.8 || tank.Bullet != "" {
 			travel = f.ActionTravelWithDodge
 		}
-		target := around(self.nearestRelay((tank.Pos.X + avgX) / 2, (tank.Pos.Y + avgY) / 2), &aroundRelay)
+		target := around(state, self.nearestRelay((tank.Pos.X + avgX) / 2, (tank.Pos.Y + avgY) / 2), &aroundRelay)
+
 		objective[tank.Id] = f.Objective {
 			Action: travel,
 			Target: target,
@@ -177,8 +178,15 @@ func (self *Brute) PlanFarShoot(state *f.GameState, radar *f.RadarResult, object
 func (self *Brute) PlanCatchFlag(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
 	for _, tank := range state.MyTank {
 		travel := f.ActionTravel
-		if radar.Dodge[tank.Id].Threat > 0.9 && rand.Int() % 3 == 0 {
-			travel = f.ActionTravelWithDodge
+
+		if rand.Int() % 3 == 0 {
+			if radar.Dodge[tank.Id].Threat > 0.9 {
+				travel = f.ActionTravelWithDodge
+			}
+		} else {
+			if radar.DodgeBullet[tank.Id].Threat > 0.7 && radar.DodgeBullet[tank.Id].Threat <= 1 {
+				travel = f.ActionTravelWithDodge
+			}
 		}
 		objective[tank.Id] = f.Objective {
 			Action: travel,
