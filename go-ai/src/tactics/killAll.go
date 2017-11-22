@@ -53,24 +53,7 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 		// 	}
 		// }
 
-		if len(state.EnemyTank) >= len(state.MyTank) {
-			if radar.Dodge[tank.Id].Threat >= 0.4 && radar.Dodge[tank.Id].Threat <= 1 {
-				objective[tank.Id] = f.Objective {
-					Action: f.ActionTravel,
-					Target: radar.Dodge[tank.Id].SafePos,
-				}
-				continue tankloop
-			} 
-		} else {
-			if radar.DodgeBullet[tank.Id].Threat > 0 && radar.DodgeBullet[tank.Id].Threat <= 1 {
-				objective[tank.Id] = f.Objective {
-					Action: f.ActionTravel,
-					Target: radar.DodgeBullet[tank.Id].SafePos,
-				}
-				continue tankloop
-			} 
-		}
-
+		
 		fireRadar := radar.Fire[tank.Id]
 		maxFaith := 0.0
 		tmpIndex := 0
@@ -95,6 +78,25 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 			continue tankloop
 		}
 
+		if len(state.EnemyTank) >= len(state.MyTank) {
+			if radar.Dodge[tank.Id].Threat >= 0.4 && radar.Dodge[tank.Id].Threat <= 1 {
+				objective[tank.Id] = f.Objective {
+					Action: f.ActionTravel,
+					Target: radar.Dodge[tank.Id].SafePos,
+				}
+				continue tankloop
+			} 
+		} else {
+			if radar.DodgeBullet[tank.Id].Threat > 0 && radar.DodgeBullet[tank.Id].Threat <= 1 {
+				objective[tank.Id] = f.Objective {
+					Action: f.ActionTravel,
+					Target: radar.DodgeBullet[tank.Id].SafePos,
+				}
+				continue tankloop
+			} 
+		}
+
+
 		var ttank *f.Tank
 		least := 99999
 		dist := 0
@@ -106,11 +108,14 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 			}
 		}
 
-		if dist < 15 {
-			objective[tank.Id] = f.Objective {
-				Action: f.ActionTravelWithDodge,
+		if dist < 15 && ttank != nil {
+			if ttank.Pos.X == tank.Pos.X || ttank.Pos.Y == tank.Pos.Y {
+				objective[tank.Id] = f.Objective {
+					Action: f.ActionTravelWithDodge,
+					Target: radar.DodgeBullet[tank.Id].SafePos,
+				}
+				continue tankloop
 			}
-			continue tankloop
 		}
 
 		// if ttank != nil && dist < 10 {
