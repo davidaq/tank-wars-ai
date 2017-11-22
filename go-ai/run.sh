@@ -4,7 +4,7 @@ export GOPATH=`pwd`
 export HOST=ml.niven.cn:8777
 export GAME=HktkVaflG
 export SIDE=blue
-export TACTICS=killall
+export TACTICS=brute
 # export TACTICS=proxy PROXY_PORT=8776
 
 go run src/ai-client.go > /dev/null 2>&1 &
