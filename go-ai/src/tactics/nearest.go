@@ -2,6 +2,7 @@ package tactics
 
 import (
 	f "framework"
+	"math/rand"
 )
 
 type Nearest struct {
@@ -22,13 +23,18 @@ func (self *Nearest) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 	// }
 	tankloop: for _, tank := range state.MyTank {
 		fireRadar := radar.Fire[tank.Id]
+		faith := 0.
+		var pfire *f.RadarFire
 		for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
-			if fire != nil && fire.Sin < 0.5 && fire.Faith > 0.2 && tank.Bullet == "" {
-				objective[tank.Id] = f.Objective {
-					Action: fire.Action,
-				}
-				continue tankloop
+			if fire != nil && fire.Sin < 0.5 && fire.Faith > faith {
+				pfire = fire
 			}
+		}
+		if pfire != nil {
+			objective[tank.Id] = f.Objective {
+				Action: pfire.Action,
+			}
+			continue tankloop
 		}
 
 		least := 99999
@@ -41,8 +47,12 @@ func (self *Nearest) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 			}
 		}
 		if ttank != nil {
+			travel := f.ActionTravel
+			if radar.Dodge[tank.Id].Threat > 0.9 && rand.Int() % 3 == 0 {
+				travel = f.ActionTravelWithDodge
+			}
 			objective[tank.Id] = f.Objective {
-				Action: f.ActionTravel,
+				Action: travel,
 				Target: ttank.Pos,
 				// Target: f.Position { X: 0, Y: 0 },
 			}
