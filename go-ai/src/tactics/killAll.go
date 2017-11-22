@@ -1,7 +1,7 @@
 package tactics
 
 import (
-	"fmt"
+	// "fmt";
 	f "framework";
 )
 
@@ -24,20 +24,19 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 	tankloop: for _, tank := range state.MyTank {
 		delete(objective, tank.Id)
 		// if radar.Dodge[tank.Id].Threat >= 0.4 && radar.Dodge[tank.Id].Threat < 1 && (tank.Pos.X != targetX && tank.Pos.Y != targetY + count) {
-		fmt.Println("-----------------------", count, tank.Id, radar.Dodge[tank.Id].Threat)
 		if tank.Bullet != "" {
 			objective[tank.Id] = f.Objective {
 				Action: f.ActionTravelWithDodge,
 			}
 			continue tankloop
 		}
-		if radar.Dodge[tank.Id].Threat >= 0.4 && radar.Dodge[tank.Id].Threat <= 1 {
-			objective[tank.Id] = f.Objective {
-				Action: f.ActionTravel,
-				Target: radar.Dodge[tank.Id].SafePos,
-			}
-			continue tankloop
-		} 
+		// if radar.Dodge[tank.Id].Threat >= 0.6 && radar.Dodge[tank.Id].Threat <= 1 {
+		// 	objective[tank.Id] = f.Objective {
+		// 		Action: f.ActionTravel,
+		// 		Target: radar.Dodge[tank.Id].SafePos,
+		// 	}
+		// 	continue tankloop
+		// } 
 		// else if radar.Dodge[tank.Id].Threat == -1 {
 		// 	for _, bullet := range radar.ExtDangerSrc[tank.Id] {
 		// 		if bullet.Urgent == -1 {
@@ -60,14 +59,25 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 		// }
 
 		fireRadar := radar.Fire[tank.Id]
+		maxFaith := 0.0
+		tmpIndex := 0
+		index := 0
 		for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
-			if fire != nil && fire.Sin < 0.5 && fire.Faith > 0 {
-				objective[tank.Id] = f.Objective {
-					Action: fire.Action,
-				}
-				continue tankloop
+			if fire != nil && fire.Sin < 0.5 && fire.Faith > maxFaith {
+				maxFaith = fire.Faith
+				index = tmpIndex
 			}
+			tmpIndex++			
 		}	
+
+		fire := []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right }
+
+		if maxFaith > 0 {
+			objective[tank.Id] = f.Objective {
+				Action: fire[index].Action,
+			}
+			continue tankloop
+		}
 
 		var ttank *f.Tank
 		least := 99999
