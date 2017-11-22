@@ -22,6 +22,7 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 	// targetX := 6
 	// targetY := 8
 	tankloop: for _, tank := range state.MyTank {
+		// fmt.Println("-----------------------", count-1, tank.Id, objective[tank.Id])
 		delete(objective, tank.Id)
 		// if radar.Dodge[tank.Id].Threat >= 0.4 && radar.Dodge[tank.Id].Threat < 1 && (tank.Pos.X != targetX && tank.Pos.Y != targetY + count) {
 		if tank.Bullet != "" {
@@ -30,13 +31,7 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 			}
 			continue tankloop
 		}
-		// if radar.Dodge[tank.Id].Threat >= 0.6 && radar.Dodge[tank.Id].Threat <= 1 {
-		// 	objective[tank.Id] = f.Objective {
-		// 		Action: f.ActionTravel,
-		// 		Target: radar.Dodge[tank.Id].SafePos,
-		// 	}
-		// 	continue tankloop
-		// } 
+
 		// else if radar.Dodge[tank.Id].Threat == -1 {
 		// 	for _, bullet := range radar.ExtDangerSrc[tank.Id] {
 		// 		if bullet.Urgent == -1 {
@@ -58,10 +53,29 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 		// 	}
 		// }
 
+		if len(state.EnemyTank) >= len(state.MyTank) {
+			if radar.Dodge[tank.Id].Threat >= 0.6 && radar.Dodge[tank.Id].Threat < 1 {
+				objective[tank.Id] = f.Objective {
+					Action: f.ActionTravel,
+					Target: radar.Dodge[tank.Id].SafePos,
+				}
+				continue tankloop
+			} 
+		} else {
+			if radar.DodgeBullet[tank.Id].Threat > 0 && radar.DodgeBullet[tank.Id].Threat <= 1 {
+				objective[tank.Id] = f.Objective {
+					Action: f.ActionTravel,
+					Target: radar.DodgeBullet[tank.Id].SafePos,
+				}
+				continue tankloop
+			} 
+		}
+
 		fireRadar := radar.Fire[tank.Id]
 		maxFaith := 0.0
 		tmpIndex := 0
 		index := 0
+		// fmt.Println(count, tank.Id, "up", fireRadar.Up, "down", fireRadar.Down, "left", fireRadar.Left, "right", fireRadar.Right)
 		for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
 			if fire != nil && fire.Sin < 0.5 && fire.Faith > maxFaith {
 				maxFaith = fire.Faith
@@ -72,7 +86,9 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 
 		fire := []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right }
 
-		if maxFaith > 0 {
+
+		// fmt.Println("-----------------------FIRE", count, tank.Id, fire[index])		
+		if maxFaith > 0.0 {
 			objective[tank.Id] = f.Objective {
 				Action: fire[index].Action,
 			}
@@ -90,6 +106,13 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 			}
 		}
 
+		if dist < 15 {
+			objective[tank.Id] = f.Objective {
+				Action: f.ActionTravelWithDodge,
+			}
+			continue tankloop
+		}
+
 		// if ttank != nil && dist < 10 {
 		// 	objective[tank.Id] = f.Objective {
 		// 		Action: f.ActionTravelWithDodge,
@@ -97,6 +120,7 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 		// 	}
 		// 	continue tankloop
 		// }
+
 		if ttank != nil {
 			objective[tank.Id] = f.Objective {
 				Action: f.ActionTravel,
