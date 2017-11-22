@@ -63,10 +63,10 @@ func (self *Brute) Init(state *f.GameState) {
 		self.relays = append(self.relays, f.Position { X: fx - leftv, Y: fy })
 	}
 	if down {
-		self.relays = append(self.relays, f.Position { X: fx, Y: fy + upv })
+		self.relays = append(self.relays, f.Position { X: fx, Y: fy + downv })
 	}
 	if right {
-		self.relays = append(self.relays, f.Position { X: fx + leftv, Y: fy })
+		self.relays = append(self.relays, f.Position { X: fx + rightv, Y: fy })
 	}
 }
 
@@ -74,7 +74,7 @@ func (self *Brute) Plan(state *f.GameState, radar *f.RadarResult, objective map[
 	self.round++
 	if state.FlagWait < 5 {
 		self.PlanCatchFlag(state, radar, objective)
-	} else {
+	} else if !self.PlanKill(state, radar, objective) {
 		self.PlanFarShoot(state, radar, objective)
 	}
 	fireForest := make(map[f.Position]FireForest)
@@ -89,7 +89,9 @@ func (self *Brute) Plan(state *f.GameState, radar *f.RadarResult, objective map[
 			var pfire *f.RadarFire
 			for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
 				if fire != nil && fire.Sin < 0.5 && fire.Faith > faith {
-					pfire = fire
+					if fire.Faith > 0.3 || fire.Cost < 5 {
+						pfire = fire
+					}
 				}
 			}
 			if pfire != nil {
@@ -110,6 +112,72 @@ func (self *Brute) Plan(state *f.GameState, radar *f.RadarResult, objective map[
 	}
 }
 
+func (self *Brute) PlanKill(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) bool {
+	if self.round < state.Params.MaxRound / 2 || len(state.MyTank) > len(state.EnemyTank) {
+		return false
+	}
+	sumX := 0
+	sumY := 0
+	count := 0
+	for _, tank := range state.MyTank {
+		sumX += tank.Pos.X
+		sumY += tank.Pos.Y
+		count++
+	}
+	if count < 2 {
+		return false
+	}
+	mAvg := f.Position { X: sumX / count, Y: sumY / count }
+
+	sumX = 0
+	sumY = 0
+	count = 0
+	for _, tank := range state.EnemyTank {
+		sumX += tank.Pos.X
+		sumY += tank.Pos.Y
+		count++
+	}
+	if count == 0 {
+		return false
+	}
+	eAvg := f.Position { X: sumX / count, Y: sumY / count }
+
+	least := 0
+	var ttank *f.Tank
+	for _, tank := range state.EnemyTank {
+		if away := tank.Pos.SDist(eAvg); away > state.Params.TankSpeed * 3 {
+			d := tank.Pos.SDist(mAvg) - away
+			if ttank == nil || d < least {
+				least = d
+				ttank = &tank
+			}
+		}
+	}
+	if ttank == nil {
+		return false
+	}
+	for _, tank := range state.MyTank {
+		travel := f.ActionTravel
+		if radar.Dodge[tank.Id].Threat > 0.8 || tank.Bullet != "" {
+			travel = f.ActionTravelWithDodge
+		}
+		dx := ttank.Pos.X - tank.Pos.X
+		dy := ttank.Pos.Y - tank.Pos.Y
+		target := ttank.Pos
+		if dx > dy {
+			target.X = tank.Pos.X
+		} else {
+			target.Y = tank.Pos.Y
+		}
+		objective[tank.Id] = f.Objective {
+			Action: travel,
+			Target: target,
+		}
+	}
+	fmt.Println("pursue")
+	return true
+}
+
 func around(state *f.GameState, pos f.Position, counter *int) f.Position {
 	ret := pos
 	switch *counter {
@@ -127,7 +195,6 @@ func around(state *f.GameState, pos f.Position, counter *int) f.Position {
 		ret.Y += state.Params.TankSpeed
 	}
 	(*counter)++
-	fmt.Println(ret)
 	return ret
 }
 
@@ -161,12 +228,36 @@ func (self *Brute) PlanFarShoot(state *f.GameState, radar *f.RadarResult, object
 	}
 	avgX := sumX / count
 	avgY := sumY / count
+	relay := self.nearestRelay(avgX, avgY)
 	for _, tank := range state.MyTank {
 		travel := f.ActionTravel
 		if radar.Dodge[tank.Id].Threat > 0.8 || tank.Bullet != "" {
 			travel = f.ActionTravelWithDodge
+		} else if radar.Dodge[tank.Id].Threat < 0.1 && tank.Bullet == "" {
+			fireRadar := radar.Fire[tank.Id]
+			var tryFire *f.RadarFire
+			if tank.Pos.X == state.Params.FlagX {
+				if tank.Pos.Y > state.Params.FlagY {
+					tryFire = fireRadar.Up
+				} else {
+					tryFire = fireRadar.Down
+				}
+			} else if tank.Pos.Y == state.Params.FlagY {
+				if tank.Pos.X > state.Params.FlagX {
+					tryFire = fireRadar.Left
+				} else {
+					tryFire = fireRadar.Right
+				}
+			}
+			if tryFire != nil && tryFire.Sin < 0.1 {
+				fmt.Println("far shoot")
+				objective[tank.Id] = f.Objective {
+					Action: tryFire.Action,
+				}
+				continue
+			}
 		}
-		target := around(state, self.nearestRelay((tank.Pos.X + avgX) / 2, (tank.Pos.Y + avgY) / 2), &aroundRelay)
+		target := around(state, relay, &aroundRelay)
 
 		objective[tank.Id] = f.Objective {
 			Action: travel,
