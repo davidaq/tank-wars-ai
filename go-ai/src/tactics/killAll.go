@@ -24,10 +24,10 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 	tankloop: for _, tank := range state.MyTank {
 		// fmt.Println("-----------------------", count-1, tank.Id, objective[tank.Id])
 		delete(objective, tank.Id)
-		// if radar.Dodge[tank.Id].Threat >= 0.4 && radar.Dodge[tank.Id].Threat < 1 && (tank.Pos.X != targetX && tank.Pos.Y != targetY + count) {
 		if tank.Bullet != "" {
 			objective[tank.Id] = f.Objective {
 				Action: f.ActionTravelWithDodge,
+				Target: radar.Dodge[tank.Id].SafePos,
 			}
 			continue tankloop
 		}
@@ -54,7 +54,7 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 		// }
 
 		if len(state.EnemyTank) >= len(state.MyTank) {
-			if radar.Dodge[tank.Id].Threat >= 0.6 && radar.Dodge[tank.Id].Threat < 1 {
+			if radar.Dodge[tank.Id].Threat >= 0.4 && radar.Dodge[tank.Id].Threat < 1 {
 				objective[tank.Id] = f.Objective {
 					Action: f.ActionTravel,
 					Target: radar.Dodge[tank.Id].SafePos,
