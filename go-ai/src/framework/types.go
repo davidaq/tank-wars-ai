@@ -48,7 +48,6 @@ type RadarResult struct {
 }
 
 type RadarDodge struct {
-	Type 	int 		`json:"type"`		// 受威胁类型，1 - 炮弹威胁 2 - 敌军威胁 3 - 综合威胁
 	Threat	float64		`json:"threat"` 	// 受威胁程度，0到1，1就是如果不采纳肯定会命中
 	SafePos Position	`json:"safePos"`  	// 建议躲避位置，可以直接设定为坦克当前位置表示原地不动（前进方向受威胁）
 }

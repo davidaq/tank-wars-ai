@@ -14,12 +14,6 @@ type Dodger struct {
 
 const MAX = 10000
 
-const (
-    DODGER_TYPE_BULLET  = 1
-    DODGER_TYPE_ENEMY   = 2
-    DODGER_TYPE_ALL     = 3
-)
-
 /**
  * 获取隔墙数量
  */
@@ -441,17 +435,17 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
     radarDodgeBullet := make(map[string]RadarDodge)
     radarDodgeEnemy  := make(map[string]RadarDodge)
     // 综合威胁
-    radarDodge = self.calcDodge(moveUrgent, threat, DODGER_TYPE_ALL, state, tankData)
+    radarDodge = self.calcDodge(moveUrgent, threat, state, tankData)
     // 子弹威胁
-    radarDodgeBullet = self.calcDodge(moveUrgentBullet, threatBullet, DODGER_TYPE_BULLET, state, tankData)
+    radarDodgeBullet = self.calcDodge(moveUrgentBullet, threatBullet, state, tankData)
     // 敌军威胁
-    radarDodgeEnemy = self.calcDodge(moveUrgentEnemy, threatEnemy, DODGER_TYPE_ENEMY, state, tankData)
+    radarDodgeEnemy = self.calcDodge(moveUrgentEnemy, threatEnemy, state, tankData)
 
 
 	return radarDodge, radarDodgeBullet, radarDodgeEnemy, extDangerSrc
 }
 
-func (self *Radar) calcDodge(moveUrgent map[string]map[int]int, threat map[string]int, dodgerType int, state *GameState, tankData map[string]Tank) map[string]RadarDodge {
+func (self *Radar) calcDodge(moveUrgent map[string]map[int]int, threat map[string]int, state *GameState, tankData map[string]Tank) map[string]RadarDodge {
     radarDodge := make(map[string]RadarDodge)
     for tankId, urgent := range moveUrgent {
         // STEP4.1 行动威胁排序，保存行动从大到小的key
@@ -475,7 +469,6 @@ func (self *Radar) calcDodge(moveUrgent map[string]map[int]int, threat map[strin
         // 如果都是MAX则无需推荐
         if urgentV[4] == MAX {
             radarDodge[tankId] = RadarDodge{
-                Type: dodgerType,
                 Threat: 0,
                 SafePos: Position{},
             }
@@ -508,7 +501,6 @@ func (self *Radar) calcDodge(moveUrgent map[string]map[int]int, threat map[strin
         // 如果全都撞墙，则不去推荐
         if len(actionSequence) == 0 {
             radarDodge[tankId] = RadarDodge{
-                Type: dodgerType,
                 Threat: 0,
                 SafePos: Position{},
             }
@@ -583,7 +575,6 @@ func (self *Radar) calcDodge(moveUrgent map[string]map[int]int, threat map[strin
         // 计算威胁度
         finThreat := 1 / float64(threat[tankId])
         radarDodge[tankId] = RadarDodge{
-            Type:    dodgerType,
             Threat:  finThreat,
             SafePos: nextPos[actionSequence[0]],
         }
