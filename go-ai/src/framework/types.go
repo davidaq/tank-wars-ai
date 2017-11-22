@@ -39,15 +39,17 @@ type DiffResult struct {
 type RadarResult struct {
 	DiffResult
 	Dodge	map[string]RadarDodge			`json:"dodge"`
+	DodgeBullet map[string]RadarDodge		`json:"dodge_bullet"`
+	DodgeEnemy	map[string]RadarDodge		`json:"dodge_enemy"`
 	Fire	map[string]RadarFireAll			`json:"fire"`
 	Bullet 	map[string][]BulletThreat		`json:"bullet"`
 	Enemy  	map[string][]EnemyThreat		`json:"enemy"`
-	ExtDangerSrc map[string][]ExtDangerSrc  `json:"extdangersrc"`	//躲不掉的威胁源
+	ExtDangerSrc map[string][]ExtDangerSrc  `json:"extdangersrc"`	//躲不掉和火线上的威胁源
 }
 
 type RadarDodge struct {
-	Threat float64		`json:"threat"` 	// 受威胁程度，0到1，1就是如果不采纳肯定会命中
-	SafePos Position	`json:"safePos"`  // 建议躲避位置，可以直接设定为坦克当前位置表示原地不动（前进方向受威胁）
+	Threat	float64		`json:"threat"` 	// 受威胁程度，0到1，1就是如果不采纳肯定会命中
+	SafePos Position	`json:"safePos"`  	// 建议躲避位置，可以直接设定为坦克当前位置表示原地不动（前进方向受威胁）
 }
 
 type RadarFireAll struct {

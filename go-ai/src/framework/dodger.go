@@ -61,17 +61,19 @@ func (self *Radar) getWallSum(state *GameState, my Tank, enemy EnemyThreat) int 
  * 其他象限的威胁为躲避判断参考
  * 同时参考墙、草、队友阻挡调度	队友在一格范围内，同步协调
  */
-func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[string][]BulletThreat, enemyApproach bool, enemys *map[string][]EnemyThreat) (map[string]RadarDodge, map[string][]ExtDangerSrc) {
-	radarDodge := make(map[string]RadarDodge)
-
+func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[string][]BulletThreat, enemyApproach bool, enemys *map[string][]EnemyThreat) (map[string]RadarDodge, map[string]RadarDodge, map[string]RadarDodge, map[string][]ExtDangerSrc) {
     // 各种操作的紧急度
     moveUrgent := make(map[string]map[int]int)
+    moveUrgentBullet := make(map[string]map[int]int)
+    moveUrgentEnemy  := make(map[string]map[int]int)
 
     // 预存坦克数据
     tankData := make(map[string]Tank)
 
     // 预存坦克威胁度
     threat := make(map[string]int)
+    threatBullet := make(map[string]int)
+    threatEnemy  := make(map[string]int)
 
     // 各个躲不掉威胁的来源 ID - threat
     extDangerSrc := make(map[string][]ExtDangerSrc)
@@ -89,6 +91,24 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
         // 初始化紧急程度
         tmpUrgent := MAX
 
+        // 炮弹情况
+        tmpMoveUrgentBullet := make(map[int]int)
+        tmpMoveUrgentBullet[ActionStay] = MAX
+        tmpMoveUrgentBullet[ActionMove] = MAX
+        tmpMoveUrgentBullet[ActionLeft] = MAX
+        tmpMoveUrgentBullet[ActionBack] = MAX
+        tmpMoveUrgentBullet[ActionRight] = MAX
+        tmpBulletUrgent := MAX
+
+        // 敌军情况
+        tmpMoveUrgentEnemy := make(map[int]int)
+        tmpMoveUrgentEnemy[ActionStay] = MAX
+        tmpMoveUrgentEnemy[ActionMove] = MAX
+        tmpMoveUrgentEnemy[ActionLeft] = MAX
+        tmpMoveUrgentEnemy[ActionBack] = MAX
+        tmpMoveUrgentEnemy[ActionRight] = MAX
+        tmpEnemyUrgent := MAX
+
         // 计算
 		if bulletApproach == true && len((*bullets)[tank.Id]) > 0 {
 			for _, b := range (*bullets)[tank.Id] {
@@ -96,6 +116,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                     // 设置最终紧急度 如果不躲 两回合肯定挂掉
                     if b.Distances[b.Quadrant] <= state.Params.BulletSpeed * 3 + 1 {
                         tmpUrgent = 1
+                        tmpBulletUrgent = 1
                     }
 
                     // 影响火线上的操作
@@ -103,28 +124,35 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         // 影响直行、后退、停止
                         if tmpMoveUrgent[ActionMove] > b.Distances[b.Quadrant] {
                             tmpMoveUrgent[ActionMove] = b.Distances[b.Quadrant]
+                            tmpMoveUrgentBullet[ActionMove] = b.Distances[b.Quadrant]
                         }
                         if tmpMoveUrgent[ActionBack] > b.Distances[b.Quadrant] {
                             tmpMoveUrgent[ActionBack] = b.Distances[b.Quadrant] - state.Params.BulletSpeed   //后退需要加一步
+                            tmpMoveUrgentBullet[ActionBack] = b.Distances[b.Quadrant] - state.Params.BulletSpeed
                         }
                         if tmpMoveUrgent[ActionStay] > b.Distances[b.Quadrant] {
                             tmpMoveUrgent[ActionStay] = b.Distances[b.Quadrant] - state.Params.BulletSpeed   // 停下视作加一步
+                            tmpMoveUrgentBullet[ActionStay] = b.Distances[b.Quadrant] - state.Params.BulletSpeed
                         }
                     } else {
                         // 影响左转、右转、停止
                         if tmpMoveUrgent[ActionLeft] > b.Distances[b.Quadrant] {
                             tmpMoveUrgent[ActionLeft] = b.Distances[b.Quadrant] - state.Params.BulletSpeed
+                            tmpMoveUrgentBullet[ActionLeft] = b.Distances[b.Quadrant] - state.Params.BulletSpeed
                         }
                         if tmpMoveUrgent[ActionRight] > b.Distances[b.Quadrant] {
                             tmpMoveUrgent[ActionRight] = b.Distances[b.Quadrant] - state.Params.BulletSpeed
+                            tmpMoveUrgentBullet[ActionRight] = b.Distances[b.Quadrant] - state.Params.BulletSpeed
                         }
                         if tmpMoveUrgent[ActionStay] > b.Distances[b.Quadrant] {
                             tmpMoveUrgent[ActionStay] = b.Distances[b.Quadrant] - state.Params.BulletSpeed
+                            tmpMoveUrgentBullet[ActionStay] = b.Distances[b.Quadrant] - state.Params.BulletSpeed
                         }
                     }
                     // 火线上躲不掉的情况
                     if b.Distances[b.Quadrant] <= state.Params.BulletSpeed {
                         tmpUrgent = -1
+                        tmpBulletUrgent = -1
                     }
 
 				} else {
@@ -135,7 +163,9 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         if tankMove - float64(state.Params.TankSpeed) < float64(b.Distances[QUADRANT_L]) && tankMove >= float64(b.Distances[QUADRANT_L]) {
                             // 如果直行，则被侧面的子弹干掉
                             tmpMoveUrgent[ActionMove] = b.Distances[QUADRANT_U]
+                            tmpMoveUrgentBullet[ActionMove] = b.Distances[QUADRANT_U]
                             tmpUrgent = 1
+                            tmpBulletUrgent = 1
                             continue
                         }
                     }
@@ -145,7 +175,9 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         if tankMove - float64(state.Params.TankSpeed) < float64(b.Distances[QUADRANT_R]) && tankMove >= float64(b.Distances[QUADRANT_R]) {
                             // 如果直行，则被侧面的子弹干掉
                             tmpMoveUrgent[ActionMove] = b.Distances[QUADRANT_U]
+                            tmpMoveUrgentBullet[ActionMove] = b.Distances[QUADRANT_U]
                             tmpUrgent = 1
+                            tmpBulletUrgent = 1
                             continue
                         }
                     }
@@ -162,6 +194,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         // 影响直行
                         if tmpMoveUrgent[ActionMove] > distance {
                             tmpMoveUrgent[ActionMove] = distance
+                            tmpMoveUrgentBullet[ActionMove] = distance
                         }
                     }
 
@@ -169,6 +202,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         // 影响左转
                         if tmpMoveUrgent[ActionLeft] > distance {
                             tmpMoveUrgent[ActionLeft] = distance
+                            tmpMoveUrgentBullet[ActionLeft] = distance
                         }
                     }
 
@@ -176,6 +210,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         // 影响后退
                         if tmpMoveUrgent[ActionBack] > distance {
                             tmpMoveUrgent[ActionBack] = distance
+                            tmpMoveUrgentBullet[ActionBack] = distance
                         }
                     }
 
@@ -183,14 +218,15 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         // 影响右转
                         if tmpMoveUrgent[ActionRight] > distance {
                             tmpMoveUrgent[ActionRight] = distance
+                            tmpMoveUrgentBullet[ActionRight] = distance
                         }
                     }
                 }
-                if tmpUrgent == 1 || tmpUrgent == -1 {
+                if tmpBulletUrgent == 1 || tmpBulletUrgent == -1 {
                     extDangerSrc[tank.Id] = append(extDangerSrc[tank.Id], ExtDangerSrc{
                         Source: b.BulletId,
                         Type:   BULLET_THREAT,
-                        Urgent: tmpUrgent,
+                        Urgent: tmpBulletUrgent,
                         Distance: b.Distances[b.Quadrant],
                     })
                 }
@@ -212,6 +248,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                     // 两回合炮弹距离则为紧急
                     if e.Distances[e.Quadrant] <= state.Params.BulletSpeed * 2 + 1 && wallSum == 0 {
                         tmpUrgent = 1
+                        tmpEnemyUrgent = 1
                     }
 
                     // 影响直行、后退、停止
@@ -225,6 +262,15 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         if tmpMoveUrgent[ActionStay] > e.Distances[e.Quadrant] {
                             tmpMoveUrgent[ActionStay] = e.Distances[e.Quadrant] + weight
                         }
+                        if tmpMoveUrgentEnemy[ActionMove] > e.Distances[e.Quadrant] {
+                            tmpMoveUrgentEnemy[ActionMove] = e.Distances[e.Quadrant] + weight
+                        }
+                        if tmpMoveUrgentEnemy[ActionBack] > e.Distances[e.Quadrant] {
+                            tmpMoveUrgentEnemy[ActionBack] = e.Distances[e.Quadrant] + weight
+                        }
+                        if tmpMoveUrgentEnemy[ActionStay] > e.Distances[e.Quadrant] {
+                            tmpMoveUrgentEnemy[ActionStay] = e.Distances[e.Quadrant] + weight
+                        }
                     } else {
                         // 影响左转、右转、停止
                         if tmpMoveUrgent[ActionLeft] > e.Distances[e.Quadrant] {
@@ -236,11 +282,21 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         if tmpMoveUrgent[ActionStay] > e.Distances[e.Quadrant] {
                             tmpMoveUrgent[ActionStay] = e.Distances[e.Quadrant] + weight
                         }
+                        if tmpMoveUrgentEnemy[ActionLeft] > e.Distances[e.Quadrant] {
+                            tmpMoveUrgentEnemy[ActionLeft] = e.Distances[e.Quadrant] + weight
+                        }
+                        if tmpMoveUrgentEnemy[ActionRight] > e.Distances[e.Quadrant] {
+                            tmpMoveUrgentEnemy[ActionRight] = e.Distances[e.Quadrant] + weight
+                        }
+                        if tmpMoveUrgentEnemy[ActionStay] > e.Distances[e.Quadrant] {
+                            tmpMoveUrgentEnemy[ActionStay] = e.Distances[e.Quadrant] + weight
+                        }
                     }
 
                     // 火线上躲不掉的情况
                     if e.Distances[e.Quadrant] <= state.Params.BulletSpeed {
                         tmpUrgent = -1
+                        tmpEnemyUrgent = -1
                     }
 				} else {
                     // 敌军在其他象限的处理
@@ -250,6 +306,8 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                             // 如果直行，则被侧面的子弹干掉
                             tmpMoveUrgent[ActionMove] = e.Distances[QUADRANT_U] + weight
                             tmpUrgent = 1
+                            tmpMoveUrgentEnemy[ActionMove] = e.Distances[QUADRANT_U] + weight
+                            tmpEnemyUrgent = 1
                             continue
                         }
                     }
@@ -260,6 +318,8 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                             // 如果直行，则被侧面的子弹干掉
                             tmpMoveUrgent[ActionMove] = e.Distances[QUADRANT_U] + weight
                             tmpUrgent = 1
+                            tmpMoveUrgentEnemy[ActionMove] = e.Distances[QUADRANT_U] + weight
+                            tmpEnemyUrgent = 1
                             continue
                         }
                     }
@@ -279,6 +339,12 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         if tmpMoveUrgent[ActionRight] > distance {
                             tmpMoveUrgent[ActionRight] = distance + weight
                         }
+                        if tmpMoveUrgentEnemy[ActionMove] > distance {
+                            tmpMoveUrgentEnemy[ActionMove] = distance + weight
+                        }
+                        if tmpMoveUrgentEnemy[ActionRight] > distance {
+                            tmpMoveUrgentEnemy[ActionRight] = distance + weight
+                        }
                     }
 
                     if e.Quadrant == QUADRANT_L_U {
@@ -288,6 +354,12 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         }
                         if tmpMoveUrgent[ActionLeft] > distance {
                             tmpMoveUrgent[ActionLeft] = distance + weight
+                        }
+                        if tmpMoveUrgentEnemy[ActionMove] > distance {
+                            tmpMoveUrgentEnemy[ActionMove] = distance + weight
+                        }
+                        if tmpMoveUrgentEnemy[ActionLeft] > distance {
+                            tmpMoveUrgentEnemy[ActionLeft] = distance + weight
                         }
                     }
 
@@ -299,6 +371,12 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         if tmpMoveUrgent[ActionBack] > distance {
                             tmpMoveUrgent[ActionBack] = distance + weight
                         }
+                        if tmpMoveUrgentEnemy[ActionLeft] > distance {
+                            tmpMoveUrgentEnemy[ActionLeft] = distance + weight
+                        }
+                        if tmpMoveUrgentEnemy[ActionBack] > distance {
+                            tmpMoveUrgentEnemy[ActionBack] = distance + weight
+                        }
                     }
 
                     if e.Quadrant == QUADRANT_R_D {
@@ -309,14 +387,20 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         if tmpMoveUrgent[ActionBack] > distance {
                             tmpMoveUrgent[ActionBack] = distance + weight
                         }
+                        if tmpMoveUrgentEnemy[ActionRight] > distance {
+                            tmpMoveUrgentEnemy[ActionRight] = distance + weight
+                        }
+                        if tmpMoveUrgentEnemy[ActionBack] > distance {
+                            tmpMoveUrgentEnemy[ActionBack] = distance + weight
+                        }
                     }
 				}
 
-                if tmpUrgent == 1 || tmpUrgent == -1 {
+                if tmpEnemyUrgent == 1 || tmpEnemyUrgent == -1 {
                     extDangerSrc[tank.Id] = append(extDangerSrc[tank.Id], ExtDangerSrc{
                         Source: e.EnemyId,
                         Type:   ENEMY_THREAT,
-                        Urgent: tmpUrgent,
+                        Urgent: tmpEnemyUrgent,
                         Distance: e.Distances[e.Quadrant],
                     })
                 }
@@ -338,11 +422,31 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                 //}
 			}
 		}
-        threat[tank.Id] = tmpUrgent
-        moveUrgent[tank.Id] = tmpMoveUrgent
+        threat[tank.Id]             = tmpUrgent
+        threatBullet[tank.Id]       = tmpBulletUrgent
+        threatEnemy[tank.Id]        = tmpEnemyUrgent
+        moveUrgent[tank.Id]         = tmpMoveUrgent
+        moveUrgentBullet[tank.Id]   = tmpMoveUrgentBullet
+        moveUrgentEnemy[tank.Id]    = tmpMoveUrgentEnemy
 	}
 
 	// STEP4 综合场上局势进行协同调度
+    radarDodge := make(map[string]RadarDodge)
+    radarDodgeBullet := make(map[string]RadarDodge)
+    radarDodgeEnemy  := make(map[string]RadarDodge)
+    // 综合威胁
+    radarDodge = self.calcDodge(moveUrgent, threat, state, tankData)
+    // 子弹威胁
+    radarDodgeBullet = self.calcDodge(moveUrgentBullet, threatBullet, state, tankData)
+    // 敌军威胁
+    radarDodgeEnemy = self.calcDodge(moveUrgentEnemy, threatEnemy, state, tankData)
+
+
+	return radarDodge, radarDodgeBullet, radarDodgeEnemy, extDangerSrc
+}
+
+func (self *Radar) calcDodge(moveUrgent map[string]map[int]int, threat map[string]int, state *GameState, tankData map[string]Tank) map[string]RadarDodge {
+    radarDodge := make(map[string]RadarDodge)
     for tankId, urgent := range moveUrgent {
         // STEP4.1 行动威胁排序，保存行动从大到小的key
         urgentV := []int{}  // 距离value列表
@@ -477,8 +581,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
         // 草丛躲避
         // 查找是否有阻挡的己方坦克
     }
-
-	return radarDodge, extDangerSrc
+    return radarDodge
 }
 
 /**

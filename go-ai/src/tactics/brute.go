@@ -15,11 +15,59 @@ func NewBrute() *Brute {
 	inst := &Brute {
 		round: 0,
 	}
-	inst.relays = append(inst.relays, f.Position { X: 6, Y: 15 }, f.Position { X: 15, Y: 6 }, f.Position { X: 24, Y: 15 }, f.Position { X: 15, Y: 24 })
 	return inst
 }
 
 func (self *Brute) Init(state *f.GameState) {
+	fx, fy := state.Params.FlagX, state.Params.FlagY
+	up, left, down, right := false, false, false, false
+	upv, leftv, downv, rightv := 0, 0, 0, 0
+	for i, d := state.Params.BulletSpeed * 2 + 1, state.Params.BulletSpeed * 4; i <= d; i++ {
+		if !up {
+			if state.Terain.Get(fx, fy - i) == 0 {
+				upv = i
+			} else {
+				up = true
+			}
+		}
+		if !down {
+			if state.Terain.Get(fx, fy + i) == 0 {
+				downv = i
+			} else {
+				down = true
+			}
+		}
+		if !left {
+			if state.Terain.Get(fx - i, fy) == 0 {
+				leftv = i
+			} else {
+				left = true
+			}
+		}
+		if !right {
+			if state.Terain.Get(fx + i, fy) == 0 {
+				leftv = i
+			} else {
+				left = true
+			}
+		}
+	}
+	upv -= 1
+	leftv -= 1
+	downv -= 1
+	rightv -= 1
+	if up {
+		self.relays = append(self.relays, f.Position { X: fx, Y: fy - upv })
+	}
+	if left {
+		self.relays = append(self.relays, f.Position { X: fx - leftv, Y: fy })
+	}
+	if down {
+		self.relays = append(self.relays, f.Position { X: fx, Y: fy + upv })
+	}
+	if right {
+		self.relays = append(self.relays, f.Position { X: fx + leftv, Y: fy })
+	}
 }
 
 func (self *Brute) Plan(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
@@ -37,12 +85,16 @@ func (self *Brute) Plan(state *f.GameState, radar *f.RadarResult, objective map[
 			fireForest[f.Position { X: tank.Pos.X + 1, Y: tank.Pos.Y }] = FireForest { tank.Id, f.ActionFireRight }
 			fireForest[f.Position { X: tank.Pos.X, Y: tank.Pos.Y - 1 }] = FireForest { tank.Id, f.ActionFireUp }
 			fireForest[f.Position { X: tank.Pos.X, Y: tank.Pos.Y + 1}] = FireForest { tank.Id, f.ActionFireDown }
+			faith := 0.
+			var pfire *f.RadarFire
 			for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
-				if fire != nil && fire.Sin < 0.5 && fire.Faith > 0.1 {
-					objective[tank.Id] = f.Objective {
-						Action: fire.Action,
-					}
-					continue
+				if fire != nil && fire.Sin < 0.5 && fire.Faith > faith {
+					pfire = fire
+				}
+			}
+			if pfire != nil {
+				objective[tank.Id] = f.Objective {
+					Action: pfire.Action,
 				}
 			}
 		}
