@@ -622,13 +622,69 @@ func (self *Radar) convertActionToPosition(state *GameState, tank Tank, action i
         if s.Id == tank.Id {
             continue
         }
-        if positionRet.X == s.Pos.X && positionRet.Y == s.Pos.Y {
-            return false, Position{}
+        // distance可能是多个格
+        if positionRet.X == tank.Pos.X {
+            if positionRet.Y >= tank.Pos.Y {
+                for y := tank.Pos.Y; y <= positionRet.Y; y++ {
+                    if positionRet.X == s.Pos.X && positionRet.Y == s.Pos.Y {
+                        return false, Position{}
+                    }
+                }
+            } else {
+                for y := tank.Pos.Y; y >= positionRet.Y; y-- {
+                    if positionRet.X == s.Pos.X && positionRet.Y == s.Pos.Y {
+                        return false, Position{}
+                    }
+                }
+            }
+        }
+        if positionRet.Y == tank.Pos.Y {
+            if positionRet.X >= tank.Pos.X {
+                for x := tank.Pos.X; x <= positionRet.X; x++ {
+                    if positionRet.X == s.Pos.X && positionRet.Y == s.Pos.Y {
+                        return false, Position{}
+                    }
+                }
+            } else {
+                for x := tank.Pos.X; x >= positionRet.X; x-- {
+                    if positionRet.X == s.Pos.X && positionRet.Y == s.Pos.Y {
+                        return false, Position{}
+                    }
+                }
+            }
         }
     }
     for _, e := range state.EnemyTank {
-        if positionRet.X == e.Pos.X && positionRet.Y == e.Pos.Y {
-            return false, Position{}
+        // distance可能是多个格
+        if positionRet.X == tank.Pos.X {
+            if positionRet.Y >= tank.Pos.Y {
+                for y := tank.Pos.Y; y <= positionRet.Y; y++ {
+                    if positionRet.X == e.Pos.X && positionRet.Y == e.Pos.Y {
+                        return false, Position{}
+                    }
+                }
+            } else {
+                for y := tank.Pos.Y; y >= positionRet.Y; y-- {
+                    if positionRet.X == e.Pos.X && positionRet.Y == e.Pos.Y {
+                        return false, Position{}
+                    }
+                }
+            }
+        }
+        if positionRet.Y == tank.Pos.Y {
+            if positionRet.X >= tank.Pos.X {
+                for x := tank.Pos.X; x <= positionRet.X; x++ {
+                    if positionRet.X == e.Pos.X && positionRet.Y == e.Pos.Y {
+                        return false, Position{}
+                    }
+                }
+            } else {
+                for x := tank.Pos.X; x >= positionRet.X; x-- {
+                    if positionRet.X == e.Pos.X && positionRet.Y == e.Pos.Y {
+                        return false, Position{}
+                    }
+                }
+            }
         }
     }
 
