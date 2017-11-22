@@ -272,21 +272,26 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 			if len(enemyThreat.Distances) == 2 {
 				verticalDist := 0
 				fireDirection := 0
-				needToCal := false
+				needToCalc := false
+				horizontalDist := 0
+
 				for direction, dist := range enemyThreat.Distances {
-					if dist <= state.Params.TankSpeed && dist >= 1 {
-						fireDirection = direction
-						needToCal = true
-					} else if needToCal {
+					if dist > verticalDist {
 						verticalDist = dist
+						fireDirection = direction
+					} else {
+						horizontalDist = dist
 					}
 				}
 
-				
+				if horizontalDist >= 1 && horizontalDist <= 2 * state.Params.TankSpeed {
+					needToCalc = true
+				}
+
 				realDirection := directionConvert(fireDirection, tank)
 				// fmt.Println("0 ------- DIRECTION", "real", realDirection, "fire", fireDirection)
 				
-				if needToCal {
+				if needToCalc {
 					faith = calcFaith(verticalDist, state.Params.BulletSpeed, state.Params.TankSpeed, false, realDirection, enemyThreat.Enemy, tank.Pos, state.Terain)										
 				} else {
 					faith = 0
