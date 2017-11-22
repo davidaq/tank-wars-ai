@@ -19,7 +19,7 @@ func NewFox() *Fox {
 func (self *Fox) Init(state *f.GameState) {
 	i:=0
 	for _, tank := range state.MyTank {
-		if i<3 {
+		if i<2 {
 			self.tankGroupA[tank.Id] = tank
 		} else {
 			self.tankGroupB[tank.Id] = tank
@@ -84,10 +84,10 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 		// furthest := -99999
 		// var ttank *f.Tank
 		patrolPos := []f.Position{
-			{ X: state.Terain.Width/2+5, Y: state.Terain.Height/2 },
 			{ X: state.Terain.Width/2-5, Y: state.Terain.Height/2 },
-			{ X: state.Terain.Width/2, Y: state.Terain.Height/2+5 },
 			{ X: state.Terain.Width/2, Y: state.Terain.Height/2-5 },
+			{ X: state.Terain.Width/2+5, Y: state.Terain.Height/2 },
+			{ X: state.Terain.Width/2, Y: state.Terain.Height/2+5 },
 		}
 		// 战斗A组
 		if _, ok := self.tankGroupA[tank.Id]; ok {
@@ -108,15 +108,15 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 
 			// flagPartol
 			objective[tank.Id] = f.Objective {
-				Action: f.ActionTravelWithDodge,
+				Action: f.ActionTravel,
 				Target: patrolPos[(n-1)%4],
 			}
-			if radar.DodgeEnemy[tank.Id].Threat > 0.9 {
-				objective[tank.Id] = f.Objective {
-					Action: f.ActionTravelWithDodge,
-					Target: patrolPos[n%4],
-				}
-			}
+			// if radar.DodgeEnemy[tank.Id].Threat > 0.9 {
+			// 	objective[tank.Id] = f.Objective {
+			// 		Action: f.ActionTravelWithDodge,
+			// 		Target: patrolPos[n%4],
+			// 	}
+			// }
 		}
 		// 战斗B组
 		if _, ok := self.tankGroupB[tank.Id]; ok {
@@ -137,22 +137,35 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 
 			// flagPartol
 			objective[tank.Id] = f.Objective {
-				Action: f.ActionTravelWithDodge,
+				Action: f.ActionTravel,
 				Target: patrolPos[(n-1)%4],
 			}
-			if radar.DodgeEnemy[tank.Id].Threat > 0.9 {
-				objective[tank.Id] = f.Objective {
-					Action: f.ActionTravelWithDodge,
-					Target: patrolPos[n%4],
-				}
-			}
+			// if radar.DodgeEnemy[tank.Id].Threat > 0.9 {
+			// 	objective[tank.Id] = f.Objective {
+			// 		Action: f.ActionTravelWithDodge,
+			// 		Target: patrolPos[n%4],
+			// 	}
+			// }
 		}
 
 		// 夺旗
-		if state.FlagWait <= 5 {
-			objective[tank.Id] = f.Objective {
-				Action: f.ActionTravel,
-				Target: f.Position { X: state.Terain.Width/2, Y: state.Terain.Height/2 },
+		if len(self.tankGroupA) > 0 {
+			if state.FlagWait <= 8 {
+				if _, ok := self.tankGroupA[tank.Id]; ok {
+					objective[tank.Id] = f.Objective {
+						Action: f.ActionTravel,
+						Target: f.Position { X: state.Terain.Width/2, Y: state.Terain.Height/2 },
+					}
+				}
+			}
+		} else {
+			if state.FlagWait <= 8 {
+				if _, ok := self.tankGroupB[tank.Id]; ok {
+					objective[tank.Id] = f.Objective {
+						Action: f.ActionTravel,
+						Target: f.Position { X: state.Terain.Width/2, Y: state.Terain.Height/2 },
+					}
+				}
 			}
 		}
 
