@@ -14,11 +14,59 @@ func NewBrute() *Brute {
 	inst := &Brute {
 		round: 0,
 	}
-	inst.relays = append(inst.relays, f.Position { X: 7, Y: 15 }, f.Position { X: 15, Y: 7 }, f.Position { X: 23, Y: 15 }, f.Position { X: 15, Y: 23 })
 	return inst
 }
 
 func (self *Brute) Init(state *f.GameState) {
+	fx, fy := state.Params.FlagX, state.Params.FlagY
+	up, left, down, right := false, false, false, false
+	upv, leftv, downv, rightv := 0, 0, 0, 0
+	for i, d := state.Params.BulletSpeed * 2 + 1, state.Params.BulletSpeed * 4; i <= d; i++ {
+		if !up {
+			if state.Terain.Get(fx, fy - i) == 0 {
+				upv = i
+			} else {
+				up = true
+			}
+		}
+		if !down {
+			if state.Terain.Get(fx, fy + i) == 0 {
+				downv = i
+			} else {
+				down = true
+			}
+		}
+		if !left {
+			if state.Terain.Get(fx - i, fy) == 0 {
+				leftv = i
+			} else {
+				left = true
+			}
+		}
+		if !right {
+			if state.Terain.Get(fx + i, fy) == 0 {
+				leftv = i
+			} else {
+				left = true
+			}
+		}
+	}
+	upv -= 1
+	leftv -= 1
+	downv -= 1
+	rightv -= 1
+	if up {
+		self.relays = append(self.relays, f.Position { X: fx, Y: fy - upv })
+	}
+	if left {
+		self.relays = append(self.relays, f.Position { X: fx - leftv, Y: fy })
+	}
+	if down {
+		self.relays = append(self.relays, f.Position { X: fx, Y: fy + upv })
+	}
+	if right {
+		self.relays = append(self.relays, f.Position { X: fx + leftv, Y: fy })
+	}
 }
 
 func (self *Brute) Plan(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
