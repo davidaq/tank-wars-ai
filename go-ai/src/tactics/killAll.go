@@ -54,7 +54,7 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 		// }
 
 		if len(state.EnemyTank) >= len(state.MyTank) {
-			if radar.Dodge[tank.Id].Threat >= 0.4 && radar.Dodge[tank.Id].Threat < 1 {
+			if radar.Dodge[tank.Id].Threat >= 0.4 && radar.Dodge[tank.Id].Threat <= 1 {
 				objective[tank.Id] = f.Objective {
 					Action: f.ActionTravel,
 					Target: radar.Dodge[tank.Id].SafePos,
