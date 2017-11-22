@@ -83,11 +83,12 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 		// least := 99999
 		// furthest := -99999
 		// var ttank *f.Tank
+		distance := state.Terain.Width/6
 		patrolPos := []f.Position{
-			{ X: state.Terain.Width/2-5, Y: state.Terain.Height/2 },
-			{ X: state.Terain.Width/2, Y: state.Terain.Height/2-5 },
-			{ X: state.Terain.Width/2+5, Y: state.Terain.Height/2 },
-			{ X: state.Terain.Width/2, Y: state.Terain.Height/2+5 },
+			{ X: state.Terain.Width/2-distance, Y: state.Terain.Height/2 },
+			{ X: state.Terain.Width/2, Y: state.Terain.Height/2-distance },
+			{ X: state.Terain.Width/2+distance, Y: state.Terain.Height/2 },
+			{ X: state.Terain.Width/2, Y: state.Terain.Height/2+distance },
 		}
 		// 战斗A组
 		if _, ok := self.tankGroupA[tank.Id]; ok {
