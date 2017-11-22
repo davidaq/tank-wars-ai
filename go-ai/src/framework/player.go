@@ -5,10 +5,16 @@ import (
     "time"
 )
 
+type Dodge struct {
+	round int
+	pos Position
+}
+
 type Player struct {
 	inited bool
 	tactics Tactics
 	objectives map[string]Objective
+	dodge map[string]Dodge
 	radar *Radar
 	traveller *Traveller
 	differ *Diff
@@ -24,6 +30,7 @@ func NewPlayer(tactics Tactics) *Player {
 	inst := &Player {
 		tactics: tactics,
 		objectives: make(map[string]Objective),
+		dodge: make(map[string]Dodge),
 		inited: false,
 		radar: nil,
 		traveller: nil,
@@ -93,11 +100,17 @@ func (self *Player) Play(state *GameState) map[string]int {
 		} else if objective.Action == ActionTravelWithDodge {
 			dodge, ok := radarResult.Dodge[tank.Id]
 			if ok && dodge.Threat > 0.001 {
-				if dodge.SafePos.X == tank.Pos.X && dodge.SafePos.Y == tank.Pos.Y {
+				if ododge, ok := self.dodge[tank.Id]; ok && self.round - ododge.round < 2 && ododge.pos.SDist(tank.Pos) > 0 {
+					travel[tank.Id] = &ododge.pos
+				} else if dodge.SafePos.SDist(tank.Pos) == 0 {
 					noForward = append(noForward, tank.Id)
 					travel[tank.Id] = &objective.Target
 				} else {
 					travel[tank.Id] = &dodge.SafePos
+					self.dodge[tank.Id] = Dodge {
+						round: self.round,
+						pos: dodge.SafePos,
+					}
 				}
 			} else {
 				travel[tank.Id] = &objective.Target
