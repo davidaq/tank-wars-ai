@@ -85,12 +85,16 @@ func (self *Brute) Plan(state *f.GameState, radar *f.RadarResult, objective map[
 			fireForest[f.Position { X: tank.Pos.X + 1, Y: tank.Pos.Y }] = FireForest { tank.Id, f.ActionFireRight }
 			fireForest[f.Position { X: tank.Pos.X, Y: tank.Pos.Y - 1 }] = FireForest { tank.Id, f.ActionFireUp }
 			fireForest[f.Position { X: tank.Pos.X, Y: tank.Pos.Y + 1}] = FireForest { tank.Id, f.ActionFireDown }
+			faith := 0.
+			var pfire *f.RadarFire
 			for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
-				if fire != nil && fire.Sin < 0.5 && fire.Faith > 0.1 {
-					objective[tank.Id] = f.Objective {
-						Action: fire.Action,
-					}
-					continue
+				if fire != nil && fire.Sin < 0.5 && fire.Faith > faith {
+					pfire = fire
+				}
+			}
+			if pfire != nil {
+				objective[tank.Id] = f.Objective {
+					Action: pfire.Action,
 				}
 			}
 		}
