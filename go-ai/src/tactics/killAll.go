@@ -1,7 +1,7 @@
 package tactics
 
 import (
-	"fmt";
+	// "fmt";
 	f "framework";
 )
 
@@ -15,20 +15,28 @@ func NewKillAll() *KillAll {
 func (self *KillAll) Init(state *f.GameState) {
 }
 
+var count = 0
 func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
-	count := 0
-	targetX := 6
-	targetY := 8
+	count++
+	// count := 0
+	// targetX := 6
+	// targetY := 8
 	tankloop: for _, tank := range state.MyTank {
 		delete(objective, tank.Id)
 		// if radar.Dodge[tank.Id].Threat >= 0.4 && radar.Dodge[tank.Id].Threat < 1 && (tank.Pos.X != targetX && tank.Pos.Y != targetY + count) {
-		if radar.Dodge[tank.Id].Threat >= 0.4 && radar.Dodge[tank.Id].Threat <= 0.7 {
+		if tank.Bullet != "" {
 			objective[tank.Id] = f.Objective {
-				Action: f.ActionTravel,
-				Target: radar.Dodge[tank.Id].SafePos,
+				Action: f.ActionTravelWithDodge,
 			}
 			continue tankloop
-		} 
+		}
+		// if radar.Dodge[tank.Id].Threat >= 0.6 && radar.Dodge[tank.Id].Threat <= 1 {
+		// 	objective[tank.Id] = f.Objective {
+		// 		Action: f.ActionTravel,
+		// 		Target: radar.Dodge[tank.Id].SafePos,
+		// 	}
+		// 	continue tankloop
+		// } 
 		// else if radar.Dodge[tank.Id].Threat == -1 {
 		// 	for _, bullet := range radar.ExtDangerSrc[tank.Id] {
 		// 		if bullet.Urgent == -1 {
@@ -51,45 +59,62 @@ func (self *KillAll) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 		// }
 
 		fireRadar := radar.Fire[tank.Id]
+		maxFaith := 0.0
+		tmpIndex := 0
+		index := 0
 		for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
-			if fire != nil {
-				fmt.Println(fire.Faith)
+			if fire != nil && fire.Sin < 0.5 && fire.Faith > maxFaith {
+				maxFaith = fire.Faith
+				index = tmpIndex
 			}
-			if fire != nil && fire.Sin < 0.5 && fire.Faith > 0 {
-				objective[tank.Id] = f.Objective {
-					Action: fire.Action,
-				}
-				continue tankloop
-			}
+			tmpIndex++			
 		}	
 
-		// var ttank *f.Tank
-		// for _, etank := range state.EnemyTank {
-		// 	if etank.Pos.X < (state.Terain.Width / 2) {
-		// 		ttank = &etank
-		// 		break
-		// 	}
-		// }
+		fire := []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right }
 
-		// if ttank != nil {
+		if maxFaith > 0 {
+			objective[tank.Id] = f.Objective {
+				Action: fire[index].Action,
+			}
+			continue tankloop
+		}
+
+		var ttank *f.Tank
+		least := 99999
+		dist := 0
+		for _, etank := range state.EnemyTank {
+			dist = abs(tank.Pos.X - etank.Pos.X) + abs(tank.Pos.Y - etank.Pos.Y)
+			if dist < least {
+				ttank = &etank
+				least = dist
+			}
+		}
+
+		// if ttank != nil && dist < 10 {
 		// 	objective[tank.Id] = f.Objective {
-		// 		Action: f.ActionTravel,
-		// 		Target: ttank.Pos,
+		// 		Action: f.ActionTravelWithDodge,
+		// 		Target: f.Position{X: ttank.Pos.X - 8, Y: ttank.Pos.Y},
 		// 	}
 		// 	continue tankloop
 		// }
-					
-		if tank.Pos.X == targetX && tank.Pos.Y == targetY + count {
-			objective[tank.Id] = f.Objective {
-				Action: f.ActionFireRight,
-			}
-		} else {
+		if ttank != nil {
 			objective[tank.Id] = f.Objective {
 				Action: f.ActionTravel,
-				Target: f.Position { X: targetX, Y:targetY + count, Direction: f.DirectionLeft },
+				Target: ttank.Pos,
 			}
-		}
-		count += 1
+			continue tankloop
+		}			
+		// if tank.Pos.X == targetX && tank.Pos.Y == targetY + count {
+		// 	objective[tank.Id] = f.Objective {
+		// 		Action: f.ActionFireRight,
+		// 	}
+		// } else {
+		// 	objective[tank.Id] = f.Objective {
+		// 		Action: f.ActionTravel,
+		// 		Target: f.Position { X: targetX, Y:targetY + count, Direction: f.DirectionLeft },
+		// 	}
+		// }
+		// count += 1
 	}
 	// bottomTank := state.MyTank[0]
 	// maxY := 0	

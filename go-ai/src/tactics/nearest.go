@@ -38,7 +38,6 @@ func (self *Nearest) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 			if dist < least {
 				ttank = &etank
 				least = dist
-				break
 			}
 		}
 		if ttank != nil {
