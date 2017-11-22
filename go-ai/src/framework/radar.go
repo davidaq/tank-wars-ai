@@ -6,6 +6,7 @@ package framework;
 
 import (
 	"math"
+	"fmt"
 )
 
 type Radar struct {
@@ -454,15 +455,19 @@ func (self *Radar) Scan(state *GameState, diff *DiffResult) *RadarResult {
 
 	// 准备躲避返回字段
 	radarDodge := make(map[string]RadarDodge)
+	radarDodgeBullet := make(map[string]RadarDodge)
+	radarDodgeEnemy  := make(map[string]RadarDodge)
 	extDangerSrc := make(map[string][]ExtDangerSrc)
 	if bulletApproach != true && enemyApproach != true {
 		for _, tank := range state.MyTank {
 			radarDodge[tank.Id] = RadarDodge{}
+			radarDodgeBullet[tank.Id] = RadarDodge{}
+			radarDodgeEnemy[tank.Id] = RadarDodge{}
 			extDangerSrc[tank.Id] = []ExtDangerSrc{}
 		}
 	} else {
 		// 躲避系统（撞墙、友军、草丛警戒）
-		radarDodge, extDangerSrc = self.dodge(state, bulletApproach, &bullets, enemyApproach, &enemy)
+		radarDodge, radarDodgeBullet, radarDodgeEnemy, extDangerSrc = self.dodge(state, bulletApproach, &bullets, enemyApproach, &enemy)
 	}
 
 	// 开火系统
@@ -471,6 +476,8 @@ func (self *Radar) Scan(state *GameState, diff *DiffResult) *RadarResult {
 	// 返回
 	ret := &RadarResult {
 		Dodge: make(map[string]RadarDodge),
+		DodgeBullet: make(map[string]RadarDodge),
+		DodgeEnemy: make(map[string]RadarDodge),
 		Fire: make(map[string]RadarFireAll),
 		Bullet: make(map[string][]BulletThreat),
 		Enemy: make(map[string][]EnemyThreat),
@@ -481,6 +488,8 @@ func (self *Radar) Scan(state *GameState, diff *DiffResult) *RadarResult {
 			ret.Fire[tank.Id] = *atk
 		}
 		ret.Dodge[tank.Id] = radarDodge[tank.Id]
+		ret.DodgeBullet[tank.Id] = radarDodgeBullet[tank.Id]
+		ret.DodgeEnemy[tank.Id] = radarDodgeEnemy[tank.Id]
 		ret.Bullet[tank.Id] = bullets[tank.Id]
 		ret.Enemy[tank.Id] = enemy[tank.Id]
 		ret.ExtDangerSrc[tank.Id] = extDangerSrc[tank.Id]
