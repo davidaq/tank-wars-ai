@@ -214,7 +214,7 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 			if ttank != nil {
 				resPos := ttank.Pos
 				mid := state.Terain.Width/2
-				dis := state.Params.BulletSpeed * 3
+				dis := state.Params.BulletSpeed * 3+1
 				targetQuadrant := caculateQuadrant(mid, ttank.Pos)
 				switch targetQuadrant {
 				case 0:
