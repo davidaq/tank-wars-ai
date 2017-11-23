@@ -99,7 +99,7 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 // 然后判断是否在火线上，若在火线上：
 // 如果我方与敌方坦克垂直距离 == 1，直接返回最终faith = 1
 // 如果敌方与开火方向是相同的或者相反的，返回faith基准值
-// 如果敌方与开火方向垂直，返回faith基准值 / 2
+// 如果敌方与开火方向垂直，返回faith基准值 * 0.9
 
 // 若敌方坦克不在火线上：
 // 若敌方坦克下回合朝向火线，且正好有可能走到火线上，返回(faith基准值 / 2) - 0.15
