@@ -46,7 +46,7 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 	checker := false
 	tankloop: for _, tank := range state.MyTank {
 		n++
-		// 躲避
+		// 子弹躲避
 		if radar.DodgeBullet[tank.Id].Threat > 0.7 {
 			objective[tank.Id] = f.Objective {
 				Action: f.ActionTravel,
@@ -83,15 +83,6 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 			}
 			continue tankloop
 		}
-
-		// 躲避
-		// if radar.DodgeEnemy[tank.Id].Threat > 0.9 {
-		// 	objective[tank.Id] = f.Objective {
-		// 		Action: f.ActionTravel,
-		// 		Target: radar.DodgeBullet[tank.Id].SafePos,
-		// 	}
-		// 	continue tankloop
-		// }
 
 		// 寻路
 		least := 99999
@@ -269,6 +260,14 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 				// }
 			}
 		}
+
+		// 坦克躲避
+		// if radar.Dodge[tank.Id].Threat == 1 {
+		// 	objective[tank.Id] = f.Objective {
+		// 		Action: f.ActionTravel,
+		// 		Target: radar.Dodge[tank.Id].SafePos,
+		// 	}
+		// }
 
 		// 夺旗
 		if len(self.tankGroupA) > 0 {
