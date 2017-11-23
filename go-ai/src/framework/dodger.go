@@ -128,26 +128,26 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                             tmpMoveUrgentBullet[ActionMove] = b.Distances[b.Quadrant]
                         }
                         if tmpMoveUrgent[ActionBack] > b.Distances[b.Quadrant] {
-                            tmpMoveUrgent[ActionBack] = b.Distances[b.Quadrant]
-                            tmpMoveUrgentBullet[ActionBack] = b.Distances[b.Quadrant]
+                            tmpMoveUrgent[ActionBack] = b.Distances[b.Quadrant] - state.Params.BulletSpeed   //后退需要加一步
+                            tmpMoveUrgentBullet[ActionBack] = b.Distances[b.Quadrant] - state.Params.BulletSpeed   //后退需要加一步
                         }
                         if tmpMoveUrgent[ActionStay] > b.Distances[b.Quadrant] {
-                            tmpMoveUrgent[ActionStay] = b.Distances[b.Quadrant]
-                            tmpMoveUrgentBullet[ActionStay] = b.Distances[b.Quadrant]
+                            tmpMoveUrgent[ActionStay] = b.Distances[b.Quadrant] - state.Params.BulletSpeed   // 停下视作加一步
+                            tmpMoveUrgentBullet[ActionStay] = b.Distances[b.Quadrant] - state.Params.BulletSpeed   // 停下视作加一步
                         }
                     } else {
                         // 影响左转、右转、停止
                         if tmpMoveUrgent[ActionLeft] > b.Distances[b.Quadrant] {
-                            tmpMoveUrgent[ActionLeft] = b.Distances[b.Quadrant]
-                            tmpMoveUrgentBullet[ActionLeft] = b.Distances[b.Quadrant]
+                            tmpMoveUrgent[ActionLeft] = b.Distances[b.Quadrant] - state.Params.BulletSpeed
+                            tmpMoveUrgentBullet[ActionLeft] = b.Distances[b.Quadrant] - state.Params.BulletSpeed
                         }
                         if tmpMoveUrgent[ActionRight] > b.Distances[b.Quadrant] {
-                            tmpMoveUrgent[ActionRight] = b.Distances[b.Quadrant]
-                            tmpMoveUrgentBullet[ActionRight] = b.Distances[b.Quadrant]
+                            tmpMoveUrgent[ActionRight] = b.Distances[b.Quadrant] - state.Params.BulletSpeed
+                            tmpMoveUrgentBullet[ActionRight] = b.Distances[b.Quadrant] - state.Params.BulletSpeed
                         }
                         if tmpMoveUrgent[ActionStay] > b.Distances[b.Quadrant] {
-                            tmpMoveUrgent[ActionStay] = b.Distances[b.Quadrant]
-                            tmpMoveUrgentBullet[ActionStay] = b.Distances[b.Quadrant]
+                            tmpMoveUrgent[ActionStay] = b.Distances[b.Quadrant] - state.Params.BulletSpeed
+                            tmpMoveUrgentBullet[ActionStay] = b.Distances[b.Quadrant] - state.Params.BulletSpeed
                         }
                     }
                     // 火线上躲不掉的情况
@@ -442,9 +442,11 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
     // 敌军威胁
     radarDodgeEnemy = self.calcDodge(moveUrgentEnemy, threatEnemy, state, tankData)
 
-    fmt.Println("###")
-    fmt.Println(radarDodgeBullet)
-    fmt.Println("###")
+    if bulletApproach == true{
+        fmt.Println("###")
+        fmt.Println(radarDodgeBullet)
+        fmt.Println("###")
+    }
 
 	return radarDodge, radarDodgeBullet, radarDodgeEnemy, extDangerSrc
 }
