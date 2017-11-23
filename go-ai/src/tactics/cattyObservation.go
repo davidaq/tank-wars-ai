@@ -3,6 +3,7 @@ package tactics
 
 import (
 	f "framework"
+	"math"
     // "fmt"
 )
 
@@ -17,6 +18,7 @@ type Observation struct {
     EmyTank      map[string]f.Tank // 敌方存活坦克
     Flag         Flag
 	Terain       *f.Terain
+	ShotPos    map[f.Position]string
 }
 
 type Flag struct {
@@ -52,6 +54,9 @@ func (o *Observation) makeObservation(state *f.GameState, radar *f.RadarResult, 
 
 	// 观察地图
 	o.observeTerain()
+
+	// 观察适合射击的地点
+	o.observeShotPos()
 }
 
 func (o *Observation) observeTank() {
@@ -87,4 +92,76 @@ func (o *Observation) observeTerain() {
 	for _, bullet := range o.State.EnemyBullet {
 		o.Terain.Data[bullet.Pos.Y][bullet.Pos.X] = 6 // 子弹
 	}
+}
+
+func (o *Observation) observeShotPos() {
+	o.ShotPos = make(map[f.Position]string)
+    var pos f.Position
+	for _, tank := range o.EmyTank {
+		for i := o.State.Params.BulletSpeed; i > 0; i-- {
+	        if tank.Pos.Direction == f.DirectionUp || tank.Pos.Direction == f.DirectionDown {
+				pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y + o.State.Params.BulletSpeed + i + 2}
+				if o.reachable(pos) {
+					o.ShotPos[pos] = tank.Id
+				}
+				pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y - o.State.Params.BulletSpeed - i - 2}
+				if o.reachable(pos) {
+					o.ShotPos[pos] = tank.Id
+				}
+	        } else {
+				pos = f.Position { X: tank.Pos.X + o.State.Params.BulletSpeed+ i + 2, Y: tank.Pos.Y}
+				if o.reachable(pos) {
+					o.ShotPos[pos] = tank.Id
+				}
+				pos = f.Position { X: tank.Pos.X - o.State.Params.BulletSpeed - i - 2, Y: tank.Pos.Y}
+				if o.reachable(pos) {
+					o.ShotPos[pos] = tank.Id
+				}
+	        }
+	    }
+	}
+}
+
+// 地点是否可达（是否超出地图范围、是否墙壁）
+func (o *Observation) reachable(pos f.Position) bool {
+    // 超出地图范围
+    if pos.X < 0 || pos.X >= o.Terain.Width || pos.Y < 0 || pos.Y >= o.Terain.Height {
+        return false
+    }
+    // 是否墙壁
+    if o.Terain.Data[pos.Y][pos.X] == 1 {
+        return false
+    }
+    return true
+}
+
+// 路径是否可达
+func (o *Observation) pathReachable(startpos f.Position, endpos f.Position) bool {
+	terain := o.Terain.Data
+	// 两点是否可达
+	if !o.reachable(startpos) || !o.reachable(endpos) {
+		return false
+	}
+	// 路径是否可达（路径无墙壁、无坦克、无子弹）
+    var min, max int
+    if startpos.X == endpos.X {
+        min = int(math.Min(float64(startpos.Y), float64(endpos.Y)))
+        max = int(math.Max(float64(startpos.Y), float64(endpos.Y)))
+        for i := min+1; i < max; i++ {
+            if terain[i][startpos.X] != 0 && terain[i][startpos.X] != 2 && terain[i][startpos.X] != 3 {
+                return false
+            }
+        }
+    } else if startpos.Y == endpos.Y {
+        min = int(math.Min(float64(startpos.X), float64(endpos.X)))
+        max = int(math.Max(float64(startpos.X), float64(endpos.X)))
+        for i := min+1; i < max; i++ {
+            if terain[startpos.Y][i] != 0 && terain[startpos.Y][i] != 2 && terain[startpos.Y][i] != 3 {
+                return false
+            }
+        }
+    } else {
+        return false
+    }
+    return true
 }
