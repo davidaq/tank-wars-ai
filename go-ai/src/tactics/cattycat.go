@@ -55,6 +55,7 @@ func (c *Catty) updateRole() {
 		if c.obs.MyTank[id] != (f.Tank{}) {
 			role.Tank  = c.obs.MyTank[id]
             role.Dodge = c.obs.Radar.Dodge[id]
+			// role.Dodge = c.obs.Radar.DodgeBullet[id]
             role.Fire  = c.obs.Radar.Fire[id]
 		} else {
 			delete(c.Roles, id)
