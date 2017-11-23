@@ -128,7 +128,7 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 	if fireLine {
 		// 与敌方坦克相邻，不管敌方朝向都必中
 		if verticalDistance <= 1 {
-			return float64(1)
+			return 1.
 		}
 
 		// 敌方朝向和开火方向相同或相反，且在火线上		
@@ -137,7 +137,7 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 		}
 
 		// 敌方朝向和开火方向垂直，且在火线上
-		return faith / float64(2)
+		return faith * 0.9
 	} else {
 		// 敌方不在火线，开火方向是上或下
 		faith = faith / float64(2)
@@ -290,14 +290,26 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 				needToCalc := false
 				horizontalDist := 0
 
+				var dirA, dirB int
+				var distA, distB int
+				first := true
 				for direction, dist := range enemyThreat.Distances {
-					if dist > verticalDist {
-						verticalDist = dist
-						fireDirection = direction
+					if first {
+						first = false
+						dirA, distA = direction, dist
 					} else {
-						horizontalDist = dist
+						dirB, distB = direction, dist
 					}
 				}
+				if distA < distB {
+					dirA, dirB = dirB, dirA
+					distA, distB = distB, distA
+				}
+
+				verticalDist = distA
+				horizontalDist = distB
+				fireDirection = dirA
+
 
 				if horizontalDist >= 1 && horizontalDist <= 2 * state.Params.TankSpeed {
 					needToCalc = true

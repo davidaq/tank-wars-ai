@@ -87,10 +87,15 @@ func (self *Brute) Plan(state *f.GameState, radar *f.RadarResult, objective map[
 			fireForest[f.Position { X: tank.Pos.X, Y: tank.Pos.Y + 1}] = FireForest { tank.Id, f.ActionFireDown }
 			faith := 0.
 			var pfire *f.RadarFire
+			if radar.DodgeBullet[tank.Id].Threat > 0.7 {
+				faith = 0.7
+			}
 			for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
-				if fire != nil && fire.Sin < 0.5 && fire.Faith > faith {
-					if fire.Faith > 0.3 || fire.Cost < 5 {
+				fmt.Println("RECV FIRE", tank.Id, fire)
+				if fire.Sin < 1 && fire.Faith > faith {
+					if (fire.Sin < 0.5 && (fire.Faith > 0.3 || fire.Cost < 5)) || (fire.Sin > 0.49 && fire.Faith > 0.8) {
 						pfire = fire
+						faith = fire.Faith
 					}
 				}
 			}
@@ -228,7 +233,6 @@ func (self *Brute) PlanFarShoot(state *f.GameState, radar *f.RadarResult, object
 	}
 	avgX := sumX / count
 	avgY := sumY / count
-	relay := self.nearestRelay(avgX, avgY)
 	for _, tank := range state.MyTank {
 		travel := f.ActionTravel
 		if radar.Dodge[tank.Id].Threat > 0.8 || tank.Bullet != "" {
@@ -257,7 +261,7 @@ func (self *Brute) PlanFarShoot(state *f.GameState, radar *f.RadarResult, object
 				continue
 			}
 		}
-		target := around(state, relay, &aroundRelay)
+		target := around(state, self.nearestRelay((tank.Pos.X * 3 + avgX * 2) / 5, (tank.Pos.Y * 3 + avgY * 2) / 5), &aroundRelay)
 
 		objective[tank.Id] = f.Objective {
 			Action: travel,
