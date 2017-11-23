@@ -48,12 +48,23 @@ func (self *Nearest) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 		}
 		if ttank != nil {
 			travel := f.ActionTravel
-			if radar.Dodge[tank.Id].Threat > 0.9 && rand.Int() % 3 == 0 {
+			if radar.Dodge[tank.Id].Threat > 0.9 && rand.Int() % 3 > 0 {
 				travel = f.ActionTravelWithDodge
+			}
+			p := ttank.Pos
+			switch p.Direction {
+			case f.DirectionUp:
+				p.Y--
+			case f.DirectionDown:
+				p.Y++
+			case f.DirectionLeft:
+				p.X--
+			case f.DirectionRight:
+				p.X++
 			}
 			objective[tank.Id] = f.Objective {
 				Action: travel,
-				Target: ttank.Pos,
+				Target: p,
 				// Target: f.Position { X: 0, Y: 0 },
 			}
 		}

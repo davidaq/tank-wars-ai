@@ -31,10 +31,10 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 
 		switch fireDirection {
 		case DirectionUp: 
-			if ox == fx && fy > oy {
-				if enemyPos.X != -1 && enemyPos.X == ox && enemyPos.Y > oy && enemyPos.Y < fy {
-					return float64(0)
-				} 
+			if enemyPos.X != -1 && enemyPos.X == ox && enemyPos.Y > oy && enemyPos.Y < fy {
+				continue
+			} 
+			if ox == fx && fy > oy {	
 				return float64(1)
 			} else if fy > oy {
 				if ox - fx == tankSpeed && otherTank.Pos.Direction == DirectionLeft {
@@ -45,10 +45,10 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 				}
 			}
 		case DirectionLeft:
+			if enemyPos.X != -1 && enemyPos.Y == oy && enemyPos.X > ox && enemyPos.X < fx {
+				continue
+			}
 			if oy == fy && fx > ox {
-				if enemyPos.X != -1 && enemyPos.Y == oy && enemyPos.X > ox && enemyPos.X < fx {
-					return float64(0)
-				}
 				return float64(1)
 			} else if fx > ox {
 				if oy - fy == tankSpeed && otherTank.Pos.Direction == DirectionUp {
@@ -59,10 +59,10 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 				}
 			}
 		case DirectionDown:
+			if enemyPos.X != -1 &&  enemyPos.X == ox && enemyPos.Y > fy && enemyPos.Y < oy {
+				continue
+			}
 			if ox == fx && oy > fy {
-				if enemyPos.X != -1 &&  enemyPos.X == ox && enemyPos.Y > fy && enemyPos.Y < oy {
-					return float64(0)
-				}
 				return float64(1)
 			} else if oy > fy {
 				if ox - fx == tankSpeed && otherTank.Pos.Direction == DirectionLeft {
@@ -73,10 +73,10 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 				}
 			}
 		case DirectionRight:
+			if enemyPos.X != -1 && enemyPos.Y == oy && enemyPos.X > fx && enemyPos.X < ox {
+				continue
+			}
 			if oy == fy && ox > fx {
-				if enemyPos.X != -1 && enemyPos.Y == oy && enemyPos.X > fx && enemyPos.X < ox {
-					return float64(0)
-				}
 				return float64(1)
 			} else if ox > fx {
 				if oy - fy == tankSpeed && otherTank.Pos.Direction == DirectionUp {
@@ -99,7 +99,7 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 // 然后判断是否在火线上，若在火线上：
 // 如果我方与敌方坦克垂直距离 == 1，直接返回最终faith = 1
 // 如果敌方与开火方向是相同的或者相反的，返回faith基准值
-// 如果敌方与开火方向垂直，返回faith基准值 / 2
+// 如果敌方与开火方向垂直，返回faith基准值 * 0.9
 
 // 若敌方坦克不在火线上：
 // 若敌方坦克下回合朝向火线，且正好有可能走到火线上，返回(faith基准值 / 2) - 0.15
@@ -128,7 +128,7 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 	if fireLine {
 		// 与敌方坦克相邻，不管敌方朝向都必中
 		if verticalDistance <= 1 {
-			return float64(1)
+			return 1.
 		}
 
 		// 敌方朝向和开火方向相同或相反，且在火线上		
@@ -137,7 +137,7 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 		}
 
 		// 敌方朝向和开火方向垂直，且在火线上
-		return faith / float64(2)
+		return faith * 0.9
 	} else {
 		// 敌方不在火线，开火方向是上或下
 		faith = faith / float64(2)
@@ -290,14 +290,26 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 				needToCalc := false
 				horizontalDist := 0
 
+				var dirA, dirB int
+				var distA, distB int
+				first := true
 				for direction, dist := range enemyThreat.Distances {
-					if dist > verticalDist {
-						verticalDist = dist
-						fireDirection = direction
+					if first {
+						first = false
+						dirA, distA = direction, dist
 					} else {
-						horizontalDist = dist
+						dirB, distB = direction, dist
 					}
 				}
+				if distA < distB {
+					dirA, dirB = dirB, dirA
+					distA, distB = distB, distA
+				}
+
+				verticalDist = distA
+				horizontalDist = distB
+				fireDirection = dirA
+
 
 				if horizontalDist >= 1 && horizontalDist <= 2 * state.Params.TankSpeed {
 					needToCalc = true
