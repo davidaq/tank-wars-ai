@@ -31,10 +31,10 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 
 		switch fireDirection {
 		case DirectionUp: 
-			if ox == fx && fy > oy {
-				if enemyPos.X != -1 && enemyPos.X == ox && enemyPos.Y > oy && enemyPos.Y < fy {
-					return float64(0)
-				} 
+			if enemyPos.X != -1 && enemyPos.X == ox && enemyPos.Y > oy && enemyPos.Y < fy {
+				continue
+			} 
+			if ox == fx && fy > oy {	
 				return float64(1)
 			} else if fy > oy {
 				if ox - fx == tankSpeed && otherTank.Pos.Direction == DirectionLeft {
@@ -45,10 +45,10 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 				}
 			}
 		case DirectionLeft:
+			if enemyPos.X != -1 && enemyPos.Y == oy && enemyPos.X > ox && enemyPos.X < fx {
+				continue
+			}
 			if oy == fy && fx > ox {
-				if enemyPos.X != -1 && enemyPos.Y == oy && enemyPos.X > ox && enemyPos.X < fx {
-					return float64(0)
-				}
 				return float64(1)
 			} else if fx > ox {
 				if oy - fy == tankSpeed && otherTank.Pos.Direction == DirectionUp {
@@ -59,10 +59,10 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 				}
 			}
 		case DirectionDown:
+			if enemyPos.X != -1 &&  enemyPos.X == ox && enemyPos.Y > fy && enemyPos.Y < oy {
+				continue
+			}
 			if ox == fx && oy > fy {
-				if enemyPos.X != -1 &&  enemyPos.X == ox && enemyPos.Y > fy && enemyPos.Y < oy {
-					return float64(0)
-				}
 				return float64(1)
 			} else if oy > fy {
 				if ox - fx == tankSpeed && otherTank.Pos.Direction == DirectionLeft {
@@ -73,10 +73,10 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 				}
 			}
 		case DirectionRight:
+			if enemyPos.X != -1 && enemyPos.Y == oy && enemyPos.X > fx && enemyPos.X < ox {
+				continue
+			}
 			if oy == fy && ox > fx {
-				if enemyPos.X != -1 && enemyPos.Y == oy && enemyPos.X > fx && enemyPos.X < ox {
-					return float64(0)
-				}
 				return float64(1)
 			} else if ox > fx {
 				if oy - fy == tankSpeed && otherTank.Pos.Direction == DirectionUp {
