@@ -229,12 +229,11 @@ func (self *Player) Play(state *GameState) map[string]int {
 	return movement
 }
 
-type FireForest struct {
-	tankId string
-	action int
-}
-
 func (self *Player) forestColideShoot(state *GameState, radar *RadarResult, objective map[string]Objective) {
+	type FireForest struct {
+		tankId string
+		action int
+	}
 	fireForest := make(map[Position]FireForest)
 	for _, tank := range state.MyTank {
 		if tank.Bullet == "" {
