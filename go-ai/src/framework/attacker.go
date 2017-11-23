@@ -91,6 +91,21 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 	return float64(0)
 }
 
+// faith计算方法：
+
+// 首先根据与敌方垂直距离给出faith基准值:
+// 1(1个子弹速度以内), 0.8（2个）, 0.6（3个）, 0.4（4个）, 0.3（10个以内），其他情况是0
+
+// 然后判断是否在火线上，若在火线上：
+// 如果我方与敌方坦克垂直距离 == 1，直接返回最终faith = 1
+// 如果敌方与开火方向是相同的或者相反的，返回faith基准值
+// 如果敌方与开火方向垂直，返回faith基准值 / 2
+
+// 若敌方坦克不在火线上：
+// 若敌方坦克下回合朝向火线，且正好有可能走到火线上，返回(faith基准值 / 2) - 0.15
+// 若敌方坦克与火线距离 > 1个坦克速度，返回faith = 0
+// 若敌方坦克与火线距离在1个坦克速度以内，但不朝向火线，返回(faith基准值 / 2) - 0.3
+
 func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool, fireDirection int, enemyPos Position, tankPos Position, terain *Terain) float64 {
 	faith := float64(0)
 
@@ -125,11 +140,11 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 		return faith / float64(2)
 	} else {
 		// 敌方不在火线，开火方向是上或下
-		faith = faith / float64(3)
+		faith = faith / float64(2)
 		if fireDirection == DirectionUp || fireDirection == DirectionDown {
 
 			// 坦克下回合走不到火线上
-			if int(math.Abs(float64(tankPos.X - enemyPos.X))) != tankSpeed {
+			if int(math.Abs(float64(tankPos.X - enemyPos.X))) > tankSpeed {
 				return float64(0)
 			}
 
@@ -142,14 +157,14 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 				return faith - 0.15
 			}
 			// 敌方坦克朝向与火线相反或不朝向火线
-			return faith - 0.2
+			return faith - 0.3
 		}
 
 		// 开火方向是左或右
 		if fireDirection == DirectionLeft || fireDirection == DirectionRight {
 
 			// 坦克下回合走不到火线上
-			if int(math.Abs(float64(tankPos.Y - enemyPos.Y))) != tankSpeed {
+			if int(math.Abs(float64(tankPos.Y - enemyPos.Y))) > tankSpeed {
 				return float64(0)
 			}
 
@@ -304,7 +319,7 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 					sin = float64(0)
 				}
 
-				// fmt.Println("3 ----- NO FIRELINE", "count", count, "faith", faith, "sin", sin, "cost", cost, "dist", verticalDist, "tank", tank.Id, "enemyX", enemyThreat.Enemy.X, "enemyY", enemyThreat.Enemy.Y)
+				fmt.Println("FIRE INFO -------- NO FIRELINE", "count", count, "faith", faith, "sin", sin, "cost", cost, "dist", verticalDist, "tank", tank.Id, "enemyX", enemyThreat.Enemy.X, "enemyY", enemyThreat.Enemy.Y)
 				
 				cost = int(math.Ceil(float64(cost) / float64(state.Params.BulletSpeed)))
 
@@ -347,7 +362,7 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 						faith = float64(0)
 						sin = float64(0)
 					}
-					// fmt.Println("3 ----- FIRELINE", "count", count, "faith", faith, "sin", sin, "cost", cost, "dist", dist, "tank", tank.Id, "enemyX", enemyThreat.Enemy.X, "enemyY", enemyThreat.Enemy.Y)
+					fmt.Println("FIRE INFO -------- FIRELINE", "count", count, "faith", faith, "sin", sin, "cost", cost, "dist", dist, "tank", tank.Id, "enemyX", enemyThreat.Enemy.X, "enemyY", enemyThreat.Enemy.Y)
 					
 					cost = int(math.Ceil(float64(cost) / float64(state.Params.BulletSpeed)))					
 					switch realDirection {
