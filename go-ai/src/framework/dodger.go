@@ -7,6 +7,7 @@ package framework
 import (
 	"math"
     "sort"
+    "fmt"
 )
 
 type Dodger struct {
@@ -114,7 +115,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
 			for _, b := range (*bullets)[tank.Id] {
 				if b.Quadrant == QUADRANT_U || b.Quadrant == QUADRANT_L || b.Quadrant == QUADRANT_D || b.Quadrant == QUADRANT_R {
                     // 设置最终紧急度 如果不躲 两回合肯定挂掉
-                    if b.Distances[b.Quadrant] <= state.Params.BulletSpeed * 3 + 1 {
+                    if b.Distances[b.Quadrant] <= state.Params.BulletSpeed * 4 - 1 {
                         tmpUrgent = 1
                         tmpBulletUrgent = 1
                     }
@@ -128,11 +129,11 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         }
                         if tmpMoveUrgent[ActionBack] > b.Distances[b.Quadrant] {
                             tmpMoveUrgent[ActionBack] = b.Distances[b.Quadrant] - state.Params.BulletSpeed   //后退需要加一步
-                            tmpMoveUrgentBullet[ActionBack] = b.Distances[b.Quadrant] - state.Params.BulletSpeed
+                            tmpMoveUrgentBullet[ActionBack] = b.Distances[b.Quadrant] - state.Params.BulletSpeed   //后退需要加一步
                         }
                         if tmpMoveUrgent[ActionStay] > b.Distances[b.Quadrant] {
                             tmpMoveUrgent[ActionStay] = b.Distances[b.Quadrant] - state.Params.BulletSpeed   // 停下视作加一步
-                            tmpMoveUrgentBullet[ActionStay] = b.Distances[b.Quadrant] - state.Params.BulletSpeed
+                            tmpMoveUrgentBullet[ActionStay] = b.Distances[b.Quadrant] - state.Params.BulletSpeed   // 停下视作加一步
                         }
                     } else {
                         // 影响左转、右转、停止
@@ -441,6 +442,11 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
     // 敌军威胁
     radarDodgeEnemy = self.calcDodge(moveUrgentEnemy, threatEnemy, state, tankData)
 
+    if bulletApproach == true{
+        fmt.Println("###")
+        fmt.Println(radarDodgeBullet)
+        fmt.Println("###")
+    }
 
 	return radarDodge, radarDodgeBullet, radarDodgeEnemy, extDangerSrc
 }
@@ -501,7 +507,7 @@ func (self *Radar) calcDodge(moveUrgent map[string]map[int]int, threat map[strin
         // 如果全都撞墙，则不去推荐
         if len(actionSequence) == 0 {
             radarDodge[tankId] = RadarDodge{
-                Threat: 0,
+                Threat:  -1,
                 SafePos: Position{},
             }
             continue
@@ -612,8 +618,35 @@ func (self *Radar) convertActionToPosition(state *GameState, tank Tank, action i
     }
 
     // 撞墙、超出地图边界判断
-    if state.Terain.Get(positionRet.X, positionRet.Y) == TerainObstacle {
-        return false, Position{}
+    if positionRet.X == tank.Pos.X {
+        if positionRet.Y >= tank.Pos.Y {
+            for y := tank.Pos.Y; y <= positionRet.Y; y++ {
+                if state.Terain.Get(positionRet.X, y) == TerainObstacle {
+                    return false, Position{}
+                }
+            }
+        } else {
+            for y := tank.Pos.Y; y >= positionRet.Y; y-- {
+                if state.Terain.Get(positionRet.X, y) == TerainObstacle {
+                    return false, Position{}
+                }
+            }
+        }
+    }
+    if positionRet.Y == tank.Pos.Y {
+        if positionRet.X >= tank.Pos.X {
+            for x := tank.Pos.X; x <= positionRet.X; x++ {
+                if state.Terain.Get(x, positionRet.Y) == TerainObstacle {
+                    return false, Position{}
+                }
+            }
+        } else {
+            for x := tank.Pos.X; x >= positionRet.X; x-- {
+                if state.Terain.Get(x, positionRet.Y) == TerainObstacle {
+                    return false, Position{}
+                }
+            }
+        }
     }
 
     // 检查碰撞己方和敌方坦克
@@ -622,13 +655,69 @@ func (self *Radar) convertActionToPosition(state *GameState, tank Tank, action i
         if s.Id == tank.Id {
             continue
         }
-        if positionRet.X == s.Pos.X && positionRet.Y == s.Pos.Y {
-            return false, Position{}
+        // distance可能是多个格
+        if positionRet.X == tank.Pos.X {
+            if positionRet.Y >= tank.Pos.Y {
+                for y := tank.Pos.Y; y <= positionRet.Y; y++ {
+                    if positionRet.X == s.Pos.X && y == s.Pos.Y {
+                        return false, Position{}
+                    }
+                }
+            } else {
+                for y := tank.Pos.Y; y >= positionRet.Y; y-- {
+                    if positionRet.X == s.Pos.X && y == s.Pos.Y {
+                        return false, Position{}
+                    }
+                }
+            }
+        }
+        if positionRet.Y == tank.Pos.Y {
+            if positionRet.X >= tank.Pos.X {
+                for x := tank.Pos.X; x <= positionRet.X; x++ {
+                    if x == s.Pos.X && positionRet.Y == s.Pos.Y {
+                        return false, Position{}
+                    }
+                }
+            } else {
+                for x := tank.Pos.X; x >= positionRet.X; x-- {
+                    if x == s.Pos.X && positionRet.Y == s.Pos.Y {
+                        return false, Position{}
+                    }
+                }
+            }
         }
     }
     for _, e := range state.EnemyTank {
-        if positionRet.X == e.Pos.X && positionRet.Y == e.Pos.Y {
-            return false, Position{}
+        // distance可能是多个格
+        if positionRet.X == tank.Pos.X {
+            if positionRet.Y >= tank.Pos.Y {
+                for y := tank.Pos.Y; y <= positionRet.Y; y++ {
+                    if positionRet.X == e.Pos.X && y == e.Pos.Y {
+                        return false, Position{}
+                    }
+                }
+            } else {
+                for y := tank.Pos.Y; y >= positionRet.Y; y-- {
+                    if positionRet.X == e.Pos.X && y == e.Pos.Y {
+                        return false, Position{}
+                    }
+                }
+            }
+        }
+        if positionRet.Y == tank.Pos.Y {
+            if positionRet.X >= tank.Pos.X {
+                for x := tank.Pos.X; x <= positionRet.X; x++ {
+                    if x == e.Pos.X && positionRet.Y == e.Pos.Y {
+                        return false, Position{}
+                    }
+                }
+            } else {
+                for x := tank.Pos.X; x >= positionRet.X; x-- {
+                    if x == e.Pos.X && positionRet.Y == e.Pos.Y {
+                        return false, Position{}
+                    }
+                }
+            }
         }
     }
 
