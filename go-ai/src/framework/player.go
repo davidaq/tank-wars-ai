@@ -121,7 +121,7 @@ func (self *Player) Play(state *GameState) map[string]int {
 		}
 	}
 
-	self.traveller.Search(travel, state, movement)
+	self.traveller.Search(travel, state, radarResult.FullMapThreat, movement)
 	for _, tankId := range noForward {
 		action, _ := movement[tankId]
 		if action == ActionMove {
