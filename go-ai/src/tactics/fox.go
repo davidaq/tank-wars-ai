@@ -2,6 +2,7 @@ package tactics
 
 import (
 	f "framework"
+	"fmt"
 )
 
 type Fox struct {
@@ -44,10 +45,55 @@ func (self *Fox) Init(state *f.GameState) {
 func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
 	n := 0
 	checker := false
+	tankGroupANum := 0
+	tankGroupBNum := 0
+
+	// 分组存活判断
+	for _, tank := range state.MyTank {
+		if _, ok := self.tankGroupA[tank.Id]; ok {
+			tankGroupANum++
+		}
+		if _, ok := self.tankGroupB[tank.Id]; ok {
+			tankGroupBNum++
+		}
+	}
+
+	fmt.Println("A:",tankGroupANum, "B:",tankGroupBNum)
+
 	tankloop: for _, tank := range state.MyTank {
 		n++
+
+		// 动态分组
+		fmt.Println(tankGroupANum <= 1 && tankGroupBNum <= 1 && len(state.MyTank) <= len(state.EnemyTank))
+		if tankGroupANum < 1 && tankGroupBNum < 1 && len(state.MyTank) <= len(state.EnemyTank) {
+			self.tankGroupB[tank.Id] = tank
+			delete(self.tankGroupA, tank.Id)
+		}
+
+		// faith排序
+		fireRadar := radar.Fire[tank.Id]
+		var tempRadarFire *f.RadarFire
+		for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
+			if tempRadarFire == nil {
+				tempRadarFire = fire
+			}
+			if fire!=nil {
+				if fire.Faith > tempRadarFire.Faith {
+					tempRadarFire = fire
+				}
+			}
+		}
+
+		// 光荣弹开火
+		if radar.DodgeBullet[tank.Id].Threat == -1 && tempRadarFire != nil && tempRadarFire.Sin < 0.5 {
+			objective[tank.Id] = f.Objective {
+				Action: tempRadarFire.Action,
+			}
+			continue tankloop
+		}
+
 		// 子弹躲避
-		if radar.DodgeBullet[tank.Id].Threat > 0.7 {
+		if radar.DodgeBullet[tank.Id].Threat > 0.15 {
 			objective[tank.Id] = f.Objective {
 				Action: f.ActionTravel,
 				Target: radar.DodgeBullet[tank.Id].SafePos,
@@ -65,18 +111,6 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 		}
 
 		// 开火
-		fireRadar := radar.Fire[tank.Id]
-		var tempRadarFire *f.RadarFire
-		for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
-			if tempRadarFire == nil {
-				tempRadarFire = fire
-			}
-			if fire!=nil {
-				if fire.Faith > tempRadarFire.Faith {
-					tempRadarFire = fire
-				}
-			}
-		}
 		if tempRadarFire != nil && tempRadarFire.Sin < 0.5 && tempRadarFire.Faith > 0.2 && tank.Bullet == "" {
 			objective[tank.Id] = f.Objective {
 				Action: tempRadarFire.Action,
@@ -280,7 +314,7 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 				}
 			}
 		} else {
-			if state.FlagWait <= 8 {
+			if state.FlagWait <= 5 {
 				if _, ok := self.tankGroupB[tank.Id]; ok {
 					objective[tank.Id] = f.Objective {
 						Action: f.ActionTravel,
