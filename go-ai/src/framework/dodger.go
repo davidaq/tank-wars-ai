@@ -1,5 +1,10 @@
 /**
  * 高性能躲避行动子系统
+ *
+ * 说明
+ 子弹威胁算法
+ 假设子弹在
+ *
  * author: linxingchen
  */
 package framework
@@ -16,7 +21,7 @@ type Dodger struct {
 const MAX = 10000
 
 /**
- * 获取隔墙数量
+ * 获取隔墙情况数量
  */
 func (self *Radar) getWallSum(state *GameState, my Tank, enemy EnemyThreat) int {
     wallSum := 0
@@ -111,11 +116,11 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
         tmpEnemyUrgent := MAX
 
         // 计算
-		if bulletApproach == true && len((*bullets)[tank.Id]) > 0 {
-			for _, b := range (*bullets)[tank.Id] {
-				if b.Quadrant == QUADRANT_U || b.Quadrant == QUADRANT_L || b.Quadrant == QUADRANT_D || b.Quadrant == QUADRANT_R {
+        if bulletApproach == true && len((*bullets)[tank.Id]) > 0 {
+            for _, b := range (*bullets)[tank.Id] {
+                if b.Quadrant == QUADRANT_U || b.Quadrant == QUADRANT_L || b.Quadrant == QUADRANT_D || b.Quadrant == QUADRANT_R {
                     // 设置最终紧急度 如果不躲 两回合肯定挂掉
-                    if b.Distances[b.Quadrant] <= state.Params.BulletSpeed * 4 - 1 {
+                    if b.Distances[b.Quadrant] <= state.Params.BulletSpeed * 4 {
                         tmpUrgent = 1
                         tmpBulletUrgent = 1
                     }
@@ -156,7 +161,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         tmpBulletUrgent = -1
                     }
 
-				} else {
+                } else {
                     // 非火线的情况
                     // 这里计算 如果目前朝向 正好被击中 则为1 如不会被击中 则参与下面计算 计算只记录面向的象限
                     if b.Quadrant == QUADRANT_L_U && b.BulletPosition.Direction == DirectionRight {
@@ -231,205 +236,229 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         Distance: b.Distances[b.Quadrant],
                     })
                 }
-			}
-		}
+            }
+        }
 
         // 处理敌军情况 如果自己在草里，不用考虑敌军 威胁
-		if enemyApproach == true && len((*enemys)[tank.Id]) > 0 && state.Terain.Get(tank.Pos.X, tank.Pos.Y) != TerainForest {
-			for _, e := range ((*enemys)[tank.Id]) {
-                // 加权
-                weight := 0
-                // 对墙判定，如果隔墙则威胁度降低
-                wallSum := self.getWallSum(state, tank, e) // 隔几面墙
-                // 墙加权
-                weight += state.Params.TankSpeed * wallSum
-
-				if e.Quadrant == QUADRANT_U || e.Quadrant == QUADRANT_L || e.Quadrant == QUADRANT_D || e.Quadrant == QUADRANT_R {
-                    // 敌军在火线上的处理
-                    // 两回合炮弹距离则为紧急
-                    if e.Distances[e.Quadrant] <= state.Params.BulletSpeed * 2 + 1 && wallSum == 0 {
-                        tmpUrgent = 1
-                        tmpEnemyUrgent = 1
+        if enemyApproach == true && len((*enemys)[tank.Id]) > 0 && state.Terain.Get(tank.Pos.X, tank.Pos.Y) != TerainForest {
+            var tmpThreat []EnemyThreat
+            tmpLong := state.Params.BulletSpeed * 2 + 1
+            tmpShort := state.Params.TankSpeed
+            for _, e := range ((*enemys)[tank.Id]) {
+                // 只考虑己方一步，不考虑自己的斜方向
+                // 考虑敌军4条火线和子弹情况，距离为2个子弹射程。如果敌军tankbullet不为空，则坦克没有威胁
+                // 因此考虑红十字形状的敌军范围，假设向前行进，则左右两侧（1， 2象限）和前方（-1象限）的坦克具有威胁
+                for _, enemyBullet := range state.EnemyBullet {
+                    if e.EnemyId == enemyBullet.From {
+                        // 如果已经射出则没有威胁
+                        continue
                     }
+                }
 
-                    // 影响直行、后退、停止
-                    if e.Quadrant == QUADRANT_U || e.Quadrant == QUADRANT_D {
-                        if tmpMoveUrgent[ActionMove] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgent[ActionMove] = e.Distances[e.Quadrant] + weight
-                        }
-                        if tmpMoveUrgent[ActionBack] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgent[ActionBack] = e.Distances[e.Quadrant] + weight
-                        }
-                        if tmpMoveUrgent[ActionStay] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgent[ActionStay] = e.Distances[e.Quadrant] + weight
-                        }
-                        if tmpMoveUrgentEnemy[ActionMove] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgentEnemy[ActionMove] = e.Distances[e.Quadrant] + weight
-                        }
-                        if tmpMoveUrgentEnemy[ActionBack] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgentEnemy[ActionBack] = e.Distances[e.Quadrant] + weight
-                        }
-                        if tmpMoveUrgentEnemy[ActionStay] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgentEnemy[ActionStay] = e.Distances[e.Quadrant] + weight
-                        }
-                    } else {
-                        // 影响左转、右转、停止
-                        if tmpMoveUrgent[ActionLeft] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgent[ActionLeft] = e.Distances[e.Quadrant] + weight
-                        }
-                        if tmpMoveUrgent[ActionRight] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgent[ActionRight] = e.Distances[e.Quadrant] + weight
-                        }
-                        if tmpMoveUrgent[ActionStay] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgent[ActionStay] = e.Distances[e.Quadrant] + weight
-                        }
-                        if tmpMoveUrgentEnemy[ActionLeft] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgentEnemy[ActionLeft] = e.Distances[e.Quadrant] + weight
-                        }
-                        if tmpMoveUrgentEnemy[ActionRight] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgentEnemy[ActionRight] = e.Distances[e.Quadrant] + weight
-                        }
-                        if tmpMoveUrgentEnemy[ActionStay] > e.Distances[e.Quadrant] {
-                            tmpMoveUrgentEnemy[ActionStay] = e.Distances[e.Quadrant] + weight
-                        }
+                tmpAbsX := int(math.Abs(float64(e.Enemy.X - tank.Pos.X)))
+                tmpAbsY := int(math.Abs(float64(e.Enemy.Y - tank.Pos.Y)))
+                if e.OriginQuadrant == QUADRANT_U || e.OriginQuadrant == QUADRANT_L_U || e.OriginQuadrant == QUADRANT_R_U {
+                    if (tmpAbsX <= tmpShort && tmpAbsY <= tmpLong) {
+                        tmpThreat = append(tmpThreat, e)
                     }
+                }
 
-                    // 火线上躲不掉的情况
-                    if e.Distances[e.Quadrant] <= state.Params.BulletSpeed {
+                if e.OriginQuadrant == QUADRANT_L || e.OriginQuadrant == QUADRANT_L_U || e.OriginQuadrant == QUADRANT_L_D {
+                    if (tmpAbsX <= tmpLong && tmpAbsY <= tmpShort) {
+                        tmpThreat = append(tmpThreat, e)
+                    }
+                }
+
+                if e.OriginQuadrant == QUADRANT_D || e.OriginQuadrant == QUADRANT_L_D || e.OriginQuadrant == QUADRANT_R_D {
+                    if (tmpAbsX <= tmpShort && tmpAbsY <= tmpLong) {
+                        tmpThreat = append(tmpThreat, e)
+                    }
+                }
+
+                if e.OriginQuadrant == QUADRANT_R || e.OriginQuadrant == QUADRANT_R_U || e.OriginQuadrant == QUADRANT_R_D {
+                    if (tmpAbsX <= tmpLong && tmpAbsY <= tmpShort) {
+                        tmpThreat = append(tmpThreat, e)
+                    }
+                }
+            }
+
+            // 对已经筛选出来的进行分析，这样对debug友好 TODO 计算墙
+            for _, enemy := range tmpThreat {
+                if enemy.Quadrant == QUADRANT_U || enemy.Quadrant == QUADRANT_L || enemy.Quadrant == QUADRANT_D || enemy.Quadrant == QUADRANT_R {
+                    tmpUrgent = 1
+                    tmpEnemyUrgent = 1
+                    if enemy.Distances[enemy.Quadrant] < state.Params.BulletSpeed {
                         tmpUrgent = -1
                         tmpEnemyUrgent = -1
                     }
-				} else {
-                    // 敌军在其他象限的处理
-                    if e.Quadrant == QUADRANT_L_U {
-                        tankMove := math.Ceil(float64(e.Distances[QUADRANT_U]) / float64(state.Params.BulletSpeed)) * float64(state.Params.TankSpeed)
-                        if tankMove - float64(state.Params.TankSpeed) < float64(e.Distances[QUADRANT_L]) && tankMove >= float64(e.Distances[QUADRANT_L]) {
-                            // 如果直行，则被侧面的子弹干掉
-                            tmpMoveUrgent[ActionMove] = e.Distances[QUADRANT_U] + weight
-                            tmpUrgent = 1
-                            tmpMoveUrgentEnemy[ActionMove] = e.Distances[QUADRANT_U] + weight
-                            tmpEnemyUrgent = 1
-                            continue
-                        }
-                    }
-
-                    if e.Quadrant == QUADRANT_R_U {
-                        tankMove := math.Ceil(float64(e.Distances[QUADRANT_U]) / float64(state.Params.BulletSpeed)) * float64(state.Params.TankSpeed)
-                        if tankMove - float64(state.Params.TankSpeed) < float64(e.Distances[QUADRANT_R]) && tankMove >= float64(e.Distances[QUADRANT_R]) {
-                            // 如果直行，则被侧面的子弹干掉
-                            tmpMoveUrgent[ActionMove] = e.Distances[QUADRANT_U] + weight
-                            tmpUrgent = 1
-                            tmpMoveUrgentEnemy[ActionMove] = e.Distances[QUADRANT_U] + weight
-                            tmpEnemyUrgent = 1
-                            continue
-                        }
-                    }
-
-                    // 计算作死的可能性
+                } else {
+                    // 其他的威胁度直接距离来做，最后除速度向上取整
                     distance := 0
-                    for _, v := range e.Distances {
+                    for _, v := range enemy.Distances {
                         distance += int(math.Pow(float64(v), 2))
                     }
-                    distance = int(math.Sqrt(float64(distance)))
+                    distance = int(math.Ceil(math.Sqrt(float64(distance)) / float64(state.Params.BulletSpeed)))
 
-                    if e.Quadrant == QUADRANT_R_U {
-                        // 影响直行和右转
-                        if tmpMoveUrgent[ActionMove] > distance {
-                            tmpMoveUrgent[ActionMove] = distance + weight
-                        }
-                        if tmpMoveUrgent[ActionRight] > distance {
-                            tmpMoveUrgent[ActionRight] = distance + weight
-                        }
-                        if tmpMoveUrgentEnemy[ActionMove] > distance {
-                            tmpMoveUrgentEnemy[ActionMove] = distance + weight
-                        }
-                        if tmpMoveUrgentEnemy[ActionRight] > distance {
-                            tmpMoveUrgentEnemy[ActionRight] = distance + weight
-                        }
+                    // 两侧永远不要小于等于1，否则容易误判紧急事件
+                    if tmpUrgent > distance {
+                        tmpUrgent = distance
+                        tmpEnemyUrgent = distance
                     }
 
-                    if e.Quadrant == QUADRANT_L_U {
-                        // 影响直行和左转
-                        if tmpMoveUrgent[ActionMove] > distance {
-                            tmpMoveUrgent[ActionMove] = distance + weight
+
+                }
+                // 假设，要向前一步 那么有威胁的是相对象限的1，2，距离减1坦克速度的-1，和距离加1坦克速度的-3
+                if enemy.Quadrant == QUADRANT_U || enemy.Quadrant == QUADRANT_R_U || enemy.Quadrant == QUADRANT_L_U || enemy.Quadrant == QUADRANT_D {
+                    if enemy.Quadrant == QUADRANT_U || enemy.Quadrant == QUADRANT_D {
+                        if enemy.Quadrant == QUADRANT_U {
+                            if tmpMoveUrgent[ActionMove] > enemy.Distances[enemy.Quadrant] - state.Params.TankSpeed {
+                                tmpMoveUrgent[ActionMove] = enemy.Distances[enemy.Quadrant] - state.Params.TankSpeed
+                            }
+                            if tmpMoveUrgentEnemy[ActionMove] > enemy.Distances[enemy.Quadrant] - state.Params.TankSpeed {
+                                tmpMoveUrgentEnemy[ActionMove] = enemy.Distances[enemy.Quadrant] - state.Params.TankSpeed
+                            }
                         }
-                        if tmpMoveUrgent[ActionLeft] > distance {
-                            tmpMoveUrgent[ActionLeft] = distance + weight
+                        if enemy.Quadrant == QUADRANT_D {
+                            if tmpMoveUrgent[ActionMove] > enemy.Distances[enemy.Quadrant] + state.Params.TankSpeed {
+                                tmpMoveUrgent[ActionMove] = enemy.Distances[enemy.Quadrant] + state.Params.TankSpeed
+                            }
+                            if tmpMoveUrgentEnemy[ActionMove] > enemy.Distances[enemy.Quadrant] + state.Params.TankSpeed {
+                                tmpMoveUrgentEnemy[ActionMove] = enemy.Distances[enemy.Quadrant] + state.Params.TankSpeed
+                            }
                         }
-                        if tmpMoveUrgentEnemy[ActionMove] > distance {
-                            tmpMoveUrgentEnemy[ActionMove] = distance + weight
-                        }
-                        if tmpMoveUrgentEnemy[ActionLeft] > distance {
-                            tmpMoveUrgentEnemy[ActionLeft] = distance + weight
+                    } else {
+                        if enemy.Distances[QUADRANT_L] <= tmpShort || enemy.Distances[QUADRANT_R] <= tmpShort {
+                            // 如果到U有墙，则跳过
+                            if tmpMoveUrgent[ActionMove] > enemy.Distances[QUADRANT_U] {
+                                tmpMoveUrgent[ActionMove] = enemy.Distances[QUADRANT_U]
+                            }
+                            if tmpMoveUrgentEnemy[ActionMove] > enemy.Distances[QUADRANT_U] {
+                                tmpMoveUrgentEnemy[ActionMove] = enemy.Distances[QUADRANT_U]
+                            }
                         }
                     }
+                }
 
-                    if e.Quadrant == QUADRANT_L_D {
-                        // 影响左转和后退
-                        if tmpMoveUrgent[ActionLeft] > distance {
-                            tmpMoveUrgent[ActionLeft] = distance + weight
+                // 假设，向左一步 那么有威胁的是相对象限的2,3象限距离减1坦克速度的-2和加1坦克速度的-4
+                if enemy.Quadrant == QUADRANT_L || enemy.Quadrant == QUADRANT_L_U || enemy.Quadrant == QUADRANT_L_D || enemy.Quadrant == QUADRANT_R {
+                    if enemy.Quadrant == QUADRANT_L || enemy.Quadrant == QUADRANT_R {
+                        if enemy.Quadrant == QUADRANT_L {
+                            if tmpMoveUrgent[ActionLeft] > enemy.Distances[enemy.Quadrant] - state.Params.TankSpeed {
+                                tmpMoveUrgent[ActionLeft] = enemy.Distances[enemy.Quadrant] - state.Params.TankSpeed
+                            }
+                            if tmpMoveUrgentEnemy[ActionLeft] > enemy.Distances[enemy.Quadrant] - state.Params.TankSpeed {
+                                tmpMoveUrgentEnemy[ActionLeft] = enemy.Distances[enemy.Quadrant] - state.Params.TankSpeed
+                            }
                         }
-                        if tmpMoveUrgent[ActionBack] > distance {
-                            tmpMoveUrgent[ActionBack] = distance + weight
+                        if enemy.Quadrant == QUADRANT_R {
+                            if tmpMoveUrgent[ActionLeft] > enemy.Distances[enemy.Quadrant] + state.Params.TankSpeed {
+                                tmpMoveUrgent[ActionLeft] = enemy.Distances[enemy.Quadrant] + state.Params.TankSpeed
+                            }
+                            if tmpMoveUrgentEnemy[ActionLeft] > enemy.Distances[enemy.Quadrant] + state.Params.TankSpeed {
+                                tmpMoveUrgentEnemy[ActionLeft] = enemy.Distances[enemy.Quadrant] + state.Params.TankSpeed
+                            }
                         }
-                        if tmpMoveUrgentEnemy[ActionLeft] > distance {
-                            tmpMoveUrgentEnemy[ActionLeft] = distance + weight
-                        }
-                        if tmpMoveUrgentEnemy[ActionBack] > distance {
-                            tmpMoveUrgentEnemy[ActionBack] = distance + weight
+                    } else {
+                        if enemy.Distances[QUADRANT_U] <= tmpShort || enemy.Distances[QUADRANT_D] <= tmpShort {
+                            if tmpMoveUrgent[ActionLeft] > enemy.Distances[QUADRANT_L] {
+                                tmpMoveUrgent[ActionLeft] = enemy.Distances[QUADRANT_L]
+                            }
+                            if tmpMoveUrgentEnemy[ActionLeft] > enemy.Distances[QUADRANT_L] {
+                                tmpMoveUrgentEnemy[ActionLeft] = enemy.Distances[QUADRANT_L]
+                            }
                         }
                     }
+                }
 
-                    if e.Quadrant == QUADRANT_R_D {
-                        // 影响右转和后退
-                        if tmpMoveUrgent[ActionRight] > distance {
-                            tmpMoveUrgent[ActionRight] = distance + weight
+                // 假设向下一步 那么有威胁的是相对象限的-3、-1 3,4
+                if enemy.Quadrant == QUADRANT_D || enemy.Quadrant == QUADRANT_L_D || enemy.Quadrant == QUADRANT_R_D || enemy.Quadrant == QUADRANT_U {
+                    if enemy.Quadrant == QUADRANT_D || enemy.Quadrant == QUADRANT_U {
+                        if enemy.Quadrant == QUADRANT_D {
+                            if tmpMoveUrgent[ActionBack] > enemy.Distances[enemy.Quadrant] - state.Params.TankSpeed {
+                                tmpMoveUrgent[ActionBack] = enemy.Distances[enemy.Quadrant] - state.Params.TankSpeed
+                            }
+                            if tmpMoveUrgentEnemy[ActionBack] > enemy.Distances[enemy.Quadrant] - state.Params.TankSpeed {
+                                tmpMoveUrgentEnemy[ActionBack] = enemy.Distances[enemy.Quadrant] - state.Params.TankSpeed
+                            }
                         }
-                        if tmpMoveUrgent[ActionBack] > distance {
-                            tmpMoveUrgent[ActionBack] = distance + weight
+                        if enemy.Quadrant == QUADRANT_U {
+                            if tmpMoveUrgent[ActionBack] > enemy.Distances[enemy.Quadrant] + state.Params.TankSpeed {
+                                tmpMoveUrgent[ActionBack] = enemy.Distances[enemy.Quadrant] + state.Params.TankSpeed
+                            }
+                            if tmpMoveUrgentEnemy[ActionBack] > enemy.Distances[enemy.Quadrant] + state.Params.TankSpeed {
+                                tmpMoveUrgentEnemy[ActionBack] = enemy.Distances[enemy.Quadrant] + state.Params.TankSpeed
+                            }
                         }
-                        if tmpMoveUrgentEnemy[ActionRight] > distance {
-                            tmpMoveUrgentEnemy[ActionRight] = distance + weight
-                        }
-                        if tmpMoveUrgentEnemy[ActionBack] > distance {
-                            tmpMoveUrgentEnemy[ActionBack] = distance + weight
+                    } else {
+                        if enemy.Distances[QUADRANT_L] <= tmpShort || enemy.Distances[QUADRANT_R] <= tmpShort {
+                            if tmpMoveUrgent[ActionBack] > enemy.Distances[QUADRANT_D] {
+                                tmpMoveUrgent[ActionBack] = enemy.Distances[QUADRANT_D]
+                            }
+                            if tmpMoveUrgentEnemy[ActionBack] > enemy.Distances[QUADRANT_D] {
+                                tmpMoveUrgentEnemy[ActionBack] = enemy.Distances[QUADRANT_D]
+                            }
                         }
                     }
-				}
+                }
 
+                // 假设向右一步，那么有威胁的是-2 -4 1 4
+                if enemy.Quadrant == QUADRANT_R || enemy.Quadrant == QUADRANT_R_U || enemy.Quadrant == QUADRANT_R_D || enemy.Quadrant == QUADRANT_L {
+                    if enemy.Quadrant == QUADRANT_R || enemy.Quadrant == QUADRANT_L {
+                        if enemy.Quadrant == QUADRANT_R {
+                            if tmpMoveUrgent[ActionRight] > enemy.Distances[enemy.Quadrant] - state.Params.TankSpeed {
+                                tmpMoveUrgent[ActionRight] = enemy.Distances[enemy.Quadrant] - state.Params.TankSpeed
+                            }
+                            if tmpMoveUrgentEnemy[ActionRight] > enemy.Distances[enemy.Quadrant] - state.Params.TankSpeed {
+                                tmpMoveUrgentEnemy[ActionRight] = enemy.Distances[enemy.Quadrant] - state.Params.TankSpeed
+                            }
+                        }
+                        if enemy.Quadrant == QUADRANT_L {
+                            if tmpMoveUrgent[ActionRight] > enemy.Distances[enemy.Quadrant] + state.Params.TankSpeed {
+                                tmpMoveUrgent[ActionRight] = enemy.Distances[enemy.Quadrant] + state.Params.TankSpeed
+                            }
+                            if tmpMoveUrgentEnemy[ActionRight] > enemy.Distances[enemy.Quadrant] + state.Params.TankSpeed {
+                                tmpMoveUrgentEnemy[ActionRight] = enemy.Distances[enemy.Quadrant] + state.Params.TankSpeed
+                            }
+                        }
+                    } else {
+                        if enemy.Distances[QUADRANT_U] <= tmpShort || enemy.Distances[QUADRANT_D] <= tmpShort {
+                            if tmpMoveUrgent[ActionRight] > enemy.Distances[QUADRANT_R] {
+                                tmpMoveUrgent[ActionRight] = enemy.Distances[QUADRANT_R]
+                            }
+                            if tmpMoveUrgentEnemy[ActionRight] > enemy.Distances[QUADRANT_R] {
+                                tmpMoveUrgentEnemy[ActionRight] = enemy.Distances[QUADRANT_R]
+                            }
+                        }
+                    }
+                }
+
+                // 假设停止则四个火线
+                if enemy.Quadrant == QUADRANT_U || enemy.Quadrant == QUADRANT_L || enemy.Quadrant == QUADRANT_D || enemy.Quadrant == QUADRANT_R {
+                    if tmpMoveUrgent[ActionStay] > enemy.Distances[enemy.Quadrant] {
+                        tmpMoveUrgent[ActionStay] = enemy.Distances[enemy.Quadrant]
+                    }
+                    if tmpMoveUrgentEnemy[ActionStay] > enemy.Distances[enemy.Quadrant] {
+                        tmpMoveUrgentEnemy[ActionStay] = enemy.Distances[enemy.Quadrant]
+                    }
+                }
                 if tmpEnemyUrgent == 1 || tmpEnemyUrgent == -1 {
                     extDangerSrc[tank.Id] = append(extDangerSrc[tank.Id], ExtDangerSrc{
-                        Source: e.EnemyId,
+                        Source: enemy.EnemyId,
                         Type:   ENEMY_THREAT,
                         Urgent: tmpEnemyUrgent,
-                        Distance: e.Distances[e.Quadrant],
+                        Distance: enemy.Distances[enemy.Quadrant],
                     })
                 }
-                //
-                //if tmpMoveUrgent[ActionLeft] != 0 && wallSum == 0 {
-                //    tmpMoveUrgent[ActionLeft] -= state.Params.BulletSpeed
-                //}
-                //
-                //if tmpMoveUrgent[ActionRight] != 0 && wallSum == 0 {
-                //    tmpMoveUrgent[ActionRight] -= state.Params.BulletSpeed
-                //}
-                //
-                //if tmpMoveUrgent[ActionBack] != 0 && wallSum == 0 {
-                //    tmpMoveUrgent[ActionBack] -= state.Params.BulletSpeed
-                //}
-                //
-                //if tmpMoveUrgent[ActionStay] != 0 && wallSum == 0 {
-                //    tmpMoveUrgent[ActionStay] -= state.Params.BulletSpeed
-                //}
-			}
-		}
-        threat[tank.Id]             = tmpUrgent
-        threatBullet[tank.Id]       = tmpBulletUrgent
-        threatEnemy[tank.Id]        = tmpEnemyUrgent
-        moveUrgent[tank.Id]         = tmpMoveUrgent
-        moveUrgentBullet[tank.Id]   = tmpMoveUrgentBullet
-        moveUrgentEnemy[tank.Id]    = tmpMoveUrgentEnemy
-	}
+            }
+        }
+
+        threat[tank.Id] = tmpUrgent
+        threatBullet[tank.Id] = tmpBulletUrgent
+        threatEnemy[tank.Id] = tmpEnemyUrgent
+        moveUrgent[tank.Id] = tmpMoveUrgent
+        moveUrgentBullet[tank.Id] = tmpMoveUrgentBullet
+        moveUrgentEnemy[tank.Id] = tmpMoveUrgentEnemy
+    }
 
 	// STEP4 综合场上局势进行协同调度
     radarDodge := make(map[string]RadarDodge)
@@ -442,11 +471,11 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
     // 敌军威胁
     radarDodgeEnemy = self.calcDodge(moveUrgentEnemy, threatEnemy, state, tankData)
 
-    if bulletApproach == true{
-        fmt.Println("###")
-        fmt.Println(radarDodgeBullet)
-        fmt.Println("###")
-    }
+    fmt.Println("###")
+    fmt.Println(radarDodge)
+    fmt.Println(radarDodgeEnemy)
+    fmt.Println(radarDodgeBullet)
+    fmt.Println("###")
 
 	return radarDodge, radarDodgeBullet, radarDodgeEnemy, extDangerSrc
 }
@@ -579,7 +608,7 @@ func (self *Radar) calcDodge(moveUrgent map[string]map[int]int, threat map[strin
         // 先直接选最高的策略
         // 最高策略的下一步行进位置
         // 计算威胁度
-        finThreat := 1 / float64(threat[tankId])
+        finThreat := 1 / (float64(threat[tankId]))
         radarDodge[tankId] = RadarDodge{
             Threat:  finThreat,
             SafePos: nextPos[actionSequence[0]],

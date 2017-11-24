@@ -47,6 +47,7 @@ type BulletThreat struct {
 type EnemyThreat struct {
 	Enemy 		Position
 	EnemyId		string 	// 敌军id
+	OriginQuadrant int  // 原始象限
     Quadrant    int 	// 敌军坦克所在的象限
     Distances   map[int]int // 坦克火线象限 - 垂直坦克火线的距离，如果敌军在坦克火线上，则为水平距离
 }
@@ -59,7 +60,7 @@ type ExtDangerSrc struct {
 }
 
 // 侦测几回合的威胁
-const RADAR_BULLET_STEP = 4
+const RADAR_BULLET_STEP = 5
 const RADAR_ENEMY_STEP	= 5
 
 func (self *Radar) avoidBullet(state *GameState) (bulletApproach bool, bulletThreat map[string][]BulletThreat){
@@ -286,6 +287,7 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 			if enemy.Enemy.Y < tank.Pos.Y {
 				if enemy.Enemy.X > tank.Pos.X {
 					// 计算象限
+					tmpEnemyThreat[k].OriginQuadrant = QUADRANT_R_U
                     tmpEnemyThreat[k].Quadrant = QUADRANT_R_U
 
                     // 计算相对火线的distances
@@ -293,6 +295,7 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
                     tmpEnemyThreat[k].Distances[QUADRANT_R] = tank.Pos.Y - enemy.Enemy.Y
 				}
 				if enemy.Enemy.X < tank.Pos.X {
+					tmpEnemyThreat[k].OriginQuadrant = QUADRANT_L_U
 					tmpEnemyThreat[k].Quadrant = QUADRANT_L_U
 
                     // 计算相对火线的distances
@@ -303,6 +306,7 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 
 			if enemy.Enemy.Y > tank.Pos.Y {
 				if enemy.Enemy.X < tank.Pos.X {
+					tmpEnemyThreat[k].OriginQuadrant = QUADRANT_L_D
 					tmpEnemyThreat[k].Quadrant = QUADRANT_L_D
 
                     // 计算相对火线的distances
@@ -310,6 +314,7 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
                     tmpEnemyThreat[k].Distances[QUADRANT_D] = tank.Pos.X - enemy.Enemy.X
 				}
 				if enemy.Enemy.X > tank.Pos.X {
+					tmpEnemyThreat[k].OriginQuadrant = QUADRANT_R_D
 					tmpEnemyThreat[k].Quadrant = QUADRANT_R_D
 
                     // 计算相对火线的distances
@@ -320,10 +325,12 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 
 			if enemy.Enemy.X == tank.Pos.X {
 				if enemy.Enemy.Y < tank.Pos.Y {
+					tmpEnemyThreat[k].OriginQuadrant = QUADRANT_U
 					tmpEnemyThreat[k].Quadrant = QUADRANT_U
                     tmpEnemyThreat[k].Distances[QUADRANT_U] = tank.Pos.Y - enemy.Enemy.Y // 当在火线上时由垂直距离改为水平距离
 				}
 				if enemy.Enemy.Y > tank.Pos.Y {
+					tmpEnemyThreat[k].OriginQuadrant = QUADRANT_D
 					tmpEnemyThreat[k].Quadrant = QUADRANT_D
                     tmpEnemyThreat[k].Distances[QUADRANT_D] = enemy.Enemy.Y - tank.Pos.Y
 				}
@@ -331,10 +338,12 @@ func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string
 
 			if enemy.Enemy.Y == tank.Pos.Y {
 				if enemy.Enemy.X < tank.Pos.X {
+					tmpEnemyThreat[k].OriginQuadrant = QUADRANT_L
 					tmpEnemyThreat[k].Quadrant = QUADRANT_L
                     tmpEnemyThreat[k].Distances[QUADRANT_L] = tank.Pos.X - enemy.Enemy.X
 				}
 				if enemy.Enemy.X > tank.Pos.X {
+					tmpEnemyThreat[k].OriginQuadrant = QUADRANT_R
 					tmpEnemyThreat[k].Quadrant = QUADRANT_R
                     tmpEnemyThreat[k].Distances[QUADRANT_R] = enemy.Enemy.X - tank.Pos.X
 				}
