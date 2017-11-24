@@ -46,7 +46,9 @@ func (self *Radar) fullMapThreat(state *GameState) map[Position]float64 {
                     }
 
                     // 根据步数进行赋值
-                    fullmap[Position{X:b.Pos.X, Y:y, }] = stepThreat[step]
+                    if fullmap[Position{X:b.Pos.X, Y:y, }] < stepThreat[step] {
+                        fullmap[Position{X:b.Pos.X, Y:y, }] = stepThreat[step]
+                    }
                 }
             }
 
@@ -57,7 +59,9 @@ func (self *Radar) fullMapThreat(state *GameState) map[Position]float64 {
                     if y >= state.Terain.Height || state.Terain.Get(b.Pos.X, y) == TerainObstacle {
                         continue loop
                     }
-                    fullmap[Position{X:b.Pos.X, Y:y, }] = stepThreat[step]
+                    if fullmap[Position{X:b.Pos.X, Y:y, }] < stepThreat[step] {
+                        fullmap[Position{X:b.Pos.X, Y:y, }] = stepThreat[step]
+                    }
                 }
             }
 
@@ -67,7 +71,9 @@ func (self *Radar) fullMapThreat(state *GameState) map[Position]float64 {
                     if x < 0 || state.Terain.Get(x, b.Pos.Y) == TerainObstacle {
                         continue loop
                     }
-                    fullmap[Position{X: x, Y: b.Pos.Y,}] = stepThreat[step]
+                    if fullmap[Position{X: x, Y: b.Pos.Y,}] < stepThreat[step] {
+                        fullmap[Position{X: x, Y: b.Pos.Y,}] = stepThreat[step]
+                    }
                 }
             }
 
@@ -77,7 +83,9 @@ func (self *Radar) fullMapThreat(state *GameState) map[Position]float64 {
                     if x > state.Terain.Width || state.Terain.Get(x, b.Pos.Y) == TerainObstacle {
                         continue loop
                     }
-                    fullmap[Position{X:x, Y:b.Pos.Y,}] = stepThreat[step]
+                    if fullmap[Position{X:x, Y:b.Pos.Y,}] < stepThreat[step] {
+                        fullmap[Position{X:x, Y:b.Pos.Y,}] = stepThreat[step]
+                    }
                 }
             }
         }

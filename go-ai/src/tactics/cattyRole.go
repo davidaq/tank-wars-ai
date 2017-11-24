@@ -2,7 +2,7 @@ package tactics
 
 import (
 	f "framework"
-	// "math"
+	"math"
 	// "fmt"
 )
 
@@ -31,25 +31,27 @@ func (r *CattyRole) occupyFlag() {
 }
 
 // 距离最近的可攻击位置
+// 如果敌方坦克密度较大，放弃那个位置
 func (r *CattyRole) hunt() {
 	dist := -1
-	var tid  string
 	var tpos f.Position
+	var ttank f.Tank
 	for pos, tankid := range r.obs.ShotPos {
 		nd := r.Tank.Pos.SDist(pos)
+		tank := r.obs.EmyTank[tankid]
 		if dist < 0 {
-			dist = nd
-			tid  = tankid
-			tpos = pos
-		} else if nd > r.obs.State.Params.BulletSpeed * 2 || r.obs.pathReachable(pos, r.nextPos(pos)) {
+			dist  = nd
+			ttank = tank
+			tpos  = pos
+		} else if nd > r.obs.State.Params.BulletSpeed * 2 || (r.obs.pathReachable(pos, r.nextPos(pos))) {  // && r.canHunt(tank)) {
 			if nd < dist {
-				dist = nd
-				tid  = tankid
-				tpos = pos
+				dist  = nd
+				ttank = tank
+				tpos  = pos
 			}
 		}
 	}
-	r.Target.Tank = r.obs.EmyTank[tid]
+	r.Target.Tank = ttank
 	r.Target.Pos  = tpos
 	delete(r.obs.ShotPos, tpos)
 }
@@ -91,7 +93,7 @@ func (r *CattyRole) fireBeforeDying() int {
             mrf = rf
         }
     }
-	if mrf == nil || mrf.Faith == 0 || mrf.Sin >= 0.3 {
+	if mrf == nil || mrf.Faith == 0 || mrf.Sin >= 0.5 {
 		return 0
 	} else {
 		return mrf.Action
@@ -107,7 +109,7 @@ func (r *CattyRole) fireAction() int {
             mrf = rf
         }
     }
-	if mrf == nil || mrf.Faith < 0.4 || mrf.Sin > 0.3 {
+	if mrf == nil || mrf.Faith < 0.4 || mrf.Sin >= 0.5 {
 		return -1
 	} else {
 		return mrf.Action
@@ -125,4 +127,16 @@ func (r *CattyRole) nextPos(pos f.Position) f.Position {
 	} else {
 		return f.Position { X: pos.X + r.obs.State.Params.TankSpeed, Y: pos.Y }
 	}
+}
+
+// 不要追击有援军的敌人
+func (r *CattyRole) canHunt(tank f.Tank) bool {
+	x := tank.Pos.X
+	y := tank.Pos.Y
+	for _, emytank := range r.obs.EmyTank {
+		if int(math.Abs(float64(emytank.Pos.X - x))) < r.obs.State.Params.BulletSpeed && int(math.Abs(float64(emytank.Pos.Y - y))) < r.obs.State.Params.BulletSpeed {
+			return false
+		}
+	}
+	return true
 }
