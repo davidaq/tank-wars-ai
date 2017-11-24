@@ -87,7 +87,7 @@ func (self *Brute) Plan(state *f.GameState, radar *f.RadarResult, objective map[
 			fireForest[f.Position { X: tank.Pos.X, Y: tank.Pos.Y + 1}] = FireForest { tank.Id, f.ActionFireDown }
 			faith := 0.
 			var pfire *f.RadarFire
-			if radar.DodgeBullet[tank.Id].Threat > 0.2 {
+			if radar.DodgeBullet[tank.Id].Threat > 0. {
 				faith = 0.7
 			}
 			for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
@@ -100,8 +100,13 @@ func (self *Brute) Plan(state *f.GameState, radar *f.RadarResult, objective map[
 				}
 			}
 			if pfire != nil {
-				objective[tank.Id] = f.Objective {
-					Action: pfire.Action,
+				dodgeRadar := radar.DodgeBullet[tank.Id]
+				if objective[tank.Id].Action != f.ActionTravelWithDodge || dodgeRadar.Threat < 0.7 {
+					if dodgeRadar.Threat < 0 || pfire.Faith > 0.7 {
+						objective[tank.Id] = f.Objective {
+							Action: pfire.Action,
+						}
+					}
 				}
 			}
 		}
@@ -152,6 +157,9 @@ func (self *Brute) PlanKill(state *f.GameState, radar *f.RadarResult, objective 
 	if self.round < state.Params.MaxRound / 3 {
 		return false
 	}
+	if self.round < state.Params.MaxRound / 2 && len(state.MyTank) > len(state.EnemyTank) {
+		// return false
+	}
 	sumX := 0
 	sumY := 0
 	count := 0
@@ -181,7 +189,7 @@ func (self *Brute) PlanKill(state *f.GameState, radar *f.RadarResult, objective 
 	least := 0
 	var ttank *f.Tank
 	for _, tank := range state.EnemyTank {
-		if away := tank.Pos.SDist(eAvg); away > state.Params.TankSpeed {
+		if away := tank.Pos.SDist(eAvg); away > state.Params.TankSpeed || len(state.EnemyTank) == 1 {
 			d := tank.Pos.SDist(mAvg) - away
 			if ttank == nil || d < least {
 				least = d
@@ -189,12 +197,15 @@ func (self *Brute) PlanKill(state *f.GameState, radar *f.RadarResult, objective 
 			}
 		}
 	}
+	if len(state.EnemyTank) == 1 && len(state.MyTank) > 1 {
+		return false
+	}
 	if ttank == nil {
 		return false
 	}
 	for _, tank := range state.MyTank {
 		travel := f.ActionTravel
-		if radar.Dodge[tank.Id].Threat > 0.9 || radar.DodgeBullet[tank.Id].Threat > 0.2 || tank.Bullet != "" {
+		if radar.Dodge[tank.Id].Threat > 0.9 || radar.DodgeBullet[tank.Id].Threat > 0. || tank.Bullet != "" {
 			travel = f.ActionTravelWithDodge
 		}
 		// dx := ttank.Pos.X - tank.Pos.X
@@ -251,7 +262,7 @@ func (self *Brute) PlanFarShoot(state *f.GameState, radar *f.RadarResult, object
 	avgY := sumY / count
 	for _, tank := range state.MyTank {
 		travel := f.ActionTravel
-		if radar.Dodge[tank.Id].Threat > 0.9 || radar.DodgeBullet[tank.Id].Threat > 0.2 || tank.Bullet != "" {
+		if radar.Dodge[tank.Id].Threat > 0.9 || radar.DodgeBullet[tank.Id].Threat > 0. || tank.Bullet != "" {
 			travel = f.ActionTravelWithDodge
 		} else if radar.Dodge[tank.Id].Threat < 0.1 && tank.Bullet == "" {
 			fireRadar := radar.Fire[tank.Id]
@@ -291,7 +302,7 @@ func (self *Brute) PlanCatchFlag(state *f.GameState, radar *f.RadarResult, objec
 		travel := f.ActionTravel
 
 		if rand.Int() % 3 == 0 {
-			if radar.Dodge[tank.Id].Threat > 0.9 || radar.DodgeBullet[tank.Id].Threat > 0.2 {
+			if radar.Dodge[tank.Id].Threat > 0.9 || radar.DodgeBullet[tank.Id].Threat > 0. {
 				travel = f.ActionTravelWithDodge
 			}
 		}
