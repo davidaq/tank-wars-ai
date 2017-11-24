@@ -2,7 +2,7 @@ package tactics
 
 import (
 	f "framework"
-	"fmt"
+	// "fmt"
 )
 
 type Fox struct {
@@ -45,26 +45,26 @@ func (self *Fox) Init(state *f.GameState) {
 func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
 	n := 0
 	checker := false
-	tankGroupANum := 0
-	tankGroupBNum := 0
 
 	// 分组存活判断
+	tempTankGroupA := make(map[string]f.Tank)
+	tempTankGroupB := make(map[string]f.Tank)
 	for _, tank := range state.MyTank {
 		if _, ok := self.tankGroupA[tank.Id]; ok {
-			tankGroupANum++
+			tempTankGroupA[tank.Id] = tank
 		}
 		if _, ok := self.tankGroupB[tank.Id]; ok {
-			tankGroupBNum++
+			tempTankGroupB[tank.Id] = tank
 		}
 	}
-
-	fmt.Println("A:",tankGroupANum, "B:",tankGroupBNum)
+	self.tankGroupA = tempTankGroupA
+	self.tankGroupB = tempTankGroupB
 
 	tankloop: for _, tank := range state.MyTank {
 		n++
 
 		// 动态分组
-		if tankGroupANum <= 1 && tankGroupBNum <= 1 && len(state.MyTank) <= len(state.EnemyTank) {
+		if len(self.tankGroupA) <= 1 && len(self.tankGroupB) <= 1 {
 			self.tankGroupB[tank.Id] = tank
 			delete(self.tankGroupA, tank.Id)
 		}
@@ -103,7 +103,7 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 		// }
 
 		// if _, ok := self.tankGroupB[tank.Id]; ok {
-		// 	if radar.DodgeBullet[tank.Id].Threat > 0.7 {
+		// 	if radar.DodgeBullet[tank.Id].Threat > 0.2 {
 		// 		objective[tank.Id] = f.Objective {
 		// 			Action: f.ActionTravel,
 		// 			Target: radar.DodgeBullet[tank.Id].SafePos,
@@ -111,6 +111,13 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 		// 		continue tankloop
 		// 	}
 		// }
+		if radar.DodgeBullet[tank.Id].Threat > 0.2 {
+			objective[tank.Id] = f.Objective {
+				Action: f.ActionTravel,
+				Target: radar.DodgeBullet[tank.Id].SafePos,
+			}
+			continue tankloop
+		}
 
 		// 无子弹躲避
 		if tank.Bullet != "" {
@@ -172,7 +179,7 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 			// Stalker
 			// for _, etank := range state.EnemyTank {
 			// 	dist := abs(tank.Pos.X - etank.Pos.X) + abs(tank.Pos.Y - etank.Pos.Y)
-			// 	if dist < least {
+			// 	if dist > furthest {
 			// 		ttank = &etank
 			// 		least = dist
 			// 	}
@@ -180,36 +187,37 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 			// if ttank != nil {
 			// 	resPos := ttank.Pos
 			// 	mid := state.Terain.Width/2
+			// 	dis := state.Params.BulletSpeed * 2+1
 			// 	targetQuadrant := caculateQuadrant(mid, ttank.Pos)
 			// 	switch targetQuadrant {
 			// 	case 0:
 			// 		break
 			// 	case 1:
 			// 		if !checker {
-			// 			resPos.X -= mid
+			// 			resPos.X -= dis
 			// 		} else {
-			// 			resPos.Y += mid
+			// 			resPos.Y += dis
 			// 		}
 			// 		checker = true
 			// 	case 2:
 			// 		if !checker {
-			// 			resPos.X += mid
+			// 			resPos.X += dis
 			// 		} else {
-			// 			resPos.Y += mid
+			// 			resPos.Y += dis
 			// 		}
 			// 		checker = true
 			// 	case 3:
 			// 		if !checker {
-			// 			resPos.X += mid
+			// 			resPos.X += dis
 			// 		} else {
-			// 			resPos.Y -= mid
+			// 			resPos.Y -= dis
 			// 		}
 			// 		checker = true
 			// 	case 4:
 			// 		if !checker {
-			// 			resPos.X -= mid
+			// 			resPos.X -= dis
 			// 		} else {
-			// 			resPos.Y -= mid
+			// 			resPos.Y -= dis
 			// 		}
 			// 		checker = true
 			// 	}
@@ -316,7 +324,7 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 
 		// 夺旗
 		if len(self.tankGroupA) > 0 {
-			if state.FlagWait <= 8 {
+			if state.FlagWait <= 5 {
 				if _, ok := self.tankGroupA[tank.Id]; ok {
 					objective[tank.Id] = f.Objective {
 						Action: f.ActionTravel,
@@ -325,7 +333,7 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 				}
 			}
 		} else {
-			if state.FlagWait <= 8 {
+			if state.FlagWait <= 5 {
 				if _, ok := self.tankGroupB[tank.Id]; ok {
 					objective[tank.Id] = f.Objective {
 						Action: f.ActionTravel,
