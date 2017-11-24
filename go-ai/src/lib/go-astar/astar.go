@@ -19,7 +19,7 @@ type AStar interface {
     // enforces it).
     // The start of the path is returned to you. If no path exists then the function will
     // return nil as the path.
-    FindPath(config AStarConfig, source, target []Point, movelen int, startdir int) *PathPoint
+    FindPath(config AStarConfig, source, target []Point, movelen int, startdir int, threat map[Point]float64) *PathPoint
 
     // Clone a new instance
     Clone() AStar
@@ -82,7 +82,7 @@ func (a *gridStruct) ClearTile(p Point) {
     delete(a.filledTiles, p)
 }
 
-func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movelen int, startdir int) *PathPoint {
+func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movelen int, startdir int, threat map[Point]float64) *PathPoint {
     var openList = make(map[Point]*PathPoint)
     var closeList = make(map[Point]*PathPoint)
     stepsLimit := a.rows + a.cols
@@ -165,14 +165,14 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movele
             pdirection = startdir
         }
 
-        surrounding := a.getSurrounding(current.Point, movelen)
+        surrounding, surrWeight := a.getSurrounding(current.Point, movelen, threat)
 
-        for _, p := range surrounding {
+        for si, p := range surrounding {
             if _, ok := closeList[p]; ok {
                 continue
             }
 
-            fill_weight := a.filledTiles[p]
+            fill_weight := a.filledTiles[p] + surrWeight[si]
             if current.Point.Row == p.Row {
                 step := -1
                 if p.Col > current.Point.Col {
@@ -255,58 +255,71 @@ func (a *gridStruct) getMinWeight(openList map[Point]*PathPoint) *PathPoint {
     return min
 }
 
-func (a *gridStruct) getSurrounding(p Point, movelen int) []Point {
+func (a *gridStruct) getSurrounding(p Point, movelen int, threat map[Point]float64) ([]Point, []int) {
     var surrounding []Point
-    row, col, v := p.Row, p.Col, -1
+    var extWeight []int
+    row, col, v, thr := p.Row, p.Col, -1, 0.
 
     v = -1
+    thr = 0.
     for i := 1; i <= movelen; i++ {
         trow := row - i
         if trow < 0 || a.filledTiles[Point{trow, col}] == -1 {
             break
         }
+        thr += threat[Point{trow, col}]
         v = trow
     }
-    if v >= 0 {
+    if v >= 0 && thr < 0.7 {
         surrounding = append(surrounding, Point{v, col})
+        extWeight = append(extWeight, int(thr * 10))
     }
 
     v = -1
+    thr = 0.
     for i := 1; i <= movelen; i++ {
         trow := row + i
         if trow >= a.rows || a.filledTiles[Point{trow, col}] == -1 {
             break
         }
+        thr += threat[Point{trow, col}]
         v = trow
     }
-    if v >= 0 {
+    if v >= 0 && thr < 0.7 {
         surrounding = append(surrounding, Point{v, col})
+        extWeight = append(extWeight, int(thr * 10))
     }
 
     v = -1
+    thr = 0.
     for i := 1; i <= movelen; i++ {
         tcol := col - i
         if tcol < 0 || a.filledTiles[Point{row, tcol}] == -1 {
             break
         }
+        thr += threat[Point{row, tcol}]
         v = tcol
     }
-    if v >= 0 {
+    if v >= 0 && thr < 0.7 {
         surrounding = append(surrounding, Point{row, v})
+        extWeight = append(extWeight, int(thr * 10))
     }
 
     v = -1
+    thr = 0.
     for i := 1; i <= movelen; i++ {
         tcol := col + i
         if tcol >= a.cols || a.filledTiles[Point{row, tcol}] == -1 {
             break
         }
+        thr += threat[Point{row, tcol}]
         v = tcol
     }
-    if v >= 0 {
+    if v >= 0 && thr < 0.7 {
         surrounding = append(surrounding, Point{row, v})
+        extWeight = append(extWeight, int(thr * 10))
     }
-    return surrounding
+    return surrounding, extWeight
 }
 
 type Point struct {

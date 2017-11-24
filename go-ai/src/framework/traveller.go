@@ -62,7 +62,7 @@ func (self *Traveller) CollidedTankInForest(state *GameState) []Position {
 	return ret
 }
 
-func (self *Traveller) Search(travel map[string]*Position, state *GameState, movements map[string]int) {
+func (self *Traveller) Search(travel map[string]*Position, state *GameState, threat map[Position]float64, movements map[string]int) {
 	maxPathCalc := 9
 	self.round++
 	if self.astar == nil {
@@ -111,6 +111,12 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 		}
 	}
 	firstColide := true
+	aThreat := make(map[astar.Point]float64)
+	for p, v := range threat {
+		if v > 0 {
+			aThreat[astar.Point { Col: p.X, Row: p.Y }] = v	
+		}
+	}
 	for _, tank := range myTanks {
 		id := tank.Id
 		from := tank.Pos
@@ -125,9 +131,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 			}
 			lock.Unlock()
 			if from.X != to.X || from.Y != to.Y {
-				if cache.target.X != to.X || cache.target.Y != to.Y || self.round - cache.round > 4 {
-					cache.path = nil
-				}
+				cache.path = nil
 				cache.target = to
 				if cache.expect != nil {
 					lock.Lock()
@@ -157,7 +161,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 					}
 					lock.Unlock()
 					if allowCalc {
-						cache.path = self.path(a, from, to, state.Params.TankSpeed, state.Terain)
+						cache.path = self.path(a, from, to, state.Params.TankSpeed, state.Terain, aThreat)
 						for len(cache.path) > 0 {
 							p := cache.path[0]
 							if p.X == from.X && p.Y == from.Y {
@@ -180,16 +184,28 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 			lock.Lock()
 			if action == ActionMove {
 				p := Position { Y: from.Y, X: from.X }
+				dx, dy := 0, 0
 				if nextPoint.Y > from.Y {
 					p.Y++
+					dy = 1
 				} else if nextPoint.Y < from.Y {
 					p.Y--
+					dy = -1
 				} else if nextPoint.X > from.X {
 					p.X++
+					dx = 1
 				} else if nextPoint.X < from.X {
 					p.X--
+					dx = -1
 				}
-				if _, exists := occupy[p]; exists {
+				thr := 0.
+				for i := 1; i <= state.Params.TankSpeed; i++ {
+					thr += threat[Position { X: p.X + i * dx, Y: p.Y + i * dy}]
+				}
+				if thr > 0.7 {
+					action = ActionStay
+					p = Position { Y: from.Y, X: from.X }
+				} else if _, exists := occupy[p]; exists {
 					action = ActionStay
 					if firstColide {
 						cache.path = nil
@@ -215,13 +231,13 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, mov
 	}
 }
 
-func (self *Traveller) path(a astar.AStar, source Position, target Position, movelen int, terain *Terain) []Position {
+func (self *Traveller) path(a astar.AStar, source Position, target Position, movelen int, terain *Terain, threat map[astar.Point]float64) []Position {
 	p2p := astar.NewPointToPoint()
 
 	sourcePoint := []astar.Point{ astar.Point{ Row: source.Y, Col: source.X } }
 	targetPoint := []astar.Point{ astar.Point{ Row: target.Y, Col: target.X } }
 
-	p := a.FindPath(p2p, targetPoint, sourcePoint, movelen, source.Direction)
+	p := a.FindPath(p2p, targetPoint, sourcePoint, movelen, source.Direction, threat)
 	
 	var ret []Position
 	for p != nil {
