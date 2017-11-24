@@ -51,6 +51,7 @@ func (self *Player) Play(state *GameState) map[string]int {
 			self.rotated = true
 		}
 	}
+	// 自动翻转
 	if self.rotated {
 		state.Terain = self.rotateTerain(state.Terain, state)
 		state.MyTank = self.rotateTank(state.MyTank, state)
@@ -58,6 +59,7 @@ func (self *Player) Play(state *GameState) map[string]int {
 		state.MyBullet = self.rotateBullet(state.MyBullet, state)
 		state.EnemyBullet = self.rotateBullet(state.EnemyBullet, state)
 	}
+	// 预测旗子等待时间
 	if state.FlagWait > 0 {
 		state.FlagWait = 999999
 		if self.round <= state.Params.MaxRound / 2 {
@@ -66,7 +68,7 @@ func (self *Player) Play(state *GameState) map[string]int {
 			}
 		} else if self.firstFlagGenerated {
 			if self.nextFlag == 0 {
-				base := (state.Params.MaxRound / 2 / self.initTank + 1)
+				base := state.Params.MaxRound / 2 / self.initTank + 1
 				self.nextFlag = ((self.round - state.Params.MaxRound / 2) / base + 1) * base + state.Params.MaxRound / 2
 			}
 			state.FlagWait = self.nextFlag - self.round

@@ -184,16 +184,28 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 			lock.Lock()
 			if action == ActionMove {
 				p := Position { Y: from.Y, X: from.X }
+				dx, dy := 0, 0
 				if nextPoint.Y > from.Y {
 					p.Y++
+					dy = 1
 				} else if nextPoint.Y < from.Y {
 					p.Y--
+					dy = -1
 				} else if nextPoint.X > from.X {
 					p.X++
+					dx = 1
 				} else if nextPoint.X < from.X {
 					p.X--
+					dx = -1
 				}
-				if _, exists := occupy[p]; exists {
+				thr := 0.
+				for i := 1; i <= state.Params.TankSpeed; i++ {
+					thr += threat[Position { X: p.X + i * dx, Y: p.Y + i * dy}]
+				}
+				if thr > 0.7 {
+					action = ActionStay
+					p = Position { Y: from.Y, X: from.X }
+				} else if _, exists := occupy[p]; exists {
 					action = ActionStay
 					if firstColide {
 						cache.path = nil

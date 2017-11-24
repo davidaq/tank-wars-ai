@@ -2,6 +2,7 @@
 package framework
 
 import (
+	"fmt"
 )
 
 type Diff struct {
@@ -395,7 +396,59 @@ func searchForest(preState *GameState, watchList *ObservationList, state *GameSt
 	}
 }
 
+func missingBullet (prevBullet []Bullet, newBullet []Bullet, state *GameState) []Bullet {
+	newSet := make(map[string]bool)
+	for _, b := range newBullet {
+		newSet[b.Id] = true
+	}
+	selfTank := make(map[Position]bool)
+	for _, tank := range state.MyTank {
+		pos := tank.Pos
+		pos.Direction = DirectionNone
+		selfTank[pos] = true
+	}
+	for _, b := range prevBullet {
+		if !newSet[b.Id] {
+			pos := b.Pos
+			pos.Direction = DirectionNone
+			maybeAlive := true
+			for i := 0; i < state.Params.BulletSpeed; i++ {
+				switch b.Pos.Direction {
+				case DirectionUp:
+					pos.Y--
+				case DirectionDown:
+					pos.Y++
+				case DirectionLeft:
+					pos.X++
+				case DirectionRight:
+					pos.X--
+				}
+				if state.Terain.Get(pos.X, pos.Y) == 1 || selfTank[pos] {
+					maybeAlive = false
+				}
+			}
+			if maybeAlive && state.Terain.Get(pos.X, pos.Y) == 2 {
+				nb := b
+				pos.Direction = b.Pos.Direction
+				nb.Pos = pos
+				newBullet = append(newBullet, nb)
+				fmt.Println("fill forest bullet", nb.Pos)
+			}
+		}
+	}
+	return newBullet
+}
+
+func (self *Diff) patchForestBullet (newState *GameState) {
+	if self.prevState == nil {
+		return;
+	}
+	newState.MyBullet = missingBullet(self.prevState.MyBullet, newState.MyBullet, self.prevState)
+	newState.EnemyBullet = missingBullet(self.prevState.EnemyBullet, newState.EnemyBullet, self.prevState)
+}
+
 func (self *Diff) Compare(newState *GameState, collidedEnemyInForest[]Position) *DiffResult {
+	self.patchForestBullet(newState)
 	ret := &DiffResult {
 		ForestThreat: make(map[Position]float64),
 	}
