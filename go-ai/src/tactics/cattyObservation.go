@@ -18,7 +18,8 @@ type Observation struct {
     EmyTank      map[string]f.Tank // 敌方存活坦克
     Flag         Flag
 	Terain       *f.Terain
-	ShotPos    map[f.Position]string
+	ShotPos      map[f.Position]string
+	Q            int   // 安全系数 Q * bulletspeed
 }
 
 type Flag struct {
@@ -29,6 +30,8 @@ type Flag struct {
 
 func NewObservation(state *f.GameState) (obs *Observation) {
     obs = &Observation{ TotalSteps: state.Params.MaxRound, Steps: 0, State: state, Terain: state.Terain}
+
+	obs.Q = 1
 
     // 观察坦克
     obs.observeTank()
@@ -54,6 +57,12 @@ func (o *Observation) makeObservation(state *f.GameState, radar *f.RadarResult, 
 
 	// 观察地图
 	o.observeTerain()
+
+	if len(o.MyTank) < len(o.EmyTank) {
+		o.Q = 2
+	} else {
+		o.Q = 1
+	}
 
 	// 观察适合射击的地点
 	o.observeShotPos()
@@ -100,20 +109,20 @@ func (o *Observation) observeShotPos() {
 	for _, tank := range o.EmyTank {
 		for i := o.State.Params.BulletSpeed; i > 0; i-- {
 	        if tank.Pos.Direction == f.DirectionUp || tank.Pos.Direction == f.DirectionDown {
-				pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y + o.State.Params.BulletSpeed + i + 2}
+				pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y + o.State.Params.BulletSpeed * (o.Q+1) + i + 2}
 				if o.reachable(pos) {
 					o.ShotPos[pos] = tank.Id
 				}
-				pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y - o.State.Params.BulletSpeed - i - 2}
+				pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y - o.State.Params.BulletSpeed * o.Q - i - 2}
 				if o.reachable(pos) {
 					o.ShotPos[pos] = tank.Id
 				}
 	        } else {
-				pos = f.Position { X: tank.Pos.X + o.State.Params.BulletSpeed+ i + 2, Y: tank.Pos.Y}
+				pos = f.Position { X: tank.Pos.X + o.State.Params.BulletSpeed * (o.Q+1) + i + 2, Y: tank.Pos.Y}
 				if o.reachable(pos) {
 					o.ShotPos[pos] = tank.Id
 				}
-				pos = f.Position { X: tank.Pos.X - o.State.Params.BulletSpeed - i - 2, Y: tank.Pos.Y}
+				pos = f.Position { X: tank.Pos.X - o.State.Params.BulletSpeed * o.Q - i - 2, Y: tank.Pos.Y}
 				if o.reachable(pos) {
 					o.ShotPos[pos] = tank.Id
 				}
