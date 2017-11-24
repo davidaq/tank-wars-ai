@@ -64,8 +64,7 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 		n++
 
 		// 动态分组
-		fmt.Println(tankGroupANum <= 1 && tankGroupBNum <= 1 && len(state.MyTank) <= len(state.EnemyTank))
-		if tankGroupANum < 1 && tankGroupBNum < 1 && len(state.MyTank) <= len(state.EnemyTank) {
+		if tankGroupANum <= 1 && tankGroupBNum <= 1 && len(state.MyTank) <= len(state.EnemyTank) {
 			self.tankGroupB[tank.Id] = tank
 			delete(self.tankGroupA, tank.Id)
 		}
@@ -93,13 +92,25 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 		}
 
 		// 子弹躲避
-		if radar.DodgeBullet[tank.Id].Threat > 0.15 {
-			objective[tank.Id] = f.Objective {
-				Action: f.ActionTravel,
-				Target: radar.DodgeBullet[tank.Id].SafePos,
-			}
-			continue tankloop
-		}
+		// if _, ok := self.tankGroupA[tank.Id]; ok {
+		// 	if radar.DodgeBullet[tank.Id].Threat > 0.2 {
+		// 		objective[tank.Id] = f.Objective {
+		// 			Action: f.ActionTravel,
+		// 			Target: radar.DodgeBullet[tank.Id].SafePos,
+		// 		}
+		// 		continue tankloop
+		// 	}
+		// }
+
+		// if _, ok := self.tankGroupB[tank.Id]; ok {
+		// 	if radar.DodgeBullet[tank.Id].Threat > 0.7 {
+		// 		objective[tank.Id] = f.Objective {
+		// 			Action: f.ActionTravel,
+		// 			Target: radar.DodgeBullet[tank.Id].SafePos,
+		// 		}
+		// 		continue tankloop
+		// 	}
+		// }
 
 		// 无子弹躲避
 		if tank.Bullet != "" {
@@ -314,7 +325,7 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 				}
 			}
 		} else {
-			if state.FlagWait <= 5 {
+			if state.FlagWait <= 8 {
 				if _, ok := self.tankGroupB[tank.Id]; ok {
 					objective[tank.Id] = f.Objective {
 						Action: f.ActionTravel,
