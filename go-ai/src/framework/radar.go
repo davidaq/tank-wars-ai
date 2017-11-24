@@ -452,6 +452,9 @@ func (self *Radar) convertQuadrant(state *GameState, bulletApproach bool, bullet
 // 检查自己当前的位置以及面朝方向前进的位置周围是否安全
 // 检查每个坦克四周开火命中率与代价
 func (self *Radar) Scan(state *GameState, diff *DiffResult) *RadarResult {
+	// 首先进行全图扫描
+	fullmapThreat := self.fullMapThreat(state)
+
 	// 躲避炮弹，炮弹还有几步打到
 	bulletApproach, bullets := self.avoidBullet(state)
 
@@ -490,6 +493,7 @@ func (self *Radar) Scan(state *GameState, diff *DiffResult) *RadarResult {
 		Bullet: make(map[string][]BulletThreat),
 		Enemy: make(map[string][]EnemyThreat),
 		ExtDangerSrc: make(map[string][]ExtDangerSrc),
+		FullMapThreat: make(map[Position]float64),
 	}
 	for _, tank := range state.MyTank {
 		if atk, ok := attack[tank.Id]; ok {
@@ -502,5 +506,6 @@ func (self *Radar) Scan(state *GameState, diff *DiffResult) *RadarResult {
 		ret.Enemy[tank.Id] = enemy[tank.Id]
 		ret.ExtDangerSrc[tank.Id] = extDangerSrc[tank.Id]
 	}
+	ret.FullMapThreat = fullmapThreat
 	return ret
 }
