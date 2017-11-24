@@ -54,13 +54,13 @@ func (self *Nearest) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 			p := ttank.Pos
 			switch p.Direction {
 			case f.DirectionUp:
-				p.Y--
+				p.Y -= state.Params.TankSpeed
 			case f.DirectionDown:
-				p.Y++
+				p.Y += state.Params.TankSpeed
 			case f.DirectionLeft:
-				p.X--
+				p.X -= state.Params.TankSpeed
 			case f.DirectionRight:
-				p.X++
+				p.X += state.Params.TankSpeed
 			}
 			objective[tank.Id] = f.Objective {
 				Action: travel,

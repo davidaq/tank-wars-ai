@@ -89,6 +89,7 @@ func (self *Player) Play(state *GameState) map[string]int {
 	radarResult := self.radar.Scan(state, diff)
 	radarResult.ForestThreat = diff.ForestThreat
 	self.tactics.Plan(state, radarResult, self.objectives)
+	self.forestColideShoot(state, radarResult, self.objectives)
 
 	movement := make(map[string]int)
 	travel := make(map[string]*Position)
@@ -226,6 +227,31 @@ func (self *Player) Play(state *GameState) map[string]int {
 	elapsed := time.Since(start)
 	fmt.Println("Play function took ", elapsed)
 	return movement
+}
+
+func (self *Player) forestColideShoot(state *GameState, radar *RadarResult, objective map[string]Objective) {
+	type FireForest struct {
+		tankId string
+		action int
+	}
+	fireForest := make(map[Position]FireForest)
+	for _, tank := range state.MyTank {
+		if tank.Bullet == "" {
+			fireForest[Position { X: tank.Pos.X - 1, Y: tank.Pos.Y }] = FireForest { tank.Id, ActionFireLeft }
+			fireForest[Position { X: tank.Pos.X + 1, Y: tank.Pos.Y }] = FireForest { tank.Id, ActionFireRight }
+			fireForest[Position { X: tank.Pos.X, Y: tank.Pos.Y - 1 }] = FireForest { tank.Id, ActionFireUp }
+			fireForest[Position { X: tank.Pos.X, Y: tank.Pos.Y + 1}] = FireForest { tank.Id, ActionFireDown }
+		}
+	}
+	for position, posibility := range radar.ForestThreat {
+		if posibility > 0.9 {
+			if fire, ok := fireForest[Position { X: position.X, Y: position.Y }]; ok {
+				objective[fire.tankId] = Objective {
+					Action: fire.action,
+				}
+			}
+		}
+	}
 }
 
 func (self *Player) End(state *GameState) {

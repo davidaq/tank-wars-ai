@@ -16,6 +16,19 @@ func NewFox() *Fox {
 	}
 }
 
+func caculateQuadrant (mid int, pos f.Position) int {
+	if pos.X > mid && pos.Y < mid {
+		return 1
+	} else if pos.X < mid && pos.Y < mid {
+		return 2
+	} else if pos.X < mid && pos.Y > mid {
+		return 3
+	} else if pos.X > mid && pos.Y > mid {
+		return 4
+	}
+	return 0
+}
+
 func (self *Fox) Init(state *f.GameState) {
 	i:=0
 	for _, tank := range state.MyTank {
@@ -30,9 +43,10 @@ func (self *Fox) Init(state *f.GameState) {
 
 func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
 	n := 0
+	checker := false
 	tankloop: for _, tank := range state.MyTank {
 		n++
-		// 躲避
+		// 子弹躲避
 		if radar.DodgeBullet[tank.Id].Threat > 0.7 {
 			objective[tank.Id] = f.Objective {
 				Action: f.ActionTravel,
@@ -70,19 +84,10 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 			continue tankloop
 		}
 
-		// 躲避
-		// if radar.DodgeEnemy[tank.Id].Threat > 0.9 {
-		// 	objective[tank.Id] = f.Objective {
-		// 		Action: f.ActionTravel,
-		// 		Target: radar.DodgeBullet[tank.Id].SafePos,
-		// 	}
-		// 	continue tankloop
-		// }
-
 		// 寻路
-		// least := 99999
+		least := 99999
 		// furthest := -99999
-		// var ttank *f.Tank
+		var ttank *f.Tank
 		distance := state.Terain.Width/6
 		patrolPos := []f.Position{
 			{ X: state.Terain.Width/2-distance, Y: state.Terain.Height/2 },
@@ -118,6 +123,56 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 			// 		Target: patrolPos[n%4],
 			// 	}
 			// }
+
+			// Stalker
+			// for _, etank := range state.EnemyTank {
+			// 	dist := abs(tank.Pos.X - etank.Pos.X) + abs(tank.Pos.Y - etank.Pos.Y)
+			// 	if dist < least {
+			// 		ttank = &etank
+			// 		least = dist
+			// 	}
+			// }
+			// if ttank != nil {
+			// 	resPos := ttank.Pos
+			// 	mid := state.Terain.Width/2
+			// 	targetQuadrant := caculateQuadrant(mid, ttank.Pos)
+			// 	switch targetQuadrant {
+			// 	case 0:
+			// 		break
+			// 	case 1:
+			// 		if !checker {
+			// 			resPos.X -= mid
+			// 		} else {
+			// 			resPos.Y += mid
+			// 		}
+			// 		checker = true
+			// 	case 2:
+			// 		if !checker {
+			// 			resPos.X += mid
+			// 		} else {
+			// 			resPos.Y += mid
+			// 		}
+			// 		checker = true
+			// 	case 3:
+			// 		if !checker {
+			// 			resPos.X += mid
+			// 		} else {
+			// 			resPos.Y -= mid
+			// 		}
+			// 		checker = true
+			// 	case 4:
+			// 		if !checker {
+			// 			resPos.X -= mid
+			// 		} else {
+			// 			resPos.Y -= mid
+			// 		}
+			// 		checker = true
+			// 	}
+			// 	objective[tank.Id] = f.Objective {
+			// 		Action: f.ActionTravel,
+			// 		Target: resPos,
+			// 	}	
+			// }
 		}
 		// 战斗B组
 		if _, ok := self.tankGroupB[tank.Id]; ok {
@@ -137,17 +192,82 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 			// }
 
 			// flagPartol
-			objective[tank.Id] = f.Objective {
-				Action: f.ActionTravel,
-				Target: patrolPos[(n-1)%4],
-			}
+			// objective[tank.Id] = f.Objective {
+			// 	Action: f.ActionTravel,
+			// 	Target: patrolPos[(n-1)%4],
+			// }
 			// if radar.DodgeEnemy[tank.Id].Threat > 0.9 {
 			// 	objective[tank.Id] = f.Objective {
 			// 		Action: f.ActionTravel,
 			// 		Target: patrolPos[n%4],
 			// 	}
 			// }
+
+			// Stalker
+			for _, etank := range state.EnemyTank {
+				dist := abs(tank.Pos.X - etank.Pos.X) + abs(tank.Pos.Y - etank.Pos.Y)
+				if dist < least {
+					ttank = &etank
+					least = dist
+				}
+			}
+			if ttank != nil {
+				resPos := ttank.Pos
+				mid := state.Terain.Width/2
+				dis := state.Params.BulletSpeed * 3+1
+				targetQuadrant := caculateQuadrant(mid, ttank.Pos)
+				switch targetQuadrant {
+				case 0:
+					break
+				case 1:
+					if !checker {
+						resPos.X -= dis
+					} else {
+						resPos.Y += dis
+					}
+					checker = true
+				case 2:
+					if !checker {
+						resPos.X += dis
+					} else {
+						resPos.Y += dis
+					}
+					checker = true
+				case 3:
+					if !checker {
+						resPos.X += dis
+					} else {
+						resPos.Y -= dis
+					}
+					checker = true
+				case 4:
+					if !checker {
+						resPos.X -= dis
+					} else {
+						resPos.Y -= dis
+					}
+					checker = true
+				}
+				objective[tank.Id] = f.Objective {
+					Action: f.ActionTravel,
+					Target: resPos,
+				}
+				// if abs(tank.Pos.X - ttank.Pos.X) < mid ||	abs(tank.Pos.Y - ttank.Pos.Y) < mid {
+				// 	objective[tank.Id] = f.Objective {
+				// 		Action: f.ActionTravel,
+				// 		Target: patrolPos[(n-1)%4],
+				// 	}
+				// }
+			}
 		}
+
+		// 坦克躲避
+		// if radar.Dodge[tank.Id].Threat == 1 {
+		// 	objective[tank.Id] = f.Objective {
+		// 		Action: f.ActionTravel,
+		// 		Target: radar.Dodge[tank.Id].SafePos,
+		// 	}
+		// }
 
 		// 夺旗
 		if len(self.tankGroupA) > 0 {

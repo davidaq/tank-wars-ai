@@ -35,28 +35,17 @@ func (c *Catty) Plan(state *f.GameState, radar *f.RadarResult, objective map[str
             role.occupyFlag()
             continue
         }
-        if role.Target.Tank == (f.Tank{}) || role.Target.Pos == (f.Position{}) {
+        if role.Target.Tank == (f.Tank{}) && role.Target.Pos == (f.Position{}) {
             role.hunt()
-			if role.Target.Tank != (f.Tank{}) && role.Target.Pos == (f.Position{}) {
-				role.refreshTarget()
-			}
         }
-
-        // role.refreshTarget()
 
         fmt.Printf("catty role target: %+v\n", role.Target)
 
 		if role.Tank.Bullet != "" || !role.checkDone() {
-			role.refreshTarget()
 			role.move()
 		} else {
 			role.act()
 		}
-        // if role.checkDone() {
-		// 	role.act()
-		// } else {
-		// 	role.move()
-		// }
     }
     fmt.Printf("catty objective: %+v\n", c.obs.Objs)
 }
@@ -66,6 +55,7 @@ func (c *Catty) updateRole() {
 		if c.obs.MyTank[id] != (f.Tank{}) {
 			role.Tank  = c.obs.MyTank[id]
             role.Dodge = c.obs.Radar.Dodge[id]
+			// role.Dodge = c.obs.Radar.DodgeBullet[id]
             role.Fire  = c.obs.Radar.Fire[id]
 		} else {
 			delete(c.Roles, id)
