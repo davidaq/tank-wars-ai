@@ -604,6 +604,14 @@ func (self *Radar) calcDodge(moveUrgent map[string]map[int]int, threat map[strin
             }
         }
 
+        // 如果为max则停止执行
+        if threat[tankId] == MAX {
+            radarDodge[tankId] = RadarDodge{
+                Threat:  0,
+                SafePos: Position{},
+            }
+            continue
+        }
 
         // 先直接选最高的策略
         // 最高策略的下一步行进位置
