@@ -341,22 +341,22 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 					if faith < radarFireAlls[tank.Id].Up.Faith {
 						continue
 					}
-					radarFireAlls[tank.Id].Up = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireUp}
+					radarFireAlls[tank.Id].Up = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireUp, IsStraight: false}
 				case DirectionLeft:
 					if faith < radarFireAlls[tank.Id].Left.Faith {
 						continue
 					}
-					radarFireAlls[tank.Id].Left = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireLeft}
+					radarFireAlls[tank.Id].Left = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireLeft, IsStraight: false}
 				case DirectionDown:
 					if faith < radarFireAlls[tank.Id].Down.Faith {
 						continue
 					}
-					radarFireAlls[tank.Id].Down = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireDown}
+					radarFireAlls[tank.Id].Down = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireDown, IsStraight: false}
 				case DirectionRight:
 					if faith < radarFireAlls[tank.Id].Right.Faith {
 						continue
 					}
-					radarFireAlls[tank.Id].Right = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireRight}
+					radarFireAlls[tank.Id].Right = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireRight, IsStraight: false}
 				}
 			}
 
@@ -379,13 +379,13 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 					cost = int(math.Ceil(float64(cost) / float64(state.Params.BulletSpeed)))					
 					switch realDirection {
 					case DirectionUp:
-						radarFireAlls[tank.Id].Up = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireUp}
+						radarFireAlls[tank.Id].Up = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireUp, IsStraight: true}
 					case DirectionLeft:
-						radarFireAlls[tank.Id].Left = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireLeft}
+						radarFireAlls[tank.Id].Left = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireLeft, IsStraight: true}
 					case DirectionDown:
-						radarFireAlls[tank.Id].Down = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireDown}
+						radarFireAlls[tank.Id].Down = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireDown, IsStraight: true}
 					case DirectionRight:
-						radarFireAlls[tank.Id].Right = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireRight}
+						radarFireAlls[tank.Id].Right = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireRight, IsStraight: true}
 					}
 				}
 			}

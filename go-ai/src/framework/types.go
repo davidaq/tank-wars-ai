@@ -63,8 +63,9 @@ type RadarFireAll struct {
 type RadarFire struct {
 	Faith float64			// 命中信仰，0到1，1就是如果采纳肯定会命中
 	Sin float64				// 友伤罪恶，0到1，1就是如果采纳肯定会命中
-	Cost int					// 如果没命中，需要多少回合才能恢复弹药
+	Cost int				// 如果没命中，需要多少回合才能恢复弹药
 	Action int				// ActionFireUp, ActionFireLeft, ActionFireDown, ActionFireRight
+	IsStraight bool			// true表示直线开火，false表示预判开火
 }
 
 func (self RadarFire) MarshalJSON() ([]byte, error) {

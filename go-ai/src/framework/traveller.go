@@ -117,6 +117,17 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 			aThreat[astar.Point { Col: p.X, Row: p.Y }] = v	
 		}
 	}
+	for _, tank := range state.EnemyTank {
+		if tank.Bullet == "" {
+			aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }] = 1
+			for i := 1; i <= state.Params.BulletSpeed; i++ {
+				aThreat[astar.Point { Col: tank.Pos.X + i, Row: tank.Pos.Y }] = 1
+				aThreat[astar.Point { Col: tank.Pos.X - i, Row: tank.Pos.Y }] = 1
+				aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y + i }] = 1
+				aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y - i }] = 1
+			}
+		}
+	}
 	for _, tank := range myTanks {
 		id := tank.Id
 		from := tank.Pos
