@@ -275,29 +275,37 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 				case 1:
 					if !checker {
 						resPos.X -= dis
+						resPos.Y += 1
 					} else {
 						resPos.Y += dis
+						resPos.X -= 1
 					}
 					checker = true
 				case 2:
 					if !checker {
 						resPos.X += dis
+						resPos.Y += 1
 					} else {
 						resPos.Y += dis
+						resPos.X += 1
 					}
 					checker = true
 				case 3:
 					if !checker {
 						resPos.X += dis
+						resPos.Y -= 1
 					} else {
 						resPos.Y -= dis
+						resPos.X += 1
 					}
 					checker = true
 				case 4:
 					if !checker {
 						resPos.X -= dis
+						resPos.Y -= 1
 					} else {
 						resPos.Y -= dis
+						resPos.X -= 1
 					}
 					checker = true
 				}
@@ -305,12 +313,12 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 					Action: f.ActionTravel,
 					Target: resPos,
 				}
-				if abs(tank.Pos.X - ttank.Pos.X) < dis/3 ||	abs(tank.Pos.Y - ttank.Pos.Y) < dis/3 {
-					objective[tank.Id] = f.Objective {
-						Action: f.ActionTravel,
-						Target: patrolPos[(n-1)%4],
-					}
-				}
+				// if abs(tank.Pos.X - ttank.Pos.X) < dis/3 ||	abs(tank.Pos.Y - ttank.Pos.Y) < dis/3 {
+				// 	objective[tank.Id] = f.Objective {
+				// 		Action: f.ActionTravel,
+				// 		Target: patrolPos[(n-1)%4],
+				// 	}
+				// }
 			}
 		}
 
