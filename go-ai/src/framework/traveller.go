@@ -112,12 +112,12 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 		}
 	}
 	firstColide := true
-	for _, tank := range myTanks {
+	for _, mtank := range myTanks {
+		tank := mtank
 		id := tank.Id
 		from := tank.Pos
 		to := *travel[tank.Id]
 		go (func () {
-			isDodge := movements[id] == ActionTravelWithDodge
 			nextPoint := to
 			lock.Lock()
 			cache, hasCache := self.cache[id]
@@ -127,12 +127,13 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 			}
 			lock.Unlock()
 			aThreat := make(map[astar.Point]float64)
-			if !isDodge {
-				for p, v := range threat {
-					if v > 0 {
-						aThreat[astar.Point { Col: p.X, Row: p.Y }] = v	
-					}
+			for p, v := range threat {
+				if v > 0 {
+					aThreat[astar.Point { Col: p.X, Row: p.Y }] = v	
 				}
+			}
+			isDodge := aThreat[astar.Point { Col: from.X, Row: from.Y }] > 0
+			if !isDodge {
 				directions := []int { DirectionUp, DirectionLeft, DirectionDown, DirectionRight }
 				for _, etank := range state.EnemyTank {
 					var possibles []Position
@@ -146,25 +147,41 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 						possibles = append(possibles, nPos)
 					}
 					for _, oPos := range possibles {
-						ext := 0
-						if oPos.X == tank.Pos.X {
-							if tank.Pos.Direction == DirectionUp || tank.Pos.Direction == DirectionDown {
-								ext = state.Params.BulletSpeed
-							}
-						} else if oPos.Y == tank.Pos.Y {
-							if tank.Pos.Direction == DirectionLeft || tank.Pos.Direction == DirectionRight {
-								ext = state.Params.BulletSpeed
-							}
-						}
 						for _, dir := range directions {
 							pos := oPos
 							aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = 1
-							for i, c := 1, state.Params.BulletSpeed + 2 + ext; i <= c; i++ {
+							badDir := false
+							if dir == DirectionUp || dir == DirectionDown {
+								if tank.Pos.Direction == DirectionUp || tank.Pos.Direction == DirectionDown {
+									badDir = true
+								}
+							} else {
+								if tank.Pos.Direction == DirectionLeft || tank.Pos.Direction == DirectionRight {
+									badDir = true
+								}
+							}
+							dangerDist := state.Params.BulletSpeed + 2
+							for i, N := 1, dangerDist + state.Params.BulletSpeed; i <= N; i++ {
 								pos = pos.step(dir)
 								if state.Terain.Get(pos.X, pos.Y) == 1 {
 									break
 								}
-								aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = 1
+								isThreat := false
+								if i > dangerDist {
+									if badDir {
+										isThreat = true
+									} else {
+										fpos := pos.step(tank.Pos.Direction)
+										if state.Terain.Get(fpos.X, fpos.Y) == 1 {
+											isThreat = true
+										}
+									}
+								} else {
+									isThreat = true
+								}
+								if isThreat {
+									aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = 1
+								}
 								if etank.Bullet != "" {
 									break
 								}
@@ -172,6 +189,8 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 						}
 					}
 				}
+			} else {
+				fmt.Println("IS Dodge")
 			}
 			if from.X != to.X || from.Y != to.Y {
 				cache.path = nil
