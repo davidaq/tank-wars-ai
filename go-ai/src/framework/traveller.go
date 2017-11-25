@@ -112,41 +112,6 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 		}
 	}
 	firstColide := true
-	aThreat := make(map[astar.Point]float64)
-	for p, v := range threat {
-		if v > 0 {
-			aThreat[astar.Point { Col: p.X, Row: p.Y }] = v	
-		}
-	}
-	directions := []int { DirectionUp, DirectionLeft, DirectionDown, DirectionRight }
-	for _, tank := range state.EnemyTank {
-		var possibles []Position
-		possibles = append(possibles, tank.Pos)
-		nPos := tank.Pos
-		for ti := 0; ti < state.Params.TankSpeed; ti++ {
-			nPos = nPos.step(tank.Pos.Direction)
-			if state.Terain.Get(nPos.X, nPos.Y) == 1 {
-				break
-			}
-			possibles = append(possibles, nPos)
-		}
-		for _, oPos := range possibles {
-			for _, dir := range directions {
-				pos := oPos
-				aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = 1
-				for i := 1; i <= state.Params.BulletSpeed + 2; i++ {
-					pos = pos.step(dir)
-					if state.Terain.Get(pos.X, pos.Y) == 1 {
-						break
-					}
-					aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = 1
-					if tank.Bullet != "" {
-						break
-					}
-				}
-			}
-		}
-	}
 	for _, tank := range myTanks {
 		id := tank.Id
 		from := tank.Pos
@@ -160,6 +125,51 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 				self.cache[id] = cache
 			}
 			lock.Unlock()
+			aThreat := make(map[astar.Point]float64)
+			for p, v := range threat {
+				if v > 0 {
+					aThreat[astar.Point { Col: p.X, Row: p.Y }] = v	
+				}
+			}
+			directions := []int { DirectionUp, DirectionLeft, DirectionDown, DirectionRight }
+			for _, etank := range state.EnemyTank {
+				var possibles []Position
+				possibles = append(possibles, tank.Pos)
+				nPos := etank.Pos
+				for ti := 0; ti < state.Params.TankSpeed; ti++ {
+					nPos = nPos.step(etank.Pos.Direction)
+					if state.Terain.Get(nPos.X, nPos.Y) == 1 {
+						break
+					}
+					possibles = append(possibles, nPos)
+				}
+				for _, oPos := range possibles {
+					ext := 0
+					if oPos.X == tank.Pos.X {
+						if tank.Pos.Direction == DirectionUp || tank.Pos.Direction == DirectionDown {
+							ext = state.Params.BulletSpeed
+						}
+					} else if oPos.Y == tank.Pos.Y {
+						if tank.Pos.Direction == DirectionLeft || tank.Pos.Direction == DirectionRight {
+							ext = state.Params.BulletSpeed
+						}
+					}
+					for _, dir := range directions {
+						pos := oPos
+						aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = 1
+						for i, c := 1, state.Params.BulletSpeed + 2 + ext; i <= c; i++ {
+							pos = pos.step(dir)
+							if state.Terain.Get(pos.X, pos.Y) == 1 {
+								break
+							}
+							aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = 1
+							if etank.Bullet != "" {
+								break
+							}
+						}
+					}
+				}
+			}
 			if from.X != to.X || from.Y != to.Y {
 				cache.path = nil
 				cache.target = to
@@ -230,14 +240,18 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 				}
 				threatPrevent := false
 				thr := 0.
-				for i := 1; i < state.Params.TankSpeed; i++ {
-					thr += aThreat[astar.Point { Col: from.X + i * dx, Row: from.Y + i * dy}]
+				for i := 1; i <= state.Params.TankSpeed; i++ {
+					t := aThreat[astar.Point { Col: from.X + i * dx, Row: from.Y + i * dy }]
+					if t > 0 {
+						thr += t
+					}
+					// if t < 0 && i == state.Params.TankSpeed {
+					// 	thr -= t
+					// }
 				}
 				curThreat := aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }]
-				if curThreat == 0 {
+				if curThreat < 0 {
 					threatPrevent = thr > 0.5
-				// } else if curThreat < 0.5 {
-				// 	threatPrevent = thr > 1
 				}
 				if threatPrevent {
 					action = ActionStay
