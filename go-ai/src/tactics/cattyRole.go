@@ -56,6 +56,25 @@ func (r *CattyRole) hunt() {
 	delete(r.obs.ShotPos, tpos)
 }
 
+// 换个思路定位追击点
+// func (r *CattyRole) hunt() {
+// 	dist := -1
+// 	var tpos  f.Position
+// 	var ttank f.Tank
+// 	for pos, tankid := range r.obs.ShotPos {
+// 		nd   := r.Tank.Pos.SDist(pos)
+// 		tank := r.obs.EmyTank[tankid]
+// 		if dist < 0 || nd < dist {  // && r.canHunt(tank)) {
+// 			dist  = nd
+// 			ttank = tank
+// 			tpos  = pos
+// 		}
+// 	}
+// 	r.Target.Tank = ttank
+// 	r.Target.Pos  = tpos
+// 	delete(r.obs.ShotPos, tpos)
+// }
+
 func (r *CattyRole) checkDone() bool {
     return r.Dodge.Threat == -1 || r.fireAction() != -1 || (r.Tank.Pos.X == r.Target.Pos.X && r.Tank.Pos.Y == r.Target.Pos.Y)
 }
@@ -77,7 +96,11 @@ func (r *CattyRole) act() {
 	if r.Dodge.Threat == -1 {
 		r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.fireBeforeDying() }   // 光辉弹
 	} else if r.fireAction() != -1 {
-    	r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.fireAction() }
+		if r.Dodge.Threat == 1 {
+			r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravel, Target: r.Dodge.SafePos }
+		} else {
+			r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.fireAction() }
+		}
 	} else if r.Tank.Pos.X == r.Target.Pos.X && r.Tank.Pos.Y == r.Target.Pos.Y {
 		r.hunt()
 		r.move()
