@@ -138,13 +138,15 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 				for _, etank := range state.EnemyTank {
 					var possibles []Position
 					possibles = append(possibles, tank.Pos)
-					nPos := etank.Pos
-					for ti := 0; ti < state.Params.TankSpeed; ti++ {
-						nPos = nPos.step(etank.Pos.Direction)
-						if state.Terain.Get(nPos.X, nPos.Y) == 1 {
-							break
+					if tank.Bullet != "" {
+						nPos := etank.Pos
+						for ti := 0; ti < state.Params.TankSpeed; ti++ {
+							nPos = nPos.step(etank.Pos.Direction)
+							if state.Terain.Get(nPos.X, nPos.Y) == 1 {
+								break
+							}
+							possibles = append(possibles, nPos)
 						}
-						possibles = append(possibles, nPos)
 					}
 					for _, oPos := range possibles {
 						for _, dir := range directions {
@@ -161,23 +163,21 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 								}
 							}
 							dangerDist := state.Params.BulletSpeed + 2
-							for i, N := 1, dangerDist + state.Params.BulletSpeed; i <= N; i++ {
+							for i, N := 1, dangerDist + state.Params.BulletSpeed + 1; i <= N; i++ {
 								pos = pos.step(dir)
 								if state.Terain.Get(pos.X, pos.Y) == 1 {
 									break
 								}
 								isThreat := false
-								if i > dangerDist {
-									if badDir {
-										isThreat = true
-									} else {
-										fpos := pos.step(tank.Pos.Direction)
-										if state.Terain.Get(fpos.X, fpos.Y) == 1 {
-											isThreat = true
-										}
-									}
-								} else {
+								if i <= dangerDist {
 									isThreat = true
+								} else if badDir {
+									isThreat = true
+								} else {
+									fpos := pos.step(tank.Pos.Direction)
+									if state.Terain.Get(fpos.X, fpos.Y) == 1 {
+										isThreat = true
+									}
 								}
 								if isThreat {
 									aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = 1
@@ -194,13 +194,16 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 			}
 			if from.X != to.X || from.Y != to.Y {
 				cache.path = nil
+				if to.SDist(from) <= state.Params.TankSpeed {
+					cache.path = []Position { to }
+				}
 				cache.target = to
 				if cache.expect != nil {
 					lock.Lock()
 					collide := self.collide[tank.Id]
 					if cache.expect.Y != from.Y || cache.expect.X != from.X {
-						self.collide[tank.Id] = collide + 10
 						cache.path = nil
+						self.collide[tank.Id] = collide + 10
 					} else if collide > 0 {
 						self.collide[tank.Id] = collide - 1
 					}
