@@ -137,8 +137,27 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 			return faith
 		}
 
-		// 如果我方坦克朝向和开火方向相同，且敌方坦克距离我方坦克 > 1个子弹距离 且 <= 3个子弹距离，且敌方坦克朝向与火线方向垂直，此时不能开火，开火大概率不中且自己会死，所以faith *= 0.3
+		// 如果我方坦克朝向和开火方向相同，且敌方坦克距离我方坦克 > 1个子弹距离 且 <= 3个子弹距离，且敌方坦克朝向与火线方向垂直，此时不能开火，开火大概率不中且自己会死，所以faith *= 0.1
 		if (tankPos.Direction == fireDirection || tankPos.Direction == fireDirection + 2 || tankPos.Direction == fireDirection - 2) && verticalDistance > bulletSpeed + 1 && verticalDistance <= 3 * bulletSpeed + 1 {
+			// 如果敌方面向墙敌方必死，不必躲
+			switch enemyPos.Direction {
+			case DirectionUp:
+				if terain.Get(enemyPos.X, enemyPos.Y - 1) == 1 {
+					return faith
+				}
+			case DirectionLeft:
+				if terain.Get(enemyPos.X - 1, enemyPos.Y) == 1 {
+					return faith
+				}
+			case DirectionDown:
+				if terain.Get(enemyPos.X, enemyPos.Y + 1) == 1 {
+					return faith
+				}
+			case DirectionRight:
+				if terain.Get(enemyPos.X + 1, enemyPos.Y) == 1 {
+					return faith
+				}
+			}
 			return faith * 0.1
 		}
 
