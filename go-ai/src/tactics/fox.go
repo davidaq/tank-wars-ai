@@ -275,37 +275,29 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 				case 1:
 					if !checker {
 						resPos.X -= dis
-						resPos.Y += 1
 					} else {
 						resPos.Y += dis
-						resPos.X -= 1
 					}
 					checker = true
 				case 2:
 					if !checker {
 						resPos.X += dis
-						resPos.Y += 1
 					} else {
 						resPos.Y += dis
-						resPos.X += 1
 					}
 					checker = true
 				case 3:
 					if !checker {
 						resPos.X += dis
-						resPos.Y -= 1
 					} else {
 						resPos.Y -= dis
-						resPos.X += 1
 					}
 					checker = true
 				case 4:
 					if !checker {
 						resPos.X -= dis
-						resPos.Y -= 1
 					} else {
 						resPos.Y -= dis
-						resPos.X -= 1
 					}
 					checker = true
 				}

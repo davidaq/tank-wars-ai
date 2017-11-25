@@ -4,7 +4,7 @@ export GOPATH=`pwd`
 export HOST=localhost:8777
 export GAME=HkJ5fDIeM
 export SIDE=blue
-export TACTICS=brute
+export TACTICS=cattycat
 # export TACTICS=proxy PROXY_PORT=8776
 
 go run src/ai-client.go > /dev/null 2>&1 &
