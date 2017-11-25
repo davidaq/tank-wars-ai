@@ -337,7 +337,7 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 					sin = float64(0)
 				}
 
-				fmt.Println("FIRE INFO -------- NO FIRELINE", "count", count, "faith", faith, "sin", sin, "cost", cost, "dist", verticalDist, "tank", tank.Id, "enemyX", enemyThreat.Enemy.X, "enemyY", enemyThreat.Enemy.Y, "realDirection", realDirection, "fireDirection", fireDirection, "distA", distA, "distB", distB, "dirA", dirA, "dirB", dirB)
+				fmt.Println("FIRE INFO -------- NO FIRELINE", "count", count, "faith", faith, "sin", sin, "cost", cost, "dist", verticalDist, "tank", tank.Id, "enemyX", enemyThreat.Enemy.X, "enemyY", enemyThreat.Enemy.Y)
 				
 				cost = int(math.Ceil(float64(cost) / float64(state.Params.BulletSpeed)))
 
@@ -380,7 +380,7 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 						faith = float64(0)
 						sin = float64(0)
 					}
-					fmt.Println("FIRE INFO -------- FIRELINE", "count", count, "faith", faith, "sin", sin, "cost", cost, "dist", dist, "tank", tank.Id, "enemyX", enemyThreat.Enemy.X, "enemyY", enemyThreat.Enemy.Y, "realDirection", realDirection, "fireDirection", fireDirection)
+					fmt.Println("FIRE INFO -------- FIRELINE", "count", count, "faith", faith, "sin", sin, "cost", cost, "dist", dist, "tank", tank.Id, "enemyX", enemyThreat.Enemy.X, "enemyY", enemyThreat.Enemy.Y)
 					
 					cost = int(math.Ceil(float64(cost) / float64(state.Params.BulletSpeed)))					
 					switch realDirection {

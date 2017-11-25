@@ -98,7 +98,6 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 			myTanks = append(myTanks, &t)
 		} else {
 			occupy[Position { X: tank.Pos.X, Y: tank.Pos.Y }] = true
-			a.FillTile(astar.Point{ Col: tank.Pos.X, Row: tank.Pos.Y }, -1)
 			if cache, hasCache := self.cache[tank.Id]; hasCache {
 				cache.expect = nil
 				cache.path = nil
@@ -152,18 +151,19 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 		from := tank.Pos
 		to := *travel[tank.Id]
 		go (func () {
-			lock.Lock()
-			defer lock.Unlock()
 			nextPoint := to
+			lock.Lock()
 			cache, hasCache := self.cache[id]
 			if !hasCache {
 				cache = &PathCache {}
 				self.cache[id] = cache
 			}
+			lock.Unlock()
 			if from.X != to.X || from.Y != to.Y {
 				cache.path = nil
 				cache.target = to
 				if cache.expect != nil {
+					lock.Lock()
 					collide := self.collide[tank.Id]
 					if cache.expect.Y != from.Y || cache.expect.X != from.X {
 						self.collide[tank.Id] = collide + 10
@@ -171,6 +171,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 					} else if collide > 0 {
 						self.collide[tank.Id] = collide - 1
 					}
+					lock.Unlock()
 				}
 				for len(cache.path) > 0 {
 					p := cache.path[0]
@@ -181,11 +182,13 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 					}
 				}
 				if len(cache.path) == 0 {
+					lock.Lock()
 					allowCalc := false
 					if maxPathCalc > 0 {
 						maxPathCalc--
 						allowCalc = true
 					}
+					lock.Unlock()
 					if allowCalc {
 						cache.path = self.path(a, from, to, state.Params.TankSpeed, state.Terain, aThreat, false)
 						if len(cache.path) == 0 {
@@ -212,6 +215,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 			}
 			action := toAction(from, nextPoint)
 			cache.expect = nil
+			lock.Lock()
 			if action == ActionMove {
 				p := Position { Y: from.Y, X: from.X }
 				dx, dy := 0, 0
@@ -230,12 +234,9 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 				}
 				thr := 0.
 				if aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }] < 0.7 {
-					for i := -1; i < state.Params.TankSpeed - 1; i++ {
+					for i := 0; i < state.Params.TankSpeed; i++ {
 						thr += aThreat[astar.Point { Col: p.X + i * dx, Row: p.Y + i * dy}]
-					}
-				}
-				for i := -1; i < state.Params.TankSpeed - 1; i++ {
-					a.FillTile(astar.Point { Col: p.X + i * dx, Row: p.Y + i * dy}, 10)
+					}	
 				}
 				if thr > 0.5 {
 					action = ActionStay
@@ -257,6 +258,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 				occupy[p] = true
 			}
 			movements[id] = action
+			lock.Unlock()
 			waitchan <- true
 		})()
 	}
