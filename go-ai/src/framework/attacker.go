@@ -137,9 +137,9 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 			return faith
 		}
 
-		// 如果我方坦克朝向和开火方向相同，且敌方坦克距离我方坦克 > 1个子弹距离 且 <= 3个子弹距离，且敌方坦克朝向与火线方向垂直，此时不能开火，开火大概率不中且自己会死，所以faith = 0
+		// 如果我方坦克朝向和开火方向相同，且敌方坦克距离我方坦克 > 1个子弹距离 且 <= 3个子弹距离，且敌方坦克朝向与火线方向垂直，此时不能开火，开火大概率不中且自己会死，所以faith *= 0.3
 		if (tankPos.Direction == fireDirection || tankPos.Direction == fireDirection + 2 || tankPos.Direction == fireDirection - 2) && verticalDistance > bulletSpeed + 1 && verticalDistance <= 3 * bulletSpeed + 1 {
-			return 0.
+			return faith * 0.1
 		}
 
 		// 敌方朝向和开火方向垂直，且在火线上
@@ -322,6 +322,10 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 				}
 
 				realDirection := directionConvert(fireDirection, tank)
+
+				// if distA == distB {
+					
+				// }
 				// fmt.Println("0 ------- DIRECTION", "real", realDirection, "fire", fireDirection)
 				
 				if needToCalc {
