@@ -156,7 +156,12 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         }
                     }
                     // 火线上躲不掉的情况，因为发射时子弹出现在前面位置，所以加1
-                    if b.Distances[b.Quadrant] <= state.Params.BulletSpeed + 1 {
+                    // 两种情况 顺着行进方向（-1， -3），则需要两子弹速度 + 1。如旁边方向（-2， -4），则需要一子弹速度 + 1
+                    if (b.Quadrant == QUADRANT_U || b.Quadrant == QUADRANT_D) && b.Distances[b.Quadrant] <= state.Params.BulletSpeed * 2 {
+                        tmpUrgent = -1
+                        tmpBulletUrgent = -1
+                    }
+                    if (b.Quadrant == QUADRANT_L || b.Quadrant == QUADRANT_R) && b.Distances[b.Quadrant] <= state.Params.BulletSpeed {
                         tmpUrgent = -1
                         tmpBulletUrgent = -1
                     }
