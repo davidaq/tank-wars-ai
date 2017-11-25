@@ -2,7 +2,7 @@ package tactics
 
 import (
 	f "framework"
-	"math"
+	// "math"
 	// "fmt"
 )
 
@@ -76,7 +76,7 @@ func (r *CattyRole) hunt() {
 // }
 
 func (r *CattyRole) checkDone() bool {
-    return r.Dodge.Threat == -1 || r.fireAction() != -1 || (r.Tank.Pos.X == r.Target.Pos.X && r.Tank.Pos.Y == r.Target.Pos.Y)
+    return r.Dodge.Threat == -1 || r.fireAction() != -1 || r.canFireToFlag() || (r.Tank.Pos.X == r.Target.Pos.X && r.Tank.Pos.Y == r.Target.Pos.Y)
 }
 
 func (r *CattyRole) move() {
@@ -93,6 +93,8 @@ func (r *CattyRole) act() {
 		} else {
 			r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.fireAction() }
 		}
+    } else if r.canFireToFlag() {
+        r.fireFlag()
 	} else if r.Tank.Pos.X == r.Target.Pos.X && r.Tank.Pos.Y == r.Target.Pos.Y {
 		r.hunt()
 		r.move()
@@ -124,7 +126,7 @@ func (r *CattyRole) fireAction() int {
             mrf = rf
         }
     }
-	if mrf == nil || mrf.Faith < 0.2 || mrf.Sin >= 0.5 {
+	if mrf == nil || mrf.Faith < 0.5 || mrf.Sin >= 0.5 {
 		return -1
 	} else {
 		return mrf.Action
@@ -144,14 +146,51 @@ func (r *CattyRole) nextPos(pos f.Position) f.Position {
 	}
 }
 
-// 不要追击有援军的敌人
-func (r *CattyRole) canHunt(tank f.Tank) bool {
-	x := tank.Pos.X
-	y := tank.Pos.Y
-	for _, emytank := range r.obs.EmyTank {
-		if int(math.Abs(float64(emytank.Pos.X - x))) < r.obs.State.Params.BulletSpeed && int(math.Abs(float64(emytank.Pos.Y - y))) < r.obs.State.Params.BulletSpeed {
-			return false
-		}
-	}
-	return true
+// 是否可以朝旗子开火
+func (r *CattyRole) canFireToFlag() bool {
+    if r.Tank.Pos.X == r.obs.Flag.Pos.X || r.Tank.Pos.Y == r.obs.Flag.Pos.Y {
+        // 自己在旗子中不开火
+        if (r.Tank.Pos.X == r.obs.Flag.Pos.X && r.Tank.Pos.Y == r.obs.Flag.Pos.Y){
+            return false
+        }
+        // 可以向旗子开火
+        if r.Dodge.Threat == 0 && r.obs.pathReachable(r.Tank.Pos, r.obs.Flag.Pos) {
+            // 判断友伤
+            var rf *f.RadarFire
+            if r.Tank.Pos.X == r.obs.Flag.Pos.X {
+                if r.Tank.Pos.Y > r.obs.Flag.Pos.Y {
+                     rf = r.Fire.Up
+                } else {
+                    rf = r.Fire.Down
+                }
+            } else {
+                if r.Tank.Pos.X > r.obs.Flag.Pos.X {
+                    rf = r.Fire.Left
+                } else {
+                    rf = r.Fire.Right
+                }
+            }
+            if rf == nil || rf.Sin <= 0.0 {
+                return true
+            }
+        }
+    }
+    return false
+}
+
+// 向旗子开火
+func (r *CattyRole) fireFlag() {
+    if r.Tank.Pos.X == r.obs.Flag.Pos.X {
+        if r.Tank.Pos.Y > r.obs.Flag.Pos.Y {
+            r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionFireUp }
+        } else {
+            r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionFireDown }
+        }
+    } else {
+        if r.Tank.Pos.X > r.obs.Flag.Pos.X {
+            r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionFireLeft }
+        } else {
+            r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionFireRight }
+        }
+    }
 }
