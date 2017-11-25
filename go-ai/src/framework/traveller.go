@@ -120,7 +120,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 	for _, tank := range state.EnemyTank {
 		if tank.Bullet == "" {
 			aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }] = 1
-			for i := 1; i <= state.Params.BulletSpeed + 1; i++ {
+			for i := 1; i <= state.Params.BulletSpeed + 2; i++ {
 				aThreat[astar.Point { Col: tank.Pos.X + i, Row: tank.Pos.Y }] = 1
 				aThreat[astar.Point { Col: tank.Pos.X - i, Row: tank.Pos.Y }] = 1
 				aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y + i }] = 1
@@ -213,7 +213,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 				for i := 1; i <= state.Params.TankSpeed; i++ {
 					thr += threat[Position { X: p.X + i * dx, Y: p.Y + i * dy}]
 				}
-				if thr > 0.7 {
+				if thr > 0.5 {
 					action = ActionStay
 					p = Position { Y: from.Y, X: from.X }
 				} else if _, exists := occupy[p]; exists {
