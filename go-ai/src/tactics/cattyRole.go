@@ -127,7 +127,7 @@ func (r *CattyRole) fireBeforeDying() int {
 func (r *CattyRole) fireAction() int {
     var mrf *f.RadarFire
     for _, rf := range []*f.RadarFire{ r.Fire.Up, r.Fire.Down, r.Fire.Left, r.Fire.Right } {
-        if rf == nil { continue }
+        if rf == nil || !rf.IsStraight { continue }
         if mrf == nil || mrf.Faith - mrf.Sin < rf.Faith - rf.Sin {
             mrf = rf
         }
