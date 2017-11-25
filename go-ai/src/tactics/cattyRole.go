@@ -80,15 +80,7 @@ func (r *CattyRole) checkDone() bool {
 }
 
 func (r *CattyRole) move() {
-	if r.Tank.Bullet == "" {
-		if r.Dodge.Threat == 1 {
-			r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravelWithDodge, Target: r.Target.Pos }
-		} else {
-			r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravel, Target: r.Target.Pos }
-		}
-	} else {
-		r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravel, Target: r.Dodge.SafePos }
-	}
+	r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravelWithDodge, Target: r.Target.Pos }
 }
 
 // 行动
@@ -127,7 +119,7 @@ func (r *CattyRole) fireBeforeDying() int {
 func (r *CattyRole) fireAction() int {
     var mrf *f.RadarFire
     for _, rf := range []*f.RadarFire{ r.Fire.Up, r.Fire.Down, r.Fire.Left, r.Fire.Right } {
-        if rf == nil { continue }
+        if rf == nil || !rf.IsStraight { continue }
         if mrf == nil || mrf.Faith - mrf.Sin < rf.Faith - rf.Sin {
             mrf = rf
         }

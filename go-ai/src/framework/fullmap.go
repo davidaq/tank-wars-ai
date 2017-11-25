@@ -39,6 +39,11 @@ func (self *Radar) fullMapThreat(state *GameState) map[Position]float64 {
             if b.Pos.Direction == DirectionUp {
                 // 向上 Y 骤减
                 for y := b.Pos.Y - step * state.Params.BulletSpeed; y > b.Pos.Y - (step + 1) * state.Params.BulletSpeed; y-- {
+                    // 子弹自己的位置不用标记
+                    if y == b.Pos.Y {
+                        continue
+                    }
+
                     // 检查墙
                     if y < 0 || state.Terain.Get(b.Pos.X, y) == TerainObstacle {
                         // 撞墙则停止
@@ -55,6 +60,10 @@ func (self *Radar) fullMapThreat(state *GameState) map[Position]float64 {
             if b.Pos.Direction == DirectionDown {
                 // 向下 Y 骤增
                 for y := b.Pos.Y + step * state.Params.BulletSpeed; y < b.Pos.Y + (step + 1) * state.Params.BulletSpeed; y++ {
+                    if y == b.Pos.Y {
+                        continue
+                    }
+
                     // 检查墙
                     if y >= state.Terain.Height || state.Terain.Get(b.Pos.X, y) == TerainObstacle {
                         continue loop
@@ -68,6 +77,10 @@ func (self *Radar) fullMapThreat(state *GameState) map[Position]float64 {
             if b.Pos.Direction == DirectionLeft {
                 // 向左 X 骤减
                 for x := b.Pos.X - step * state.Params.BulletSpeed; x > b.Pos.X - (step + 1) * state.Params.BulletSpeed; x-- {
+                    if x == b.Pos.X {
+                        continue
+                    }
+
                     if x < 0 || state.Terain.Get(x, b.Pos.Y) == TerainObstacle {
                         continue loop
                     }
@@ -80,6 +93,10 @@ func (self *Radar) fullMapThreat(state *GameState) map[Position]float64 {
             if b.Pos.Direction == DirectionRight {
                 // 向右 X 骤增
                 for x := b.Pos.X + step * state.Params.BulletSpeed; x < b.Pos.X + (step + 1) * state.Params.BulletSpeed; x++ {
+                    if x == b.Pos.X {
+                        continue
+                    }
+
                     if x > state.Terain.Width || state.Terain.Get(x, b.Pos.Y) == TerainObstacle {
                         continue loop
                     }
