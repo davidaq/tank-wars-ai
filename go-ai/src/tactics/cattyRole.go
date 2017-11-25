@@ -132,7 +132,7 @@ func (r *CattyRole) fireAction() int {
             mrf = rf
         }
     }
-	if mrf == nil || mrf.Faith < 0.4 || mrf.Sin >= 0.5 {
+	if mrf == nil || mrf.Faith < 0.2 || mrf.Sin >= 0.5 {
 		return -1
 	} else {
 		return mrf.Action
