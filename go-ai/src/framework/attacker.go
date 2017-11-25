@@ -1,6 +1,6 @@
 /**
  * 开火攻击行动子系统
- * author: linxingchen
+ * author: aiwen
  */
 package framework
 
@@ -100,6 +100,7 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 // 如果我方与敌方坦克垂直距离 == 1，直接返回最终faith = 1
 // 如果敌方与开火方向是相同的或者相反的，返回faith基准值
 // 如果敌方与开火方向垂直，返回faith基准值 * 0.9
+// 如果我方坦克朝向和开火方向相同，且敌方坦克距离我方坦克 > 1个子弹距离 且 <= 3个子弹距离，且敌方坦克朝向与火线方向垂直，此时不能开火，开火大概率不中且自己会死，所以faith = 0
 
 // 若敌方坦克不在火线上：
 // 若敌方坦克下回合朝向火线，且正好有可能走到火线上，返回(faith基准值 / 2) - 0.15
@@ -136,8 +137,8 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 			return faith
 		}
 
-		// 如果我方坦克朝向和开火方向相同，且敌方坦克距离我方坦克 > 一个子弹距离 且 <= 两个子弹距离，且敌方坦克朝向与火线方向垂直，此时不能开火，开火大概率不中且自己会死，所以faith = 0
-		if (tankPos.Direction == fireDirection || tankPos.Direction == fireDirection + 2 || tankPos.Direction == fireDirection - 2) && verticalDistance > bulletSpeed + 1 && verticalDistance <= 2 * bulletSpeed + 1 {
+		// 如果我方坦克朝向和开火方向相同，且敌方坦克距离我方坦克 > 1个子弹距离 且 <= 3个子弹距离，且敌方坦克朝向与火线方向垂直，此时不能开火，开火大概率不中且自己会死，所以faith = 0
+		if (tankPos.Direction == fireDirection || tankPos.Direction == fireDirection + 2 || tankPos.Direction == fireDirection - 2) && verticalDistance > bulletSpeed + 1 && verticalDistance <= 3 * bulletSpeed + 1 {
 			return 0.
 		}
 
