@@ -69,6 +69,21 @@ type Position struct {
 	X, Y, Direction int
 }
 
+func (p Position) step(direction int) Position {
+	ret := p
+	switch direction {
+	case DirectionUp:
+		ret.Y--
+	case DirectionDown:
+		ret.Y++
+	case DirectionLeft:
+		ret.X--
+	case DirectionRight:
+		ret.X++
+	}
+	return ret
+}
+
 func (s Position) SDist (other Position) int {
 	dx := s.X - other.X
 	dy := s.Y - other.Y

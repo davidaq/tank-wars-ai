@@ -131,6 +131,35 @@ func (o *Observation) observeShotPos() {
 	}
 }
 
+// 换个思路定位追击点
+// func (o *Observation) observeShotPos() {
+// 	o.ShotPos = make(map[f.Position]string)
+//     var pos f.Position
+// 	for _, tank := range o.EmyTank {
+//         if tank.Pos.Direction == f.DirectionUp {
+// 			pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y + o.State.Params.TankSpeed }
+// 			if o.reachable(pos) {
+// 				o.ShotPos[pos] = tank.Id
+// 			}
+// 		} else if tank.Pos.Direction == f.DirectionDown {
+// 			pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y - o.State.Params.TankSpeed }
+// 			if o.reachable(pos) {
+// 				o.ShotPos[pos] = tank.Id
+// 			}
+//         } else if tank.Pos.Direction == f.DirectionRight {
+// 			pos = f.Position { X: tank.Pos.X + o.State.Params.TankSpeed, Y: tank.Pos.Y}
+// 			if o.reachable(pos) {
+// 				o.ShotPos[pos] = tank.Id
+// 			}
+// 		} else if tank.Pos.Direction == f.DirectionLeft {
+// 			pos = f.Position { X: tank.Pos.X - o.State.Params.TankSpeed, Y: tank.Pos.Y}
+// 			if o.reachable(pos) {
+// 				o.ShotPos[pos] = tank.Id
+// 			}
+//         }
+// 	}
+// }
+
 // 地点是否可达（是否超出地图范围、是否墙壁）
 func (o *Observation) reachable(pos f.Position) bool {
     // 超出地图范围

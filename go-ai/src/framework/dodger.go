@@ -155,8 +155,8 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                             tmpMoveUrgentBullet[ActionStay] = b.Distances[b.Quadrant] - state.Params.BulletSpeed
                         }
                     }
-                    // 火线上躲不掉的情况
-                    if b.Distances[b.Quadrant] <= state.Params.BulletSpeed {
+                    // 火线上躲不掉的情况，因为发射时子弹出现在前面位置，所以加1
+                    if b.Distances[b.Quadrant] <= state.Params.BulletSpeed + 1 {
                         tmpUrgent = -1
                         tmpBulletUrgent = -1
                     }
@@ -655,16 +655,24 @@ func (self *Radar) convertActionToPosition(state *GameState, tank Tank, action i
     }
 
     // 撞墙、超出地图边界判断
+    // 如果能走但撞墙，则允许执行
     if positionRet.X == tank.Pos.X {
         if positionRet.Y >= tank.Pos.Y {
             for y := tank.Pos.Y; y <= positionRet.Y; y++ {
                 if state.Terain.Get(positionRet.X, y) == TerainObstacle {
+                    // 如果直行，则看能否挪动位置
+                    if action == ActionMove && y - tank.Pos.Y > 1 {
+                        return true, Position{X:tank.Pos.X, Y: y - 1}
+                    }
                     return false, Position{}
                 }
             }
         } else {
             for y := tank.Pos.Y; y >= positionRet.Y; y-- {
                 if state.Terain.Get(positionRet.X, y) == TerainObstacle {
+                    if action == ActionMove && tank.Pos.Y - y > 1 {
+                        return true, Position{X: tank.Pos.X, Y: y + 1}
+                    }
                     return false, Position{}
                 }
             }
@@ -674,12 +682,18 @@ func (self *Radar) convertActionToPosition(state *GameState, tank Tank, action i
         if positionRet.X >= tank.Pos.X {
             for x := tank.Pos.X; x <= positionRet.X; x++ {
                 if state.Terain.Get(x, positionRet.Y) == TerainObstacle {
+                    if action == ActionMove && x - tank.Pos.X > 1 {
+                        return true, Position{X: x - 1, Y: tank.Pos.Y}
+                    }
                     return false, Position{}
                 }
             }
         } else {
             for x := tank.Pos.X; x >= positionRet.X; x-- {
                 if state.Terain.Get(x, positionRet.Y) == TerainObstacle {
+                    if action == ActionMove && tank.Pos.X - x > 1 {
+                        return true, Position{X: x + 1, Y: tank.Pos.Y}
+                    }
                     return false, Position{}
                 }
             }

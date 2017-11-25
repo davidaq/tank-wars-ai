@@ -270,7 +270,7 @@ func (a *gridStruct) getSurrounding(p Point, movelen int, threat map[Point]float
         thr += threat[Point{trow, col}]
         v = trow
     }
-    if v >= 0 && thr < 0.7 {
+    if v >= 0 && thr < 0.5 {
         surrounding = append(surrounding, Point{v, col})
         extWeight = append(extWeight, int(thr * 10))
     }
@@ -285,7 +285,7 @@ func (a *gridStruct) getSurrounding(p Point, movelen int, threat map[Point]float
         thr += threat[Point{trow, col}]
         v = trow
     }
-    if v >= 0 && thr < 0.7 {
+    if v >= 0 && thr < 0.5 {
         surrounding = append(surrounding, Point{v, col})
         extWeight = append(extWeight, int(thr * 10))
     }
@@ -300,7 +300,7 @@ func (a *gridStruct) getSurrounding(p Point, movelen int, threat map[Point]float
         thr += threat[Point{row, tcol}]
         v = tcol
     }
-    if v >= 0 && thr < 0.7 {
+    if v >= 0 && thr < 0.5 {
         surrounding = append(surrounding, Point{row, v})
         extWeight = append(extWeight, int(thr * 10))
     }
@@ -315,7 +315,7 @@ func (a *gridStruct) getSurrounding(p Point, movelen int, threat map[Point]float
         thr += threat[Point{row, tcol}]
         v = tcol
     }
-    if v >= 0 && thr < 0.7 {
+    if v >= 0 && thr < 0.5 {
         surrounding = append(surrounding, Point{row, v})
         extWeight = append(extWeight, int(thr * 10))
     }
