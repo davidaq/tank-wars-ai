@@ -5,6 +5,7 @@ import (
 	"lib/go-astar"
 	"sync"
 	"math/rand"
+	"fmt"
 )
 
 type PathCache struct {
@@ -117,14 +118,31 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 			aThreat[astar.Point { Col: p.X, Row: p.Y }] = v	
 		}
 	}
+	directions := []int { DirectionUp, DirectionLeft, DirectionDown, DirectionRight }
 	for _, tank := range state.EnemyTank {
 		if tank.Bullet == "" {
-			aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }] = 1
-			for i := 1; i <= state.Params.BulletSpeed + 2; i++ {
-				aThreat[astar.Point { Col: tank.Pos.X + i, Row: tank.Pos.Y }] = 1
-				aThreat[astar.Point { Col: tank.Pos.X - i, Row: tank.Pos.Y }] = 1
-				aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y + i }] = 1
-				aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y - i }] = 1
+			var possibles []Position
+			possibles = append(possibles, tank.Pos)
+			nPos := tank.Pos
+			for ti := 0; ti < state.Params.TankSpeed; ti++ {
+				nPos = nPos.step(tank.Pos.Direction)
+				if state.Terain.Get(nPos.X, nPos.Y) == 1 {
+					break
+				}
+				possibles = append(possibles, nPos)
+			}
+			for _, oPos := range possibles {
+				for _, dir := range directions {
+					pos := oPos
+					aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = 1
+					for i := 1; i <= state.Params.BulletSpeed + 2; i++ {
+						pos = pos.step(dir)
+						if state.Terain.Get(pos.X, pos.Y) == 1 {
+							break
+						}
+						aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = 1
+					}
+				}
 			}
 		}
 	}
@@ -133,6 +151,10 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 		from := tank.Pos
 		to := *travel[tank.Id]
 		go (func () {
+			tThreat := aThreat
+			if aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }] > 0.7 {
+				tThreat = make(map[astar.Point]float64)
+			}
 			nextPoint := to
 			lock.Lock()
 			cache, hasCache := self.cache[id]
@@ -172,7 +194,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 					}
 					lock.Unlock()
 					if allowCalc {
-						cache.path = self.path(a, from, to, state.Params.TankSpeed, state.Terain, aThreat)
+						cache.path = self.path(a, from, to, state.Params.TankSpeed, state.Terain, tThreat)
 						for len(cache.path) > 0 {
 							p := cache.path[0]
 							if p.X == from.X && p.Y == from.Y {
@@ -210,12 +232,14 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 					dx = -1
 				}
 				thr := 0.
-				for i := 1; i <= state.Params.TankSpeed; i++ {
-					thr += threat[Position { X: p.X + i * dx, Y: p.Y + i * dy}]
+				for i := 0; i < state.Params.TankSpeed; i++ {
+					thr += tThreat[astar.Point { Col: p.X + i * dx, Row: p.Y + i * dy}]
 				}
+				fmt.Println("Travel move threat", thr)
 				if thr > 0.5 {
 					action = ActionStay
 					p = Position { Y: from.Y, X: from.X }
+					fmt.Println("Travel threat stay!!")
 				} else if _, exists := occupy[p]; exists {
 					action = ActionStay
 					if firstColide {
