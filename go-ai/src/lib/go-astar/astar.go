@@ -85,7 +85,7 @@ func (a *gridStruct) ClearTile(p Point) {
 func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movelen int, startdir int, threat map[Point]float64, brave bool) *PathPoint {
     var openList = make(map[Point]*PathPoint)
     var closeList = make(map[Point]*PathPoint)
-    stepsLimit := a.rows + a.cols
+    stepsLimit := (a.rows + a.cols) * 2
     if stepsLimit < 20 {
         stepsLimit = 20
     }
