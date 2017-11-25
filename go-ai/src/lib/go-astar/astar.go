@@ -19,7 +19,7 @@ type AStar interface {
     // enforces it).
     // The start of the path is returned to you. If no path exists then the function will
     // return nil as the path.
-    FindPath(config AStarConfig, source, target []Point, movelen int, startdir int, threat map[Point]float64) *PathPoint
+    FindPath(config AStarConfig, source, target []Point, movelen int, startdir int, threat map[Point]float64, brave bool) *PathPoint
 
     // Clone a new instance
     Clone() AStar
@@ -82,7 +82,7 @@ func (a *gridStruct) ClearTile(p Point) {
     delete(a.filledTiles, p)
 }
 
-func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movelen int, startdir int, threat map[Point]float64) *PathPoint {
+func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movelen int, startdir int, threat map[Point]float64, brave bool) *PathPoint {
     var openList = make(map[Point]*PathPoint)
     var closeList = make(map[Point]*PathPoint)
     stepsLimit := a.rows + a.cols
@@ -165,7 +165,7 @@ func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movele
             pdirection = startdir
         }
 
-        surrounding, surrWeight := a.getSurrounding(current.Point, movelen, threat)
+        surrounding, surrWeight := a.getSurrounding(current.Point, movelen, threat, brave)
 
         for si, p := range surrounding {
             if _, ok := closeList[p]; ok {
@@ -255,7 +255,7 @@ func (a *gridStruct) getMinWeight(openList map[Point]*PathPoint) *PathPoint {
     return min
 }
 
-func (a *gridStruct) getSurrounding(p Point, movelen int, threat map[Point]float64) ([]Point, []int) {
+func (a *gridStruct) getSurrounding(p Point, movelen int, threat map[Point]float64, brave bool) ([]Point, []int) {
     var surrounding []Point
     var extWeight []int
     row, col, v, thr := p.Row, p.Col, -1, 0.
@@ -270,7 +270,7 @@ func (a *gridStruct) getSurrounding(p Point, movelen int, threat map[Point]float
         thr += threat[Point{trow, col}]
         v = trow
     }
-    if v >= 0 && thr < 0.5 {
+    if v >= 0 && (brave || thr < 0.5) {
         surrounding = append(surrounding, Point{v, col})
         extWeight = append(extWeight, int(thr * 10))
     }
@@ -285,7 +285,7 @@ func (a *gridStruct) getSurrounding(p Point, movelen int, threat map[Point]float
         thr += threat[Point{trow, col}]
         v = trow
     }
-    if v >= 0 && thr < 0.5 {
+    if v >= 0 && (brave || thr < 0.5) {
         surrounding = append(surrounding, Point{v, col})
         extWeight = append(extWeight, int(thr * 10))
     }
@@ -300,7 +300,7 @@ func (a *gridStruct) getSurrounding(p Point, movelen int, threat map[Point]float
         thr += threat[Point{row, tcol}]
         v = tcol
     }
-    if v >= 0 && thr < 0.5 {
+    if v >= 0 && (brave || thr < 0.5) {
         surrounding = append(surrounding, Point{row, v})
         extWeight = append(extWeight, int(thr * 10))
     }
@@ -315,7 +315,7 @@ func (a *gridStruct) getSurrounding(p Point, movelen int, threat map[Point]float
         thr += threat[Point{row, tcol}]
         v = tcol
     }
-    if v >= 0 && thr < 0.5 {
+    if v >= 0 && (brave || thr < 0.5) {
         surrounding = append(surrounding, Point{row, v})
         extWeight = append(extWeight, int(thr * 10))
     }

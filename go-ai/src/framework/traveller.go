@@ -151,10 +151,6 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 		from := tank.Pos
 		to := *travel[tank.Id]
 		go (func () {
-			tThreat := aThreat
-			if aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }] > 0.45 {
-				tThreat = make(map[astar.Point]float64)
-			}
 			nextPoint := to
 			lock.Lock()
 			cache, hasCache := self.cache[id]
@@ -194,7 +190,12 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 					}
 					lock.Unlock()
 					if allowCalc {
-						cache.path = self.path(a, from, to, state.Params.TankSpeed, state.Terain, tThreat)
+						cache.path = self.path(a, from, to, state.Params.TankSpeed, state.Terain, aThreat, false)
+						if len(cache.path) == 0 {
+							if aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }] > 0.4 {
+								cache.path = self.path(a, from, to, state.Params.TankSpeed, state.Terain, aThreat, true)
+							}
+						}
 						for len(cache.path) > 0 {
 							p := cache.path[0]
 							if p.X == from.X && p.Y == from.Y {
@@ -232,10 +233,11 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 					dx = -1
 				}
 				thr := 0.
-				for i := 0; i < state.Params.TankSpeed; i++ {
-					thr += tThreat[astar.Point { Col: p.X + i * dx, Row: p.Y + i * dy}]
+				if aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }] < 0.7 {
+					for i := 0; i < state.Params.TankSpeed; i++ {
+						thr += aThreat[astar.Point { Col: p.X + i * dx, Row: p.Y + i * dy}]
+					}	
 				}
-				fmt.Println("Travel move threat", thr)
 				if thr > 0.5 {
 					action = ActionStay
 					p = Position { Y: from.Y, X: from.X }
@@ -266,13 +268,13 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 	}
 }
 
-func (self *Traveller) path(a astar.AStar, source Position, target Position, movelen int, terain *Terain, threat map[astar.Point]float64) []Position {
+func (self *Traveller) path(a astar.AStar, source Position, target Position, movelen int, terain *Terain, threat map[astar.Point]float64, brave bool) []Position {
 	p2p := astar.NewPointToPoint()
 
 	sourcePoint := []astar.Point{ astar.Point{ Row: source.Y, Col: source.X } }
 	targetPoint := []astar.Point{ astar.Point{ Row: target.Y, Col: target.X } }
 
-	p := a.FindPath(p2p, targetPoint, sourcePoint, movelen, source.Direction, threat)
+	p := a.FindPath(p2p, targetPoint, sourcePoint, movelen, source.Direction, threat, brave)
 	
 	var ret []Position
 	for p != nil {
