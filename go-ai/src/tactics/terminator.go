@@ -70,6 +70,54 @@ func (self *Terminator) Plan(state *f.GameState, radar *f.RadarResult, objective
 			delete(self.tankGroupA, tank.Id)
 		}
 
+		// faith排序
+		fireRadar := radar.Fire[tank.Id]
+		var tempRadarFire *f.RadarFire
+		for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
+			if tempRadarFire == nil {
+				tempRadarFire = fire
+			}
+			if fire!=nil {
+				if fire.Faith > tempRadarFire.Faith {
+					tempRadarFire = fire
+				}
+			}
+		}
+
+		// 光荣弹开火
+		// if radar.DodgeBullet[tank.Id].Threat == -1 && tempRadarFire != nil && tempRadarFire.Sin < 0.5 {
+		// 	objective[tank.Id] = f.Objective {
+		// 		Action: tempRadarFire.Action,
+		// 	}
+		// 	continue tankloop
+		// }
+
+		// 子弹躲避
+		// if radar.DodgeBullet[tank.Id].Threat > 0.2 {
+		// 	objective[tank.Id] = f.Objective {
+		// 		Action: f.ActionTravel,
+		// 		Target: radar.DodgeBullet[tank.Id].SafePos,
+		// 	}
+		// 	continue tankloop
+		// }
+
+		// 无子弹躲避
+		// if tank.Bullet != "" {
+		// 	objective[tank.Id] = f.Objective {
+		// 		Action: f.ActionTravelWithDodge,
+		// 		Target: radar.Dodge[tank.Id].SafePos,
+		// 	}
+		// 	continue tankloop
+		// }
+
+		// 开火
+		// if tempRadarFire != nil && tempRadarFire.Sin < 0.5 && tempRadarFire.Faith > 0.2 && tank.Bullet == "" {
+		// 	objective[tank.Id] = f.Objective {
+		// 		Action: tempRadarFire.Action,
+		// 	}
+		// 	continue tankloop
+		// }
+
 		// 寻路
 		// least := 99999
 		// furthest := -99999
@@ -84,18 +132,18 @@ func (self *Terminator) Plan(state *f.GameState, radar *f.RadarResult, objective
 		// 战斗A组
 		if _, ok := self.tankGroupA[tank.Id]; ok {
 			// faith排序
-			fireRadar := radar.Fire[tank.Id]
-			var tempRadarFire *f.RadarFire
-			for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
-				if tempRadarFire == nil {
-					tempRadarFire = fire
-				}
-				if fire!=nil {
-					if fire.Faith > tempRadarFire.Faith {
-						tempRadarFire = fire
-					}
-				}
-			}
+			// fireRadar := radar.Fire[tank.Id]
+			// var tempRadarFire *f.RadarFire
+			// for _, fire := range []*f.RadarFire { fireRadar.Up, fireRadar.Down, fireRadar.Left, fireRadar.Right } {
+			// 	if tempRadarFire == nil {
+			// 		tempRadarFire = fire
+			// 	}
+			// 	if fire!=nil {
+			// 		if fire.Faith > tempRadarFire.Faith {
+			// 			tempRadarFire = fire
+			// 		}
+			// 	}
+			// }
 
 			// 光荣弹开火
 			if radar.DodgeBullet[tank.Id].Threat == -1 && tempRadarFire != nil && tempRadarFire.Sin < 0.5 {
@@ -124,7 +172,7 @@ func (self *Terminator) Plan(state *f.GameState, radar *f.RadarResult, objective
 			}
 
 			// 开火
-			if tempRadarFire != nil && tempRadarFire.Sin < 0.5 && tempRadarFire.Faith > 0.4 && tank.Bullet == "" {
+			if tempRadarFire != nil && tempRadarFire.Sin < 0.5 && tempRadarFire.Faith > 0.2 && tank.Bullet == "" {
 				objective[tank.Id] = f.Objective {
 					Action: tempRadarFire.Action,
 				}
@@ -202,6 +250,27 @@ func (self *Terminator) Plan(state *f.GameState, radar *f.RadarResult, objective
 				role.move()
 			} else {
 				role.act()
+			}
+		}
+
+		// 夺旗
+		if len(self.tankGroupA) > 0 {
+			if state.FlagWait <= 5 {
+				if _, ok := self.tankGroupA[tank.Id]; ok {
+					objective[tank.Id] = f.Objective {
+						Action: f.ActionTravel,
+						Target: f.Position { X: state.Terain.Width/2, Y: state.Terain.Height/2 },
+					}
+				}
+			}
+		} else {
+			if state.FlagWait <= 5 {
+				if _, ok := self.tankGroupB[tank.Id]; ok {
+					objective[tank.Id] = f.Objective {
+						Action: f.ActionTravel,
+						Target: f.Position { X: state.Terain.Width/2, Y: state.Terain.Height/2 },
+					}
+				}
 			}
 		}
 	}
