@@ -80,15 +80,7 @@ func (r *CattyRole) checkDone() bool {
 }
 
 func (r *CattyRole) move() {
-	if r.Tank.Bullet == "" {
-		if r.Dodge.Threat == 1 {
-			r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravelWithDodge, Target: r.Target.Pos }
-		} else {
-			r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravel, Target: r.Target.Pos }
-		}
-	} else {
-		r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravel, Target: r.Dodge.SafePos }
-	}
+	r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravelWithDodge, Target: r.Target.Pos }
 }
 
 // 行动
