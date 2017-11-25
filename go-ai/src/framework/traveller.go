@@ -133,6 +133,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 				}
 			}
 			isDodge := aThreat[astar.Point { Col: from.X, Row: from.Y }] > 0
+			isDodge = true
 			if !isDodge {
 				directions := []int { DirectionUp, DirectionLeft, DirectionDown, DirectionRight }
 				for _, etank := range state.EnemyTank {

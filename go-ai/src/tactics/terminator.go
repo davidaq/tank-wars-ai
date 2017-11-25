@@ -166,7 +166,7 @@ func (self *Terminator) Plan(state *f.GameState, radar *f.RadarResult, objective
 			if tank.Bullet != "" {
 				objective[tank.Id] = f.Objective {
 					Action: f.ActionTravelWithDodge,
-					Target: radar.Dodge[tank.Id].SafePos,
+					Target: tank.Pos,
 				}
 				continue tankloop
 			}
