@@ -56,9 +56,10 @@ func (r *CattyRole) hunt() {
 	delete(r.obs.ShotPos, tpos)
 }
 
-func (r *CattyRole) checkDone() bool {
-    return r.Dodge.Threat == -1 || r.fireAction() != -1 || r.canFireToFlag() || (r.Tank.Pos.X == r.Target.Pos.X && r.Tank.Pos.Y == r.Target.Pos.Y)
-}
+// func (r *CattyRole) checkDone() bool {
+//     // 必死/直线可开火/可朝旗开火/到达目标点
+//     return r.Dodge.Threat == -1 || r.fireAction() != -1 || r.canFireToFlag() || (r.Tank.Pos.X == r.Target.Pos.X && r.Tank.Pos.Y == r.Target.Pos.Y)
+// }
 
 func (r *CattyRole) move() {
     r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravelWithDodge, Target: r.Target.Pos }
@@ -66,23 +67,25 @@ func (r *CattyRole) move() {
 
 // 行动
 func (r *CattyRole) act() {
+    // 必死
 	if r.Dodge.Threat == -1 {
-		r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.fireBeforeDying() }   // 光辉弹
-	} else if r.fireAction() != -1 {
-		if r.Dodge.Threat == 1 {
-            r.move()
-		} else {
-			r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.fireAction() }
-		}
+		r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.fireBeforeDying() }
+
+    // 可开火
+	} else if r.fireAction() != -1 && r.Dodge.Threat < 1 {
+		r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.fireAction() }
+
+    // 可朝旗开火
     } else if r.canFireToFlag() {
         r.fireFlag()
-	} else if r.Tank.Pos.X == r.Target.Pos.X && r.Tank.Pos.Y == r.Target.Pos.Y {
-		r.hunt()
+
+    // 其余情况寻路
+	} else {
 		r.move()
 	}
 }
 
-// 光辉弹
+// 光荣弹
 func (r *CattyRole) fireBeforeDying() int {
     var mrf *f.RadarFire
     for _, rf := range []*f.RadarFire{ r.Fire.Up, r.Fire.Down, r.Fire.Left, r.Fire.Right } {

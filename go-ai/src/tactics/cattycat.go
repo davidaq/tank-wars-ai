@@ -35,17 +35,17 @@ func (c *Catty) Plan(state *f.GameState, radar *f.RadarResult, objective map[str
             role.occupyFlag()
             continue
         }
-        // if role.Target.Tank == (f.Tank{}) && role.Target.Pos == (f.Position{}) {
-            role.hunt()
-        // }
+
+        role.hunt()
+        role.act()
 
         fmt.Printf("catty role target: %+v\n", role.Target)
 
-		if !role.checkDone() {
-			role.move()
-		} else {
-			role.act()
-		}
+		// if !role.checkDone() {
+		// 	role.move()
+		// } else {
+		// 	role.act()
+		// }
     }
     fmt.Printf("catty objective: %+v\n", c.obs.Objs)
 }
