@@ -191,10 +191,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 					}
 					lock.Unlock()
 					if allowCalc {
-						cache.path = self.path(a, from, to, state.Params.TankSpeed, state.Terain, aThreat, false)
-						if len(cache.path) == 0 && aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }] > 0 {
-							cache.path = self.path(a, from, to, state.Params.TankSpeed, state.Terain, aThreat, true)
-						}
+						cache.path = self.path(a, from, to, state.Params.TankSpeed, state.Terain, aThreat, aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }] > 0)
 						for len(cache.path) > 0 {
 							p := cache.path[0]
 							if p.X == from.X && p.Y == from.Y {
