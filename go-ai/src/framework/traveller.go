@@ -152,7 +152,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 		to := *travel[tank.Id]
 		go (func () {
 			tThreat := aThreat
-			if aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }] > 0.7 {
+			if aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }] > 0.45 {
 				tThreat = make(map[astar.Point]float64)
 			}
 			nextPoint := to
