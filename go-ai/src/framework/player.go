@@ -107,9 +107,11 @@ func (self *Player) Play(state *GameState) map[string]int {
 				// 	travel[tank.Id] = &ododge.pos
 				// } else 
 				if dodge.SafePos.SDist(tank.Pos) == 0 {
+					movement[tank.Id] = ActionTravelWithDodge
 					noForward = append(noForward, tank.Id)
 					travel[tank.Id] = &objective.Target
 				} else {
+					movement[tank.Id] = ActionTravelWithDodge
 					travel[tank.Id] = &dodge.SafePos
 					self.dodge[tank.Id] = Dodge {
 						round: self.round,
