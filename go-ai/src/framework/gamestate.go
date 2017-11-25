@@ -93,10 +93,10 @@ func (s Position) SDist (other Position) int {
 	if dy < 0 {
 		dy = -dy
 	}
-	ret := dx + dy + 1
-	if s.Direction == DirectionNone || other.Direction == DirectionNone || s.Direction == other.Direction {
-		ret--
-	}
+	ret := dx + dy
+	// if s.Direction == DirectionNone || other.Direction == DirectionNone || s.Direction == other.Direction {
+	// 	ret--
+	// }
 	return ret
 }
 

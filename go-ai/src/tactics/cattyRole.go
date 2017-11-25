@@ -89,7 +89,7 @@ func (r *CattyRole) act() {
 		r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.fireBeforeDying() }   // 光辉弹
 	} else if r.fireAction() != -1 {
 		if r.Dodge.Threat == 1 {
-			r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravel, Target: r.Dodge.SafePos }
+			r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravelWithDodge, Target: r.Tank.Pos }
 		} else {
 			r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.fireAction() }
 		}
