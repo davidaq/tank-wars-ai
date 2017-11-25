@@ -716,12 +716,18 @@ func (self *Radar) convertActionToPosition(state *GameState, tank Tank, action i
             if positionRet.Y >= tank.Pos.Y {
                 for y := tank.Pos.Y; y <= positionRet.Y; y++ {
                     if positionRet.X == s.Pos.X && y == s.Pos.Y {
+                        if action == ActionMove && y - tank.Pos.Y > 1 {
+                            return true, Position{X: tank.Pos.X, Y: y}
+                        }
                         return false, Position{}
                     }
                 }
             } else {
                 for y := tank.Pos.Y; y >= positionRet.Y; y-- {
                     if positionRet.X == s.Pos.X && y == s.Pos.Y {
+                        if action == ActionMove && tank.Pos.Y - y > 1 {
+                            return true, Position{X: tank.Pos.X, Y: y}
+                        }
                         return false, Position{}
                     }
                 }
@@ -731,12 +737,18 @@ func (self *Radar) convertActionToPosition(state *GameState, tank Tank, action i
             if positionRet.X >= tank.Pos.X {
                 for x := tank.Pos.X; x <= positionRet.X; x++ {
                     if x == s.Pos.X && positionRet.Y == s.Pos.Y {
+                        if action == ActionMove && x - tank.Pos.X > 1 {
+                            return true, Position{X: x, Y: tank.Pos.Y}
+                        }
                         return false, Position{}
                     }
                 }
             } else {
                 for x := tank.Pos.X; x >= positionRet.X; x-- {
                     if x == s.Pos.X && positionRet.Y == s.Pos.Y {
+                        if action == ActionMove && tank.Pos.X - x > 1 {
+                            return true, Position{X: x, Y: tank.Pos.Y}
+                        }
                         return false, Position{}
                     }
                 }
