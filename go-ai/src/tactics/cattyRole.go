@@ -3,6 +3,7 @@ package tactics
 import (
 	f "framework"
 	// "fmt"
+    "math/rand"
 )
 
 type CattyRole struct {
@@ -89,8 +90,8 @@ func (r *CattyRole) act() {
 	} else if r.doFire() != -1 && r.Dodge.Threat < 1 {
 		r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.doFire() }
 
-    // 可朝旗开火
-    } else if r.canFireToFlag() {
+    // 可朝旗开火（加入随机量，避免太频繁）
+    } else if r.canFireToFlag() && rand.Int() % 3 == 0 {
         r.fireToFlag()
 
     // 其余情况寻路
@@ -193,7 +194,7 @@ func (r *CattyRole) doFire() int {
             mrf = rf
         }
     }
-	if mrf == nil || mrf.Faith < 0.5 || mrf.Sin >= 0.5 {
+	if mrf == nil || mrf.Faith < 0.8 || mrf.Sin >= 0.5 {
 		return -1
 	} else {
 		return mrf.Action

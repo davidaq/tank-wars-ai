@@ -145,10 +145,11 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 			aThreat := make(map[astar.Point]float64)
 			for p, v := range threat {
 				if v > 0 {
-					aThreat[astar.Point { Col: p.X, Row: p.Y }] = v	
+					aThreat[astar.Point { Col: p.X, Row: p.Y }] = v
 				}
 			}
-			isDodge := aThreat[astar.Point { Col: from.X, Row: from.Y }] > 0.4
+			bulletThreat := aThreat[astar.Point { Col: from.X, Row: from.Y }]
+			isDodge := bulletThreat > 0.4
 			// isDodge = true
 			if !isDodge {
 				directions := []int { DirectionUp, DirectionLeft, DirectionDown, DirectionRight }
@@ -188,45 +189,53 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 									badDir = true
 								}
 							}
+							if fpos := pos.step(tank.Pos.Direction); state.Terain.Get(fpos.X, fpos.Y) == 1 {
+								badDir = true
+							}
 							dangerDist := state.Params.BulletSpeed + 1
-							for i, N := 1, dangerDist + state.Params.BulletSpeed; i <= N; i++ {
-								pos = pos.step(dir)
+							for i := 0; i <= dangerDist; i++ { // 1 + 1子弹速以内
 								if state.Terain.Get(pos.X, pos.Y) == 1 {
 									break
 								}
-								isThreat := false
-								if i <= dangerDist {
-									isThreat = true
-								} else if badDir {
-									isThreat = true
-								} else {
-									fpos := pos.step(tank.Pos.Direction)
-									if state.Terain.Get(fpos.X, fpos.Y) == 1 {
-										isThreat = true
+								if rt, ok := aThreat[astar.Point { Col: pos.X, Row: pos.Y }]; !ok || rt < 0.6 {
+									val := -1.
+									if possibleI == 0 {
+										val = -2.
+									} else if badDir {
+										val = -3.
+									}
+									if !ok || val < rt {
+										aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = val
 									}
 								}
-								if state.Terain.Get(pos.X, pos.Y) == 2 {
-									isThreat = false
-								}
-								if isThreat {
-									if rt, ok := aThreat[astar.Point { Col: pos.X, Row: pos.Y }]; !ok || rt < 0.6 {
-										val := -1.
-										if possibleI == 0 {
-											if badDir {
-												val = -2.
-											} else {
-												val = -3.
-											}
-										}
-										if !ok || rt > val {
-											aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = val
-										}
-									}
-								}
+								pos = pos.step(dir)
 							}
+							// for i := 0; i < state.Params.BulletSpeed; i++ { // 1 + 2子弹速以内
+							// 	if state.Terain.Get(pos.X, pos.Y) == 1 {
+							// 		break
+							// 	}
+							// 	pos = pos.step(dir)
+							// }
+							
+							// for i, N := 1, dangerDist + extDist; i <= N; i++ {
+							// 	pos = pos.step(dir)
+							// 	if state.Terain.Get(pos.X, pos.Y) == 1 {
+							// 		break
+							// 	}
+							// 	isThreat := false
+							// 	if i <= dangerDist {
+							// 		isThreat = true
+							// 	}
+							// 	if badDir {
+							// 		isThreat = true
+							// 	}
+							// 	if state.Terain.Get(pos.X, pos.Y) == 2 {
+							// 		isThreat = false
+							// 	}
+							// }
 						}
 					}
-					fmt.Println("ATHREAT", aThreat)
+					// fmt.Println("ATHREAT", aThreat)
 				}
 			}
 			lock.Lock()
@@ -287,16 +296,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 			}
 			action := toAction(from, nextPoint)
 			lock.Lock()
-			if curThreat < -2.9 { // 身处绝杀位
-				nPos := tank.Pos.step(tank.Pos.Direction)
-				if state.Terain.Get(nPos.X, nPos.Y) == 1 {
-					fmt.Println("Dodge Dread Kill Back", tank.Id)
-					action = (tank.Pos.Direction - DirectionUp + 2) % 4 + ActionTurnUp
-				} else {
-					action = ActionMove
-					fmt.Println("Dodge Dread Kill Move", tank.Id)
-				}
-			} else if curThreat < -1.9 { // 身处方向不好的绝杀位
+			if curThreat < -2.9 { // 身处方向不好的绝杀位
 				preferAct := make(map[int]bool)
 				if tank.Pos.Direction == DirectionUp || tank.Pos.Direction == DirectionDown {
 					preferAct[ActionTurnLeft] = true
@@ -318,6 +318,15 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 					action = suggestAct
 					fmt.Println("Dodge Dread Kill Turn", tank.Id)
 				}
+			} else if curThreat < -1.9 { // 身处绝杀位
+				nPos := tank.Pos.step(tank.Pos.Direction)
+				if state.Terain.Get(nPos.X, nPos.Y) == 1 {
+					fmt.Println("Dodge Dread Kill Back", tank.Id)
+					action = (tank.Pos.Direction - DirectionUp + 2) % 4 + ActionTurnUp
+				} else {
+					action = ActionMove
+					fmt.Println("Dodge Dread Kill Move", tank.Id)
+				}
 			} else if curThreat < -0.9 { // 身处预判绝杀位
 			}
 			movements[id] = action
@@ -326,11 +335,9 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 		})()
 	}
 	lock.Unlock()
-	fmt.Println("-----+")
 	for _, _ = range myTanks {
 		_ = <- waitchan
 	}
-	fmt.Println("-----/")
 	sorter := &TankSorter {
 		content: myTanks,
 		eval: func (tank *Tank) float64 {
@@ -380,6 +387,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 				fmt.Println("Travel threat stay!!", tank.Id)
 			}
 		}
+		// if curThreat == 
 		if action == ActionMove {
 			pos := tank.Pos
 			for i := 0; i < state.Params.TankSpeed; i++ {
@@ -415,7 +423,7 @@ func (self *Traveller) path(a astar.AStar, source Position, target Position, mov
 	targetPoint := []astar.Point{ astar.Point{ Row: target.Y, Col: target.X } }
 
 	p := a.FindPath(p2p, targetPoint, sourcePoint, movelen, source.Direction, threat, brave)
-	
+
 	var ret []Position
 	for p != nil {
 		ret = append(ret, Position {
@@ -463,7 +471,7 @@ func toAction (source Position, target Position) int {
 	} else {
 		targetDirection = target.Direction
 		if targetDirection == DirectionNone || source.Direction == target.Direction {
-			return ActionStay	
+			return ActionStay
 		}
 	}
 	if targetDirection == source.Direction {
