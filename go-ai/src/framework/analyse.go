@@ -11,7 +11,6 @@ package framework
 import (
     "container/list"
     "math"
-    "fmt"
 )
 
 type MapAnalysis struct {
