@@ -98,7 +98,7 @@ func (self *Simplest) Plan(state *f.GameState, radar *f.RadarResult, objective m
 		}
 
 		// 开火
-		if tempRadarFire != nil && tempRadarFire.Sin < 0.5 && tempRadarFire.Faith >= 0.4 && tank.Bullet == "" {
+		if tempRadarFire != nil && tempRadarFire.Sin < 0.5 && tempRadarFire.Faith >= 0.6 && tank.Bullet == "" {
 			objective[tank.Id] = f.Objective {
 				Action: tempRadarFire.Action,
 			}
@@ -109,7 +109,7 @@ func (self *Simplest) Plan(state *f.GameState, radar *f.RadarResult, objective m
 		least := 99999
 		var ttank *f.Tank
 
-		distance := state.Terain.Width/6
+		distance := state.Params.BulletSpeed +1
 		patrolPos := []f.Position{
 			{ X: state.Terain.Width/2-distance, Y: state.Terain.Height/2 },
 			{ X: state.Terain.Width/2, Y: state.Terain.Height/2-distance },
@@ -146,22 +146,22 @@ func (self *Simplest) Plan(state *f.GameState, radar *f.RadarResult, objective m
 				// fmt.Println("bulletCost:",ebcost)
 				switch p.Direction {
 				case f.DirectionUp:
-					p.Y -= 2 * state.Params.TankSpeed + 2
+					p.Y -= 3 * state.Params.TankSpeed + 1
 					if ttank.Bullet != "" {
 						p.Y -= 2 * state.Params.TankSpeed
 					}
 				case f.DirectionDown:
-					p.Y += 2 * state.Params.TankSpeed + 2
+					p.Y += 3 * state.Params.TankSpeed + 1
 					if ttank.Bullet != "" {
 						p.Y += 2 * state.Params.TankSpeed
 					}
 				case f.DirectionLeft:
-					p.X -= 2 * state.Params.TankSpeed + 2
+					p.X -= 3 * state.Params.TankSpeed + 1
 					if ttank.Bullet != "" {
 						p.Y -= 2 * state.Params.TankSpeed
 					}
 				case f.DirectionRight:
-					p.X += 2 * state.Params.TankSpeed + 2
+					p.X += 3 * state.Params.TankSpeed + 1
 					if ttank.Bullet != "" {
 						p.Y += 2 * state.Params.TankSpeed
 					}

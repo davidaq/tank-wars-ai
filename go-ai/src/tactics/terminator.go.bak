@@ -245,12 +245,12 @@ func (self *Terminator) Plan(state *f.GameState, radar *f.RadarResult, objective
 				continue tankloop
 			}
 			role.hunt()
-
-			if role.Tank.Bullet != "" || !role.checkDone() {
-				role.move()
-			} else {
-				role.act()
-			}
+                        role.act()
+			//if role.Tank.Bullet != "" || !role.checkDone() {
+			//	role.move()
+			//} else {
+			//	role.act()
+			//}
 		}
 
 		// 夺旗
