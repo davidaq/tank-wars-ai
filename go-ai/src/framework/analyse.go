@@ -16,9 +16,13 @@ import (
 type MapAnalysis struct {
     Ocnt, Fcnt, Wcnt  int   // 空地、森林、墙数据
     Forests []Forest         // 森林相关
+
+    TmpId       int         // 草丛标记
 }
 
 type Forest struct {
+    Id          int         // 草丛唯一标示
+    ForestMap   map[Position]bool // 草丛地图
     Area        int         // 面积
     Center      Position    // 中心点
     Nearest     Position    // 离出生点最近的入口
@@ -116,9 +120,12 @@ func (m *MapAnalysis) bftForest(state *GameState, firstForest Position, execedFo
     border := make(map[Position]bool)
     border[firstForest] = true
 
+    forest.ForestMap = make(map[Position]bool)
+
     // 如果只有一个草丛的情况
     for first.Value != nil {
         if pos, ok := (first.Value).(Position); ok {
+            forest.ForestMap[pos] = true
             xsum += pos.X
             ysum += pos.Y
 
@@ -159,6 +166,8 @@ func (m *MapAnalysis) bftForest(state *GameState, firstForest Position, execedFo
             break
         }
     }
+    forest.Id       = m.TmpId + 1
+    m.TmpId++
     forest.XLength  = xmax - xmin + 1
     forest.YLength  = ymax - ymin + 1
     forest.Center.X = xsum / queue.Len()
@@ -196,4 +205,16 @@ func (m *MapAnalysis) bftForest(state *GameState, firstForest Position, execedFo
         }
     }
     return forest
+}
+
+/**
+ * 判断点是否在那片草丛，如果命中则返回那片草丛
+ */
+func (m *MapAnalysis) CheckForest(pos Position) Forest{
+    for _, f := range m.Forests {
+        if f.ForestMap[pos] == true {
+            return f
+        }
+    }
+    return Forest{}
 }
