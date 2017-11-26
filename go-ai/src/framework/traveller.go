@@ -6,6 +6,7 @@ import (
 	"sync"
 	"math/rand"
 	"fmt"
+	"sort"
 )
 
 type PathCache struct {
@@ -13,6 +14,20 @@ type PathCache struct {
 	target Position
 	expect *Position
 	round int
+}
+
+type TankSorter struct {
+	content []*Tank
+	eval func (tank *Tank) float64
+}
+func (s *TankSorter) Len() int {
+	return len(s.content)
+}
+func (s *TankSorter) Swap(i, j int) {
+	s.content[i], s.content[j] = s.content[j], s.content[i]
+}
+func (s *TankSorter) Less(i, j int) bool {
+	return s.eval(s.content[i]) > s.eval(s.content[j])
 }
 
 type Traveller struct {
@@ -210,7 +225,9 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 					fmt.Println("ATHREAT", aThreat)
 				}
 			}
+			lock.Lock()
 			tAThreats[id] = aThreat
+			lock.Unlock()
 			curThreat := aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }]
 			if from.X != to.X || from.Y != to.Y {
 				cache.path = nil
@@ -309,8 +326,21 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 	for _, _ = range myTanks {
 		_ = <- waitchan
 	}
+	sorter := &TankSorter {
+		content: myTanks,
+		eval: func (tank *Tank) float64 {
+			aThreat := tAThreats[tank.Id]
+			curThreat := aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }]
+			if curThreat < 0 {
+				curThreat = 0.6
+			}
+			return curThreat
+		},
+	}
+	sort.Sort(sorter)
+
 	// 解决冲突
-	for _, tank := range myTanks {
+	for _, tank := range sorter.content {
 		action := movements[tank.Id]
 		aThreat := tAThreats[tank.Id]
 		curThreat := aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }]
@@ -345,6 +375,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 				fmt.Println("Travel threat stay!!")
 			} else if _, exists := occupy[p]; exists {
 				action = ActionStay
+				fmt.Println("Collide stay!!")
 				if firstColide {
 					cache.path = nil
 					firstColide = false
