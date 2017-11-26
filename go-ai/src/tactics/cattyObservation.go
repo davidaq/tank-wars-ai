@@ -14,6 +14,7 @@ type Observation struct {
     PreState     *f.GameState
     State        *f.GameState
     Radar        *f.RadarResult
+    mapanalysis  *f.MapAnalysis
     Objs         map[string]f.Objective
     MyTank       map[string]f.Tank // 我方存活坦克
     EmyTank      map[string]f.Tank // 敌方存活坦克
@@ -41,7 +42,9 @@ func (p PairList) Swap(i, j int){ p[i], p[j] = p[j], p[i] }
 
 func NewObservation(state *f.GameState) (obs *Observation) {
     obs = &Observation{ TotalSteps: state.Params.MaxRound, Steps: 0, State: state, Terain: state.Terain}
-
+    // 地图分析
+    obs.mapanalysis.Analysis(state)
+    
     // 观察坦克
     obs.observeTank()
 

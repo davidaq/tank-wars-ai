@@ -8,12 +8,12 @@ import (
 type Catty struct {
     obs           *Observation
     Roles         map[string]*CattyRole
-    mapanalysis   *f.MapAnalysis
+    
 }
 
 func NewCatty() *Catty{
     return &Catty {
-        mapanalysis:  &f.MapAnalysis{},
+        // mapanalysis:  &f.MapAnalysis{},
         Roles: make(map[string]*CattyRole),
     }
 }
@@ -55,8 +55,6 @@ func (c *Catty) forestinfo() map[f.Forest]int{
 }
 
 func (c *Catty) Init(state *f.GameState) {
-    // 地图分析
-    c.mapanalysis.Analysis(state)
 
     // 初始化角色
     c.obs = NewObservation(state)
@@ -82,6 +80,8 @@ func (c *Catty) Plan(state *f.GameState, radar *f.RadarResult, objective map[str
     c.obs.makeObservation(state, radar, objective)
 
     c.updateRole()
+
+    c.redispatch()
 
     for _, role := range c.Roles {
         if c.obs.Flag.Exist && c.obs.Flag.Next <= 5 {

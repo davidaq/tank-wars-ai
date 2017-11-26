@@ -29,6 +29,7 @@ type Forest struct {
     Entrance    int         // 出口数量
     XLength     int         // 森林X长度
     YLength     int         // 森林Y长度
+    HasFlag     bool        // 是否含旗
 }
 
 func (m *MapAnalysis) Analysis (state *GameState) {
@@ -172,6 +173,13 @@ func (m *MapAnalysis) bftForest(state *GameState, firstForest Position, execedFo
     forest.YLength  = ymax - ymin + 1
     forest.Center.X = xsum / queue.Len()
     forest.Center.Y = ysum / queue.Len()
+
+    // 判断是否有旗子
+    if forest.Center.X == state.Params.FlagX && forest.Center.Y == state.Params.FlagY {
+        forest.HasFlag = true
+    } else {
+        forest.HasFlag = false
+    }
 
     // 森林出口数量使用附近的墙进行计算
     tmpForestExit := make(map[Position]bool)
