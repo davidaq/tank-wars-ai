@@ -7,6 +7,7 @@ import (
 )
 
 type CattyRole struct {
+    gotoforest   bool
     obs          *Observation
     Tank         f.Tank
     Target       f.Position
@@ -183,7 +184,6 @@ func (r *CattyRole) fireByFaith(faith float64, sin float64) int {
         return mrf.Action
     }
 }
-
 
 // 是否有合适的开火方向 TODO
 func (r *CattyRole) doFire() int {

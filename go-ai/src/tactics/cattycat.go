@@ -6,19 +6,34 @@ import (
 )
 
 type Catty struct {
-    obs      *Observation
-    Roles    map[string]*CattyRole
+    obs           *Observation
+    Roles         map[string]*CattyRole
+    mapanalysis   *f.MapAnalysis
 }
 
 func NewCatty() *Catty{
-    return &Catty { Roles: make(map[string]*CattyRole) }
+    return &Catty {
+        mapanalysis:  &f.MapAnalysis{},
+        Roles: make(map[string]*CattyRole),
+    }
 }
 
 func (c *Catty) Init(state *f.GameState) {
+    // 地图分析
+    c.mapanalysis.Analysis(state)
+
+    // 初始化角色
     c.obs     = NewObservation(state)
 	for _, tank := range state.MyTank {
 		c.Roles[tank.Id] = &CattyRole { obs: c.obs, Tank: tank}
 	}
+
+    // 分配一个去旗子
+    for _, role := range c.Roles {
+        role.gotoforest = true
+        role.Target     = c.obs.Flag.Pos
+        break
+    }
 }
 
 func (c *Catty) Plan(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
@@ -35,8 +50,9 @@ func (c *Catty) Plan(state *f.GameState, radar *f.RadarResult, objective map[str
             role.occupyFlag()
             continue
         }
-
-        role.hunt()
+        if !role.gotoforest {
+            role.hunt()
+        }
         role.act()
 
         fmt.Printf("catty role target: %+v\n", role.Target)
@@ -45,8 +61,12 @@ func (c *Catty) Plan(state *f.GameState, radar *f.RadarResult, objective map[str
 }
 
 func (c *Catty) updateRole() {
+    flagcnt := 0
 	for id, role := range c.Roles {
 		if c.obs.MyTank[id] != (f.Tank{}) {
+            if role.gotoforest {
+                flagcnt++
+            }
 			role.Tank         = c.obs.MyTank[id]
 			role.Dodge        = c.obs.Radar.DodgeBullet[id]
             role.ExtDangerSrc = c.obs.Radar.ExtDangerSrc[id]
@@ -55,6 +75,13 @@ func (c *Catty) updateRole() {
 			delete(c.Roles, id)
 		}
 	}
+    if flagcnt <= 0 {
+        for _, role := range c.Roles {
+            role.gotoforest = true
+            role.Target     = c.obs.Flag.Pos
+            break
+        }
+    }
 }
 
 func (c *Catty) End(state *f.GameState) { }
