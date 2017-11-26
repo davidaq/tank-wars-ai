@@ -226,6 +226,7 @@ func (self *Player) Play(state *GameState) map[string]int {
 			movement[tank.Id] = ActionStay
 		}
 	}
+	BadCase(state, radarResult, movement)
 	if self.rotated {
 		for tankId, action := range movement {
 			switch action {
