@@ -36,13 +36,6 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 			} 
 			if ox == fx && fy > oy {	
 				return float64(1)
-			} else if fy > oy {
-				if ox - fx == tankSpeed && otherTank.Pos.Direction == DirectionLeft {
-					return float64(0.5)
-				}
-				if fx - ox == tankSpeed && otherTank.Pos.Direction == DirectionRight {
-					return float64(0.5)
-				}
 			}
 		case DirectionLeft:
 			if enemyPos.X != -1 && enemyPos.Y == oy && enemyPos.X > ox && enemyPos.X < fx {
@@ -50,13 +43,6 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 			}
 			if oy == fy && fx > ox {
 				return float64(1)
-			} else if fx > ox {
-				if oy - fy == tankSpeed && otherTank.Pos.Direction == DirectionUp {
-					return float64(0.5)
-				}
-				if fy - oy == tankSpeed && otherTank.Pos.Direction == DirectionDown {
-					return float64(0.5)
-				}
 			}
 		case DirectionDown:
 			if enemyPos.X != -1 &&  enemyPos.X == ox && enemyPos.Y > fy && enemyPos.Y < oy {
@@ -64,13 +50,6 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 			}
 			if ox == fx && oy > fy {
 				return float64(1)
-			} else if oy > fy {
-				if ox - fx == tankSpeed && otherTank.Pos.Direction == DirectionLeft {
-					return float64(0.5)
-				}
-				if fx - ox == tankSpeed && otherTank.Pos.Direction == DirectionRight {
-					return float64(0.5)
-				}
 			}
 		case DirectionRight:
 			if enemyPos.X != -1 && enemyPos.Y == oy && enemyPos.X > fx && enemyPos.X < ox {
@@ -78,13 +57,6 @@ func calcSin (theTank Tank, tanks []Tank, enemyPos Position, fireDirection int, 
 			}
 			if oy == fy && ox > fx {
 				return float64(1)
-			} else if ox > fx {
-				if oy - fy == tankSpeed && otherTank.Pos.Direction == DirectionUp {
-					return float64(0.5)
-				}
-				if fy - oy == tankSpeed && otherTank.Pos.Direction == DirectionDown {
-					return float64(0.5)
-				}
 			}
 		}
 	}
@@ -309,85 +281,85 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 			cost := 0
 
 			// 敌方不在火线，但在火线两侧
-			if len(enemyThreat.Distances) == 2 {
-				verticalDist := 0
-				fireDirection := 0
-				needToCalc := false
-				horizontalDist := 0
+			// if len(enemyThreat.Distances) == 2 {
+			// 	verticalDist := 0
+			// 	fireDirection := 0
+			// 	needToCalc := false
+			// 	horizontalDist := 0
 
-				var dirA, dirB int
-				var distA, distB int
-				first := true
-				for direction, dist := range enemyThreat.Distances {
-					if first {
-						first = false
-						dirA, distA = direction, dist
-					} else {
-						dirB, distB = direction, dist
-					}
-				}
-				if distA < distB {
-					dirA, dirB = dirB, dirA
-					distA, distB = distB, distA
-				}
+			// 	var dirA, dirB int
+			// 	var distA, distB int
+			// 	first := true
+			// 	for direction, dist := range enemyThreat.Distances {
+			// 		if first {
+			// 			first = false
+			// 			dirA, distA = direction, dist
+			// 		} else {
+			// 			dirB, distB = direction, dist
+			// 		}
+			// 	}
+			// 	if distA < distB {
+			// 		dirA, dirB = dirB, dirA
+			// 		distA, distB = distB, distA
+			// 	}
 
-				verticalDist = distA
-				horizontalDist = distB
-				fireDirection = dirA
+			// 	verticalDist = distA
+			// 	horizontalDist = distB
+			// 	fireDirection = dirA
 
 
-				if horizontalDist >= 1 && horizontalDist <= 2 * state.Params.TankSpeed {
-					needToCalc = true
-				}
+			// 	if horizontalDist >= 1 && horizontalDist <= 2 * state.Params.TankSpeed {
+			// 		needToCalc = true
+			// 	}
 
-				realDirection := directionConvert(fireDirection, tank)
+			// 	realDirection := directionConvert(fireDirection, tank)
 
-				// if distA == distB {
+			// 	// if distA == distB {
 					
-				// }
-				// fmt.Println("0 ------- DIRECTION", "real", realDirection, "fire", fireDirection)
+			// 	// }
+			// 	// fmt.Println("0 ------- DIRECTION", "real", realDirection, "fire", fireDirection)
 				
-				if needToCalc {
-					faith = calcFaith(verticalDist, state.Params.BulletSpeed, state.Params.TankSpeed, false, realDirection, enemyThreat.Enemy, tank.Pos, state.Terain)										
-				} else {
-					faith = 0
-				}
-				sin = calcSin(tank, state.MyTank, enemyThreat.Enemy, realDirection, state.Params.BulletSpeed, state.Params.TankSpeed)
-				cost = calcCost(tank, realDirection, state.Params.BulletSpeed, state.Terain)
+			// 	if needToCalc {
+			// 		faith = calcFaith(verticalDist, state.Params.BulletSpeed, state.Params.TankSpeed, false, realDirection, enemyThreat.Enemy, tank.Pos, state.Terain)										
+			// 	} else {
+			// 		faith = 0
+			// 	}
+			// 	sin = calcSin(tank, state.MyTank, enemyThreat.Enemy, realDirection, state.Params.BulletSpeed, state.Params.TankSpeed)
+			// 	cost = calcCost(tank, realDirection, state.Params.BulletSpeed, state.Terain)
 				
-				if cost < verticalDist {
-					faith = float64(0)
-					sin = float64(0)
-				}
+			// 	if cost < verticalDist {
+			// 		faith = float64(0)
+			// 		sin = float64(0)
+			// 	}
 
-				fmt.Println("FIRE INFO -------- NO FIRELINE", "count", count, "faith", faith, "sin", sin, "cost", cost, "dist", verticalDist, "tank", tank.Id, "enemyX", enemyThreat.Enemy.X, "enemyY", enemyThreat.Enemy.Y)
+			// 	fmt.Println("FIRE INFO -------- NO FIRELINE", "count", count, "faith", faith, "sin", sin, "cost", cost, "dist", verticalDist, "tank", tank.Id, "enemyX", enemyThreat.Enemy.X, "enemyY", enemyThreat.Enemy.Y, "realDirection", realDirection, "fireDirection", fireDirection, "distA", distA, "distB", distB, "dirtA", dirA, "dirtB", dirB)
 				
-				cost = int(math.Ceil(float64(cost) / float64(state.Params.BulletSpeed)))
+			// 	cost = int(math.Ceil(float64(cost) / float64(state.Params.BulletSpeed)))
 
 
-				switch realDirection {
-				case DirectionUp:
-					if faith < radarFireAlls[tank.Id].Up.Faith {
-						continue
-					}
-					radarFireAlls[tank.Id].Up = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireUp, IsStraight: false}
-				case DirectionLeft:
-					if faith < radarFireAlls[tank.Id].Left.Faith {
-						continue
-					}
-					radarFireAlls[tank.Id].Left = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireLeft, IsStraight: false}
-				case DirectionDown:
-					if faith < radarFireAlls[tank.Id].Down.Faith {
-						continue
-					}
-					radarFireAlls[tank.Id].Down = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireDown, IsStraight: false}
-				case DirectionRight:
-					if faith < radarFireAlls[tank.Id].Right.Faith {
-						continue
-					}
-					radarFireAlls[tank.Id].Right = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireRight, IsStraight: false}
-				}
-			}
+			// 	switch realDirection {
+			// 	case DirectionUp:
+			// 		if faith < radarFireAlls[tank.Id].Up.Faith {
+			// 			continue
+			// 		}
+			// 		radarFireAlls[tank.Id].Up = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireUp, IsStraight: false}
+			// 	case DirectionLeft:
+			// 		if faith < radarFireAlls[tank.Id].Left.Faith {
+			// 			continue
+			// 		}
+			// 		radarFireAlls[tank.Id].Left = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireLeft, IsStraight: false}
+			// 	case DirectionDown:
+			// 		if faith < radarFireAlls[tank.Id].Down.Faith {
+			// 			continue
+			// 		}
+			// 		radarFireAlls[tank.Id].Down = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireDown, IsStraight: false}
+			// 	case DirectionRight:
+			// 		if faith < radarFireAlls[tank.Id].Right.Faith {
+			// 			continue
+			// 		}
+			// 		radarFireAlls[tank.Id].Right = &RadarFire {Faith: faith, Cost: cost, Sin: sin, Action: ActionFireRight, IsStraight: false}
+			// 	}
+			// }
 
 			// 敌方在火线
 			if len(enemyThreat.Distances) == 1 {
@@ -403,7 +375,7 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 						faith = float64(0)
 						sin = float64(0)
 					}
-					fmt.Println("FIRE INFO -------- FIRELINE", "count", count, "faith", faith, "sin", sin, "cost", cost, "dist", dist, "tank", tank.Id, "enemyX", enemyThreat.Enemy.X, "enemyY", enemyThreat.Enemy.Y)
+					fmt.Println("FIRE INFO -------- FIRELINE", "count", count, "faith", faith, "sin", sin, "cost", cost, "dist", dist, "tank", tank.Id, "enemyX", enemyThreat.Enemy.X, "enemyY", enemyThreat.Enemy.Y, "realDirection", realDirection, "fireDirection", fireDirection)
 					
 					cost = int(math.Ceil(float64(cost) / float64(state.Params.BulletSpeed)))					
 					switch realDirection {
