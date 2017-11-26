@@ -170,8 +170,8 @@ func caculateEnemyCost(bullet f.Bullet, terain *f.Terain, bulletSpeed int) float
 	return math.Ceil(float64(count/bulletSpeed))
 }
 
-func forestGrouping (state *Gamestate, tankNum int, terain f.Terain, mapAnalysis f.MapAnalysis) (int, f.Forest) {
-// func forestGrouping (state *Gamestate, tankNum int, terain f.Terain, mapAnalysis f.MapAnalysis) map[f.Forest]int {
+func forestGrouping (tankNum int, terain f.Terain, mapAnalysis f.MapAnalysis) (int, f.Forest) {
+// func forestGrouping (tankNum int, terain f.Terain, mapAnalysis f.MapAnalysis) map[f.Forest]int {
 	// o := mapAnalysis.Ocnt
 	// f := mapAnalysis.Fcnt
 	// w := mapAnalysis.Wcnt
