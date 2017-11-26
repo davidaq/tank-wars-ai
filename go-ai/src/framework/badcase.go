@@ -94,7 +94,7 @@ func badCaseDangerZone(state *GameState, radar *RadarResult, movements map[strin
 	directions := []int { DirectionUp, DirectionLeft, DirectionDown, DirectionRight }
 	vDirections := []int { DirectionUp, DirectionDown }
 	hDirections := []int { DirectionLeft, DirectionRight }
-	tankloop: for _, eTank := range state.EnemyTank {
+	for _, eTank := range state.EnemyTank {
 		for _, dir := range directions {
 			preferVertical := true
 			if dir == DirectionDown || dir == DirectionUp {
@@ -104,13 +104,13 @@ func badCaseDangerZone(state *GameState, radar *RadarResult, movements map[strin
 			for i := 0; i < 2 + state.Params.BulletSpeed; i++ {
 				pos = pos.step(dir)
 				if state.Terain.Get(pos.X, pos.Y) == 1 {
-					continue tankloop
+					continue
 				}
 			}
 			for i := 0; i < state.Params.BulletSpeed; i++ {
 				pos = pos.step(dir)
 				if state.Terain.Get(pos.X, pos.Y) == 1 {
-					continue tankloop
+					continue
 				}
 				dangerous[pos] = preferVertical
 			}
