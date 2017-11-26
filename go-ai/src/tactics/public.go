@@ -7,7 +7,7 @@ import (
 )
 
 
-func forestPartol(pos f.Position, terain f.Terain, tankSpeed int) f.Position {
+func forestPartol(pos f.Position, terain *f.Terain, tankSpeed int) f.Position {
 	inputPos := pos
 	forestExist, posRes := judgeDirectionGrove(inputPos, terain, tankSpeed)
 
@@ -36,7 +36,7 @@ func forestPartol(pos f.Position, terain f.Terain, tankSpeed int) f.Position {
 	}
 }
 
-func judgeDirectionGrove (pos f.Position, terain f.Terain, tankSpeed int) (int, f.Position) {
+func judgeDirectionGrove (pos f.Position, terain *f.Terain, tankSpeed int) (int, f.Position) {
 	posRes := f.Position {
 		X: pos.X,
 		Y: pos.Y,
@@ -171,7 +171,7 @@ func caculateEnemyCost(bullet f.Bullet, terain *f.Terain, bulletSpeed int) float
 }
 
 // func forestGrouping (tankNum int, terain f.Terain, mapAnalysis f.MapAnalysis) (int, f.Forest) {
-func forestGrouping (tankNum int, terain f.Terain, mapAnalysis f.MapAnalysis) map[f.Forest]int {
+func forestGrouping (tankNum int, terain *f.Terain, mapAnalysis *f.MapAnalysis) map[int]int {
 	// o := mapAnalysis.Ocnt
 	// f := mapAnalysis.Fcnt
 	// w := mapAnalysis.Wcnt
@@ -181,10 +181,10 @@ func forestGrouping (tankNum int, terain f.Terain, mapAnalysis f.MapAnalysis) ma
 	// tData := terain.Data
 	mapArea := width*height
 	var large f.Forest
-	res := make(map[f.Forest]int)
+	res := make(map[int]int)
 
 	if len(forests) == 0 {
-		return 0, large
+		return res
 	} else {
 		large = forests[0]
 		// 寻找最大草丛
@@ -207,18 +207,18 @@ func forestGrouping (tankNum int, terain f.Terain, mapAnalysis f.MapAnalysis) ma
 		// }
 
 		if float64(float64(large.Area)/float64(mapArea)) > 0.3 {
-			res[large] = tankNum
+			res[large.Id] = tankNum
 		} else if float64(float64(large.Area)/float64(mapArea)) > 0.15 {
-			res[large] = tankNum/2
+			res[large.Id] = tankNum/2
 		}	else {
-			res[large] = 1
+			res[large.Id] = 1
 		}
 
 		// 旗子非最大草丛
 		for _, forest := range forests {
 			if forest.Center.X == width/2 && forest.Center.Y == height/2 {
-				if res[forest] == 0 {
-					res[forest] = 1
+				if res[forest.Id] == 0 {
+					res[forest.Id] = 1
 				}
 			}
 		}

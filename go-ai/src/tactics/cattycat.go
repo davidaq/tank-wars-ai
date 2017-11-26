@@ -18,9 +18,9 @@ func NewCatty() *Catty{
 }
 
 // 分析草丛人员分配
-func (c *Catty) analysis() {
+// func (c *Catty) analysis() {
 
-}
+// }
 
 // 分配
 func (c *Catty) dispatch() {
