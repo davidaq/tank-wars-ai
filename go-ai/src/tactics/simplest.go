@@ -2,7 +2,7 @@ package tactics
 
 import (
 	f "framework"
-	// "fmt"
+	"fmt"
 )
 
 type Simplest struct {
@@ -24,21 +24,20 @@ func (self *Simplest) Init(state *f.GameState) {
 
 	groupMap := forestGrouping(len(state.MyTank), state.Terain, self.mapanalysis)
 	i:=0
+	groupNum := 0
+	for _,v := range(groupMap) {
+		groupNum+=v
+	}
+	if groupNum == 0 {
+		groupNum = 2
+	}
+
 	for _, tank := range state.MyTank {
-		for _, forest := range self.mapanalysis.Forests {
-			for k := range(groupMap) {
-				if k == forest.Id {
-					self.tankGroupA[tank.Id] = tank
-				} else {
-					self.tankGroupB[tank.Id] = tank
-				}
-			}
+		if i<groupNum {
+			self.tankGroupA[tank.Id] = tank
+		} else {
+			self.tankGroupB[tank.Id] = tank
 		}
-		// if i<groupNum {
-		// 	self.tankGroupA[tank.Id] = tank
-		// } else {
-		// 	self.tankGroupB[tank.Id] = tank
-		// }
 		i++
 	}
 }
@@ -60,6 +59,7 @@ func (self *Simplest) Plan(state *f.GameState, radar *f.RadarResult, objective m
 	}
 	self.tankGroupA = tempTankGroupA
 	self.tankGroupB = tempTankGroupB
+	fmt.Println("A组：",self.tankGroupA, "B组：",self.tankGroupB, tempTankGroupB)
 
 	tankloop: for _, tank := range state.MyTank {
 		n++
