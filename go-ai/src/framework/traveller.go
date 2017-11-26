@@ -145,7 +145,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 			aThreat := make(map[astar.Point]float64)
 			for p, v := range threat {
 				if v > 0 {
-					aThreat[astar.Point { Col: p.X, Row: p.Y }] = v	
+					aThreat[astar.Point { Col: p.X, Row: p.Y }] = v
 				}
 			}
 			bulletThreat := aThreat[astar.Point { Col: from.X, Row: from.Y }]
@@ -235,7 +235,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 							// }
 						}
 					}
-					fmt.Println("ATHREAT", aThreat)
+					// fmt.Println("ATHREAT", aThreat)
 				}
 			}
 			lock.Lock()
@@ -423,7 +423,7 @@ func (self *Traveller) path(a astar.AStar, source Position, target Position, mov
 	targetPoint := []astar.Point{ astar.Point{ Row: target.Y, Col: target.X } }
 
 	p := a.FindPath(p2p, targetPoint, sourcePoint, movelen, source.Direction, threat, brave)
-	
+
 	var ret []Position
 	for p != nil {
 		ret = append(ret, Position {
@@ -471,7 +471,7 @@ func toAction (source Position, target Position) int {
 	} else {
 		targetDirection = target.Direction
 		if targetDirection == DirectionNone || source.Direction == target.Direction {
-			return ActionStay	
+			return ActionStay
 		}
 	}
 	if targetDirection == source.Direction {
