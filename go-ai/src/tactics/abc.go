@@ -32,6 +32,8 @@ func StartTactics (name string) f.Tactics {
 		return NewFox()
 	case "simplest":
 		return NewSimplest()
+	case "forest":
+		return NewForest()
 	// case "terminator":
 		// return NewTerminator()
     // case "snake":

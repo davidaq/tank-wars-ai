@@ -73,11 +73,11 @@ func judgeDirectionGrove (pos f.Position, terain f.Terain, tankSpeed int) (int, 
 			step = tankSpeed
 		}
 		for i:= 1; i<=step; i++ {
-			if terain.Data[pos.Y-i][pos.X] == 0 {
+			if terain.Data[pos.Y+i][pos.X] == 0 {
 				forestExist = 0
 				break
 			}
-			if terain.Data[pos.Y-i][pos.X] == 1 {
+			if terain.Data[pos.Y+i][pos.X] == 1 {
 				break
 			}
 			if terain.Data[pos.Y+i][pos.X] == 2 {
@@ -94,11 +94,11 @@ func judgeDirectionGrove (pos f.Position, terain f.Terain, tankSpeed int) (int, 
 			step = tankSpeed
 		}
 		for i:= 1; i<=step; i++ {
-			if terain.Data[pos.Y-i][pos.X] == 0 {
+			if terain.Data[pos.Y][pos.X-i] == 0 {
 				forestExist = 0
 				break
 			}
-			if terain.Data[pos.Y-i][pos.X] == 1 {
+			if terain.Data[pos.Y][pos.X-i] == 1 {
 				break
 			}
 			if terain.Data[pos.Y][pos.X-i] == 2 {
@@ -115,11 +115,11 @@ func judgeDirectionGrove (pos f.Position, terain f.Terain, tankSpeed int) (int, 
 			step = tankSpeed
 		}
 		for i:= 1; i<=step; i++ {
-			if terain.Data[pos.Y-i][pos.X] == 0 {
+			if terain.Data[pos.Y][pos.X+i] == 0 {
 				forestExist = 0
 				break
 			}
-			if terain.Data[pos.Y-i][pos.X] == 1 {
+			if terain.Data[pos.Y][pos.X+i] == 1 {
 				break
 			}
 			if terain.Data[pos.Y][pos.X+i] == 2 {
@@ -127,7 +127,7 @@ func judgeDirectionGrove (pos f.Position, terain f.Terain, tankSpeed int) (int, 
 			}
 		}
 		if forestExist > 0 {
-			posRes.X = posRes.X - forestExist
+			posRes.X = posRes.X + forestExist
 		}
 	}
 	return forestExist, posRes
