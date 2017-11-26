@@ -56,7 +56,7 @@ func (m *MapAnalysis) bftForest(state *GameState, firstForest Position, execedFo
     queue := list.New()
     queue.PushBack(firstForest)
     pointer := queue.Front()
-    // 每一个点只需要找上、下、左、右
+    // 每一个点需要找上、下、左、右
     pushUnique := make(map[Position]bool)
     pushUnique[firstForest] = true
     for pointer.Value != nil {
@@ -111,6 +111,10 @@ func (m *MapAnalysis) bftForest(state *GameState, firstForest Position, execedFo
     xmax := -1
     ymax := -1
 
+    // 记录边界情况
+    border := make(map[Position]bool)
+    border[firstForest] = true
+
     // 如果只有一个草丛的情况
     for first.Value != nil {
         if pos, ok := (first.Value).(Position); ok {
@@ -129,6 +133,23 @@ func (m *MapAnalysis) bftForest(state *GameState, firstForest Position, execedFo
             if ymax < pos.Y {
                 ymax = pos.Y
             }
+            // 找边界草丛情况，如果上下左右少于等于3个草，则为边界
+            tmpGrass := 0
+            if state.Terain.Get(pos.X + 1, pos.Y) == TerainForest {
+                tmpGrass++
+            }
+            if state.Terain.Get(pos.X - 1, pos.Y) == TerainForest {
+                tmpGrass++
+            }
+            if state.Terain.Get(pos.X, pos.Y - 1) == TerainForest {
+                tmpGrass++
+            }
+            if state.Terain.Get(pos.X, pos.Y + 1) == TerainForest {
+                tmpGrass++
+            }
+            if tmpGrass <= 3 {
+                border[Position{X:pos.X, Y:pos.Y}] = true
+            }
         }
 
         if first.Next() != nil {
@@ -143,8 +164,22 @@ func (m *MapAnalysis) bftForest(state *GameState, firstForest Position, execedFo
     forest.Center.Y = ysum / queue.Len()
 
     // 森林出口数量使用附近的墙进行计算
-
-
-
+    tmpForestExit := make(map[Position]bool)
+    for pos := range border {
+        // 如果旁边是空地，则是出口
+        if state.Terain.Get(pos.X + 1, pos.Y) == TerainEmpty {
+            tmpForestExit[Position{X:pos.X + 1, Y:pos.Y}] = true
+        }
+        if state.Terain.Get(pos.X - 1, pos.Y) == TerainEmpty {
+            tmpForestExit[Position{X:pos.X - 1, Y:pos.Y}] = true
+        }
+        if state.Terain.Get(pos.X, pos.Y + 1) == TerainEmpty {
+            tmpForestExit[Position{X:pos.X, Y:pos.Y + 1}] = true
+        }
+        if state.Terain.Get(pos.X, pos.Y - 1) == TerainEmpty {
+            tmpForestExit[Position{X:pos.X, Y:pos.Y - 1}] = true
+        }
+    }
+    forest.Entrance = len(tmpForestExit)
     return forest
 }
