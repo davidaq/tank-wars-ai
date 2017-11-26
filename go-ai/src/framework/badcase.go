@@ -75,16 +75,6 @@ func badCaseShootSelf(state *GameState, radar *RadarResult, movements map[string
 				movements[tank.Id] = ActionStay
 				continue tankloop
 			}
-			for i := 0; i < state.Params.BulletSpeed; i++ {
-				pos = pos.step(dir)
-				if state.Terain.Get(pos.X, pos.Y) == 1 {
-					continue tankloop
-				}
-				if noStop[pos] {
-					movements[tank.Id] = ActionStay
-					continue tankloop
-				}
-			}
 		}
 	}
 }
