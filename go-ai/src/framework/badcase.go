@@ -44,6 +44,7 @@ func badCaseShootSelf(state *GameState, radar *RadarResult, movements map[string
 		}
 		noStop[pos] = true
 	}
+	fmt.Println("shoot self", noPass, noStop)
 	for _, etank  := range state.EnemyTank {
 		ePos[etank.Pos] = true
 	}
