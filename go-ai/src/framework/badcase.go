@@ -23,11 +23,18 @@ func BadCase(state *f.GameState, radar *f.RadarResult, movements map[string]int)
 	}
 	for _, tank := range state.MyTank {
 		if prefer, danger := dangerous[tank.Pos.NoDirection()]; danger {
-			preferAction := make(map[int]bool)
+			preferDirection := make(map[int]bool)
 			dirs := hDirections
 			if preferVertical {
-
+				dirs = vDirections
 			}
+			for _, dir := range dirs {
+				nPos := tank.Pos.step(dir)
+				if state.Terain.Get(nPos.X, nPos.Y) != 1 {
+					preferDirection[dir] = true
+				}
+			}
+			fixMove(state, radar, movements, tank, preferDirection)
 		}
 	}
 }
