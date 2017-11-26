@@ -132,7 +132,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 					aThreat[astar.Point { Col: p.X, Row: p.Y }] = v	
 				}
 			}
-			isDodge := aThreat[astar.Point { Col: from.X, Row: from.Y }] > 0
+			isDodge := aThreat[astar.Point { Col: from.X, Row: from.Y }] > 0.4
 			// isDodge = true
 			if !isDodge {
 				directions := []int { DirectionUp, DirectionLeft, DirectionDown, DirectionRight }
@@ -193,9 +193,9 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 									isThreat = false
 								}
 								if isThreat {
-									if rt, ok := aThreat[astar.Point { Col: pos.X, Row: pos.Y }]; ok && rt < 0.6 {
+									// if rt, ok := aThreat[astar.Point { Col: pos.X, Row: pos.Y }]; ok && rt < 0.6 {
 										aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = -1
-									}
+									// }
 								}
 							}
 						}
@@ -207,9 +207,9 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 			}
 			if from.X != to.X || from.Y != to.Y {
 				cache.path = nil
-				if to.SDist(from) <= state.Params.TankSpeed {
-					cache.path = []Position { to }
-				}
+				// if to.SDist(from) <= state.Params.TankSpeed {
+				// 	cache.path = []Position { to }
+				// }
 				cache.target = to
 				if cache.expect != nil {
 					lock.Lock()

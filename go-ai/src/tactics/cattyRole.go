@@ -152,6 +152,7 @@ func (r *CattyRole) nextPos(pos f.Position) f.Position {
 
 // 是否可以朝旗子开火
 func (r *CattyRole) canFireToFlag() bool {
+    return false
     if r.Tank.Pos.X == r.obs.Flag.Pos.X || r.Tank.Pos.Y == r.obs.Flag.Pos.Y {
         // 自己在旗子中不开火
         if (r.Tank.Pos.X == r.obs.Flag.Pos.X && r.Tank.Pos.Y == r.obs.Flag.Pos.Y){
