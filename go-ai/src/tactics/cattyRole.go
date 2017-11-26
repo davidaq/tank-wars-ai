@@ -32,14 +32,13 @@ func (r *CattyRole) occupyFlag() {
 // 距离最近的可攻击位置
 // 如果敌方坦克密度较大，放弃那个位置
 func (r *CattyRole) hunt() {
-    fmt.Println("--------in hunt--------")
     fmt.Printf("r.obs.ShotPos: %+v\n", r.obs.ShotPos)
 
     // 如果没有绝杀点
     if len(r.obs.ShotPos) == 0 {
         ttank := r.neareastEmy()
         // 距离最近的坦克很远
-        if nd := r.Tank.Pos.SDist(ttank.Pos); nd > r.obs.State.Params.BulletSpeed * 2 {
+        if nd := r.Tank.Pos.SDist(ttank.Pos); nd > r.obs.State.Params.BulletSpeed * 2 {    // TODO 中心点附近
             r.Target = ttank.Pos
             return
         }
@@ -49,12 +48,12 @@ func (r *CattyRole) hunt() {
 	dist := -1
 	var tpos f.Position
 	for pos, _ := range r.obs.ShotPos {
-		nd   := r.Tank.Pos.SDist(pos)
+		nd := r.Tank.Pos.SDist(pos)
         // 很接近目标，且逃跑路线不顺畅，不攻击
         if nd < r.obs.State.Params.BulletSpeed * 2 && !r.obs.pathReachable(pos, r.nextPos(pos)) {
             continue
         }
-        if dist < 0 || nd < dist{
+        if dist < 0 || nd < dist {
             dist  = nd
             tpos  = pos
         }
@@ -66,7 +65,7 @@ func (r *CattyRole) hunt() {
         delete(r.obs.ShotPos, tpos)
 
     } else {
-        r.Target = r.Tank.Pos
+        r.Target = r.Tank.Pos      // TODO 中心点附近
     }
 }
 
@@ -175,7 +174,7 @@ func (r *CattyRole) canFireToFlag() bool {
                     rf = r.Fire.Right
                 }
             }
-            if rf == nil || rf.Sin <= 0.0 {
+            if rf != nil && rf.Sin <= 0.2 {
                 return true
             }
         }
