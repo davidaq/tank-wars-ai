@@ -97,27 +97,28 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 	waitchan := make(chan bool)
 	var lock sync.Mutex
 	occupy := make(map[Position]bool)
+	lock.Lock()
 	a := self.astar.Clone()
+	var myTanks []*Tank
+	for _, tank := range state.MyTank {
+		if _, exists := travel[tank.Id]; exists {
+			t := tank
+			myTanks = append(myTanks, &t)
+		} else {
+			occupy[tank.Pos.NoDirection()] = true
+			a.FillTile(astar.Point{ Col: tank.Pos.X, Row: tank.Pos.Y }, -1)
+			if cache, hasCache := self.cache[tank.Id]; hasCache {
+				cache.expect = nil
+				cache.path = nil
+			}
+		}
+	}
 	lw := 5
 	for _, tank := range state.MyTank {
 		a.FillTile(astar.Point{ Col: tank.Pos.X, Row: tank.Pos.Y }, lw)
 	}
 	for _, tank := range state.EnemyTank {
 		a.FillTile(astar.Point{ Col: tank.Pos.X, Row: tank.Pos.Y }, lw)
-	}
-	lock.Lock()
-	var myTanks []*Tank
-	for _, tank := range state.MyTank {
-		occupy[tank.Pos.NoDirection()] = true
-		if _, exists := travel[tank.Id]; exists {
-			t := tank
-			myTanks = append(myTanks, &t)
-		} else {
-			if cache, hasCache := self.cache[tank.Id]; hasCache {
-				cache.expect = nil
-				cache.path = nil
-			}
-		}
 	}
 	if len(myTanks) > maxPathCalc {
 		full := myTanks
@@ -383,18 +384,17 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 				pos = pos.step(pos.Direction)
 				if occupy[pos.NoDirection()] {
 					action = ActionStay
-					fmt.Println(occupy)
 					fmt.Println("Collide stay!!", tank.Id, tank.Pos, pos)
 				}
 			}
 			if action == ActionMove {
+				occupy[tank.Pos.step(tank.Pos.Direction).NoDirection()] = true
 				pos := tank.Pos
 				for i := 0; i < state.Params.TankSpeed; i++ {
 					pos = pos.step(pos.Direction)
 					if state.Terain.Get(pos.X, pos.Y) == 1 {
 						break
 					}
-					occupy[pos.NoDirection()] = true
 				}
 				cache.expect = &pos
 			} else {
