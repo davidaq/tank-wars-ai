@@ -21,6 +21,7 @@ type MapAnalysis struct {
 type Forest struct {
     Area        int         // 面积
     Center      Position    // 中心点
+    Nearest     Position    // 离出生点最近的入口
     Entrance    int         // 出口数量
     XLength     int         // 森林X长度
     YLength     int         // 森林Y长度
@@ -165,21 +166,34 @@ func (m *MapAnalysis) bftForest(state *GameState, firstForest Position, execedFo
 
     // 森林出口数量使用附近的墙进行计算
     tmpForestExit := make(map[Position]bool)
+    tmpForestBorder := make(map[Position]bool)
     for pos := range border {
         // 如果旁边是空地，则是出口
         if state.Terain.Get(pos.X + 1, pos.Y) == TerainEmpty {
             tmpForestExit[Position{X:pos.X + 1, Y:pos.Y}] = true
+            tmpForestBorder[Position{X:pos.X, Y:pos.Y}] = true
         }
         if state.Terain.Get(pos.X - 1, pos.Y) == TerainEmpty {
             tmpForestExit[Position{X:pos.X - 1, Y:pos.Y}] = true
+            tmpForestBorder[Position{X:pos.X, Y:pos.Y}] = true
         }
         if state.Terain.Get(pos.X, pos.Y + 1) == TerainEmpty {
             tmpForestExit[Position{X:pos.X, Y:pos.Y + 1}] = true
+            tmpForestBorder[Position{X:pos.X, Y:pos.Y}] = true
         }
         if state.Terain.Get(pos.X, pos.Y - 1) == TerainEmpty {
             tmpForestExit[Position{X:pos.X, Y:pos.Y - 1}] = true
+            tmpForestBorder[Position{X:pos.X, Y:pos.Y}] = true
         }
     }
     forest.Entrance = len(tmpForestExit)
+    //遍历离出生点（0,0）最近的那片
+    min := math.MaxInt32
+    for pos := range tmpForestBorder {
+        if min > pos.SDist(Position{X: 0, Y: 0}) {
+            min = pos.SDist(Position{X: 0, Y: 0})
+            forest.Nearest = pos
+        }
+    }
     return forest
 }

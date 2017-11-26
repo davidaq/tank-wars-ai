@@ -147,8 +147,6 @@ func (self *Player) Play(state *GameState) map[string]int {
 			movement[tankId] = ActionStay
 		}
 	}
-	noShootX := make(map[int][]int)
-	noShootY := make(map[int][]int)
 	for _, tank  := range state.MyTank {
 		action, _ := movement[tank.Id]
 		dir := 0
@@ -163,67 +161,9 @@ func (self *Player) Play(state *GameState) map[string]int {
 		case ActionBack:
 			isTurn = true
 			dir = 2
-		case ActionMove:
-			dx := 0
-			dy := 0
-			switch tank.Pos.Direction {
-			case DirectionUp:
-				dy = -1
-			case DirectionDown:
-				dy = 1
-			case DirectionLeft:
-				dx = -1
-			case DirectionRight:
-				dx = 1
-			}
-			x := tank.Pos.X
-			y := tank.Pos.Y
-			for i := 0; i < state.Params.TankSpeed; i++ {
-				x += dx
-				y += dy
-				noShootX[x] = append(noShootX[x], y)
-				noShootY[y] = append(noShootY[y], x)
-			}
 		}
 		if isTurn && dir > 0 {
 			movement[tank.Id] = (tank.Pos.Direction + dir - DirectionUp + 4) % 4 + ActionTurnUp
-		}
-	}
-	for _, tank  := range state.MyTank {
-		action, _ := movement[tank.Id]
-		stay := false
-		switch action {
-			case ActionFireUp:
-				for _, y := range noShootX[tank.Pos.X] {
-					if y == tank.Pos.Y - 1 {
-						stay = true
-						break;
-					}
-				}
-			case ActionFireLeft:
-				for _, x := range noShootY[tank.Pos.Y] {
-					if x == tank.Pos.X - 1 {
-						stay = true
-						break;
-					}
-				}
-			case ActionFireDown:
-				for _, y := range noShootX[tank.Pos.X] {
-					if y == tank.Pos.Y + 1 {
-						stay = true
-						break;
-					}
-				}
-			case ActionFireRight:
-				for _, x := range noShootY[tank.Pos.Y] {
-					if x == tank.Pos.X + 1 {
-						stay = true
-						break;
-					}
-				}
-		}
-		if stay {
-			movement[tank.Id] = ActionStay
 		}
 	}
 	BadCase(state, radarResult, movement)

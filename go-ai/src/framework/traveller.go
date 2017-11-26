@@ -165,10 +165,13 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 					// if tank.Bullet != "" {
 						nPos := etank.Pos
 						for ti := 0; ti < state.Params.TankSpeed; ti++ {
-							nPos = nPos.step(etank.Pos.Direction)
-							if state.Terain.Get(nPos.X, nPos.Y) == 1 {
+							tPos := nPos.step(etank.Pos.Direction)
+							if state.Terain.Get(tPos.X, tPos.Y) == 1 {
 								break
 							}
+							nPos = tPos
+						}
+						if nPos != etank.Pos {
 							possibles = append(possibles, nPos)
 						}
 					// }
@@ -210,29 +213,6 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 								}
 								pos = pos.step(dir)
 							}
-							// for i := 0; i < state.Params.BulletSpeed; i++ { // 1 + 2子弹速以内
-							// 	if state.Terain.Get(pos.X, pos.Y) == 1 {
-							// 		break
-							// 	}
-							// 	pos = pos.step(dir)
-							// }
-							
-							// for i, N := 1, dangerDist + extDist; i <= N; i++ {
-							// 	pos = pos.step(dir)
-							// 	if state.Terain.Get(pos.X, pos.Y) == 1 {
-							// 		break
-							// 	}
-							// 	isThreat := false
-							// 	if i <= dangerDist {
-							// 		isThreat = true
-							// 	}
-							// 	if badDir {
-							// 		isThreat = true
-							// 	}
-							// 	if state.Terain.Get(pos.X, pos.Y) == 2 {
-							// 		isThreat = false
-							// 	}
-							// }
 						}
 					}
 					// fmt.Println("ATHREAT", aThreat)
