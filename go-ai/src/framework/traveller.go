@@ -137,6 +137,12 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 			if !isDodge {
 				directions := []int { DirectionUp, DirectionLeft, DirectionDown, DirectionRight }
 				for _, etank := range state.EnemyTank {
+					for _, dir := range directions {
+						dp := etank.Pos.step(dir)
+						if rt, ok := aThreat[astar.Point { Col: dp.X, Row: dp.Y }]; ok && rt < 0.8 {
+							aThreat[astar.Point { Col: dp.X, Row: dp.Y }] = 0.8
+						}
+					}
 					var possibles []Position
 					possibles = append(possibles, etank.Pos)
 					// if tank.Bullet != "" {
@@ -187,7 +193,9 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 									isThreat = false
 								}
 								if isThreat {
-									aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = -1
+									if rt, ok := aThreat[astar.Point { Col: pos.X, Row: pos.Y }]; ok && rt < 0.6 {
+										aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = -1
+									}
 								}
 							}
 						}
