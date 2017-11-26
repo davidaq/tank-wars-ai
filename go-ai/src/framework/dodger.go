@@ -477,8 +477,6 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
     radarDodgeEnemy = self.calcDodge(moveUrgentEnemy, threatEnemy, state, tankData)
 
     fmt.Println("###")
-    fmt.Println(radarDodge)
-    fmt.Println(radarDodgeEnemy)
     fmt.Println(radarDodgeBullet)
     fmt.Println("###")
 
