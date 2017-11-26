@@ -3,6 +3,10 @@ package framework
 // 写死防止干蠢事
 
 func BadCase(state *GameState, radar *RadarResult, movements map[string]int) {
+	badCaseDangerZone(state, radar, movements)
+}
+
+func badCaseDangerZone(state *GameState, radar *RadarResult, movements map[string]int) {
 	dangerous := make(map[Position]bool)
 	directions := []int { DirectionUp, DirectionLeft, DirectionDown, DirectionRight }
 	vDirections := []int { DirectionUp, DirectionDown }
