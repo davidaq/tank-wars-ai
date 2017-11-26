@@ -428,20 +428,10 @@ func missingBullet (prevBullet []Bullet, newBullet []Bullet, state *GameState) [
 	}
 	for _, b := range prevBullet {
 		if !newSet[b.Id] {
-			pos := b.Pos
-			pos.Direction = DirectionNone
+			pos := b.Pos.NoDirection()
 			maybeAlive := true
 			for i := 0; i < state.Params.BulletSpeed; i++ {
-				switch b.Pos.Direction {
-				case DirectionUp:
-					pos.Y--
-				case DirectionDown:
-					pos.Y++
-				case DirectionLeft:
-					pos.X++
-				case DirectionRight:
-					pos.X--
-				}
+				pos = pos.step(b.Pos.Direction)
 				if state.Terain.Get(pos.X, pos.Y) == 1 || selfTank[pos] {
 					maybeAlive = false
 				}
@@ -460,7 +450,7 @@ func missingBullet (prevBullet []Bullet, newBullet []Bullet, state *GameState) [
 
 func (self *Diff) patchForestBullet (newState *GameState) {
 	if self.prevState == nil {
-		return;
+		return
 	}
 	newState.MyBullet = missingBullet(self.prevState.MyBullet, newState.MyBullet, self.prevState)
 	newState.EnemyBullet = missingBullet(self.prevState.EnemyBullet, newState.EnemyBullet, self.prevState)
