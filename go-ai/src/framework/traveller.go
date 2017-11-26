@@ -139,7 +139,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 				for _, etank := range state.EnemyTank {
 					for _, dir := range directions {
 						dp := etank.Pos.step(dir)
-						if rt, ok := aThreat[astar.Point { Col: dp.X, Row: dp.Y }]; ok && rt < 0.8 {
+						if rt, ok := aThreat[astar.Point { Col: dp.X, Row: dp.Y }]; !ok || rt < 0.8 {
 							aThreat[astar.Point { Col: dp.X, Row: dp.Y }] = 0.8
 						}
 					}
@@ -193,17 +193,19 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 									isThreat = false
 								}
 								if isThreat {
-									// if rt, ok := aThreat[astar.Point { Col: pos.X, Row: pos.Y }]; ok && rt < 0.6 {
-										aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = -1
-									// }
+									if rt, ok := aThreat[astar.Point { Col: pos.X, Row: pos.Y }]; !ok || rt < 0.6 {
+										val := -1.
+										if badDir {
+											val = -2.
+										}
+										aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = val
+									}
 								}
 							}
 						}
 					}
 					fmt.Println("ATHREAT", aThreat)
 				}
-			} else {
-				fmt.Println("IS Dodge")
 			}
 			if from.X != to.X || from.Y != to.Y {
 				cache.path = nil
@@ -260,6 +262,10 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 			action := toAction(from, nextPoint)
 			cache.expect = nil
 			lock.Lock()
+			curThreat := aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }]
+			if curThreat < 0 { // 身处绝杀位
+				
+			}
 			if action == ActionMove {
 				p := Position { Y: from.Y, X: from.X }
 				threatPrevent := false
@@ -280,7 +286,6 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 				if lastThreat < 0 {
 					thr -= lastThreat
 				}
-				curThreat := aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }]
 				if curThreat > 0.4 {
 					threatPrevent = false
 				} else {

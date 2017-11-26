@@ -50,6 +50,7 @@ type Tank struct {
 	Hp int
 	Pos Position
 	Bullet string
+	BulletCost int
 }
 
 type Bullet struct {
