@@ -137,12 +137,10 @@ func (o *Observation) findShotPos() map[f.Position]string {
     var pos f.Position
 	for _, tank := range o.EmyTank {
         fmt.Printf("emytank: %+v\n", tank)
-		for i := o.State.Params.BulletSpeed; i > 0; i-- {
+		for i := o.State.Params.BulletSpeed-1 ; i >= 0; i-- {
 	        if tank.Pos.Direction == f.DirectionUp {
                 pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y + o.State.Params.BulletSpeed + i + 2 + o.State.Params.TankSpeed }
-                fmt.Printf("tank: %+v\n, pos: %+v\n", tank, pos)
-                fmt.Println("pos.Y - tank.Pos.Y:", pos.Y - tank.Pos.Y)
-                if o.reachable(pos) && pos.Y - tank.Pos.Y <= 2 * o.State.Params.BulletSpeed{
+                if o.reachable(pos) && (pos.Y - tank.Pos.Y <= 2 * o.State.Params.BulletSpeed){
 					shotPos[pos] = tank.Id
 				}
 				pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y - o.State.Params.BulletSpeed - i - 2}
