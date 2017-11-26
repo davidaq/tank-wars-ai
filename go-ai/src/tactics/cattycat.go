@@ -17,11 +17,6 @@ func NewCatty() *Catty{
     }
 }
 
-// 分析草丛人员分配
-func (c *Catty) analysis() {
-
-}
-
 // 分配
 func (c *Catty) dispatch() {
     // 分配一些去旗子，其它在草外
@@ -137,7 +132,7 @@ func (c *Catty) Plan(state *f.GameState, radar *f.RadarResult, objective map[str
             } else {
                 role.patrol()
             }
-            fmt.Printf("catty role: %+v\n", role)
+            fmt.Printf("catty role target: %+v\n", role.Target)
         }
     }
     fmt.Printf("catty objective: %+v\n", c.obs.Objs)

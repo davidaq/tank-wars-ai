@@ -2,7 +2,7 @@ package tactics
 
 import (
 	f "framework"
-	// "fmt"
+	"fmt"
     "math/rand"
 )
 
@@ -155,6 +155,7 @@ func (r *CattyRole) act() {
 }
 
 func (r *CattyRole) move() {
+    // fmt.Println("----in move-----")
     r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravelWithDodge, Target: r.Target }
 }
 
