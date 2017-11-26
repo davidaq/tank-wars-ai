@@ -2,7 +2,7 @@ cd `dirname $0`
 export GOPATH=`pwd`
 
 export HOST=localhost:8777
-export GAME=ryZuJ-uxz
+export GAME=ryZuJ-uxz 
 export SIDE=red
 export TACTICS=fox
 # export TACTICS=proxy PROXY_PORT=8776

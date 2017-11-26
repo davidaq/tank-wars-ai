@@ -85,6 +85,12 @@ func (p Position) step(direction int) Position {
 	return ret
 }
 
+func (p Position) NoDirection() Position {
+	ret := p
+	ret.Direction = DirectionNone
+	return ret
+}
+
 func (s Position) SDist (other Position) int {
 	dx := s.X - other.X
 	dy := s.Y - other.Y
