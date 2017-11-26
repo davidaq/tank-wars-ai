@@ -123,9 +123,23 @@ func (self *Player) Play(state *GameState) map[string]int {
 			}
 		} else {
 			movement[tank.Id] = objective.Action
+			fireDirection := DirectionNone
+			switch objective.Action {
+				case ActionFireUp: fallthrough
+				case ActionFireDown: fallthrough
+				case ActionFireLeft: fallthrough
+				case ActionFireRight:
+					fireDirection = objective.Action - ActionFireUp + DirectionUp
+			}
+			if fireDirection != DirectionNone {
+				pos := tank.Pos
+				for i, c := 0, state.Params.BulletSpeed * 2 + 2; i < c; i++ {
+					pos = pos.step(pos.Direction)
+					radarResult.FullMapThreat[pos.NoDirection()] = 2
+				}
+			}
 		}
 	}
-
 	self.traveller.Search(travel, state, radarResult.FullMapThreat, movement)
 	for _, tankId := range noForward {
 		action, _ := movement[tankId]
