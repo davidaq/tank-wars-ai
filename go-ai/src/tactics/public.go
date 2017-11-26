@@ -196,7 +196,7 @@ func forestGrouping (tankNum int, terain *f.Terain, mapAnalysis *f.MapAnalysis) 
 					large = forest
 				}
 			}
-		} 
+		}
 
 		// if float64(float64(large.Area)/float64(mapArea)) > 0.3 {
 		// 	return tankNum, large
@@ -206,9 +206,9 @@ func forestGrouping (tankNum int, terain *f.Terain, mapAnalysis *f.MapAnalysis) 
 		// 	return 1, large
 		// }
 
-		if float64(float64(large.Area)/float64(mapArea)) > 0.3 {
+		if float64(float64(large.Area)/float64(mapArea)) > 0.15 {
 			res[large.Id] = tankNum
-		} else if float64(float64(large.Area)/float64(mapArea)) > 0.15 {
+		} else if float64(float64(large.Area)/float64(mapArea)) > 0.6 {
 			res[large.Id] = tankNum/2
 		}	else {
 			res[large.Id] = 1
@@ -222,7 +222,7 @@ func forestGrouping (tankNum int, terain *f.Terain, mapAnalysis *f.MapAnalysis) 
 				}
 			}
 		}
-	
+
 		return res
 	}
 }
