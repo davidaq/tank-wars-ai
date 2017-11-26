@@ -108,11 +108,11 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 	lock.Lock()
 	var myTanks []*Tank
 	for _, tank := range state.MyTank {
+		occupy[tank.Pos.NoDirection()] = true
 		if _, exists := travel[tank.Id]; exists {
 			t := tank
 			myTanks = append(myTanks, &t)
 		} else {
-			occupy[Position { X: tank.Pos.X, Y: tank.Pos.Y }] = true
 			if cache, hasCache := self.cache[tank.Id]; hasCache {
 				cache.expect = nil
 				cache.path = nil
@@ -126,7 +126,6 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 			myTanks[i] = full[j]
 		}
 	}
-	firstColide := true
 	tAThreats := make(map[string]map[astar.Point]float64)
 	for _, mtank := range myTanks {
 		tank := mtank
@@ -216,7 +215,9 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 										} else if possibleI == 0 {
 											val = -3.
 										}
-										aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = val
+										if !ok || rt > val {
+											aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = val
+										}
 									}
 								}
 							}
@@ -282,7 +283,6 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 				}
 			}
 			action := toAction(from, nextPoint)
-			cache.expect = nil
 			lock.Lock()
 			if curThreat < -2.9 { // 身处绝杀位
 				nPos := tank.Pos.step(tank.Pos.Direction)
@@ -323,9 +323,11 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 		})()
 	}
 	lock.Unlock()
+	fmt.Println("-----+")
 	for _, _ = range myTanks {
 		_ = <- waitchan
 	}
+	fmt.Println("-----/")
 	sorter := &TankSorter {
 		content: myTanks,
 		eval: func (tank *Tank) float64 {
@@ -338,13 +340,13 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 		},
 	}
 	sort.Sort(sorter)
-
 	// 解决冲突
 	for _, tank := range sorter.content {
 		action := movements[tank.Id]
 		aThreat := tAThreats[tank.Id]
 		curThreat := aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }]
 		cache := self.cache[tank.Id]
+		cache.expect = nil
 		if action == ActionMove {
 			p := Position { Y: tank.Pos.Y, X: tank.Pos.X }
 			threatPrevent := false
@@ -372,26 +374,33 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 			}
 			if threatPrevent {
 				action = ActionStay
-				fmt.Println("Travel threat stay!!")
-			} else if _, exists := occupy[p]; exists {
-				action = ActionStay
-				fmt.Println("Collide stay!!")
-				if firstColide {
-					cache.path = nil
-					firstColide = false
-				}
-			} else {
-				nextPoint := tank.Pos
-				for i := 0; i < state.Params.TankSpeed; i++ {
-					nextPoint = nextPoint.step(tank.Pos.Direction)
-				}
-				cache.expect = &nextPoint
-				p = p.step(tank.Pos.Direction)
+				fmt.Println("Travel threat stay!!", tank.Id)
 			}
-			occupy[p] = true
-		} else {
-			p := Position { Y: tank.Pos.Y, X: tank.Pos.X }
-			occupy[p] = true
+		}
+		if action == ActionMove {
+			pos := tank.Pos
+			for i := 0; i < state.Params.TankSpeed; i++ {
+				pos = pos.step(pos.Direction)
+				if occupy[pos.NoDirection()] {
+					action = ActionStay
+					fmt.Println(occupy)
+					fmt.Println("Collide stay!!", tank.Id, tank.Pos, pos)
+				}
+			}
+			if action == ActionMove {
+				pos := tank.Pos
+				for i := 0; i < state.Params.TankSpeed; i++ {
+					pos = pos.step(pos.Direction)
+					if state.Terain.Get(pos.X, pos.Y) == 1 {
+						break
+					}
+					occupy[pos.NoDirection()] = true
+				}
+				cache.expect = &pos
+			} else {
+				pos := tank.Pos
+				occupy[pos.NoDirection()] = true
+			}
 		}
 		movements[tank.Id] = action
 	}
