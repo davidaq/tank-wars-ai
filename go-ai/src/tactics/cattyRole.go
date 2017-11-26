@@ -3,21 +3,20 @@ package tactics
 import (
 	f "framework"
 	// "math"
-	// "fmt"
+	"fmt"
 )
 
 type CattyRole struct {
     obs       *Observation
     Tank      f.Tank
-    Target    CattyTarget
+    Target    f.Position
     Dodge     f.RadarDodge     // 躲避建议
     Fire      f.RadarFireAll   // 开火建议
 }
 
-type CattyTarget struct {
-	Tank    f.Tank        // 目标坦克
-    Pos     f.Position    // 目标地点
-}
+// type CattyTarget struct {
+//     Pos     f.Position    // 目标地点
+// }
 
 func (r *CattyRole) occupyFlag() {
     travel := f.ActionTravel
@@ -33,36 +32,58 @@ func (r *CattyRole) occupyFlag() {
 // 距离最近的可攻击位置
 // 如果敌方坦克密度较大，放弃那个位置
 func (r *CattyRole) hunt() {
+    fmt.Println("--------in hunt--------")
+    fmt.Printf("r.obs.ShotPos: %+v\n", r.obs.ShotPos)
+
+    // 如果没有绝杀点
+    if len(r.obs.ShotPos) == 0 {
+        ttank := r.neareastEmy()
+        // 距离最近的坦克很远
+        if nd := r.Tank.Pos.SDist(ttank.Pos); nd > r.obs.State.Params.BulletSpeed * 2 {
+            r.Target = ttank.Pos
+            return
+        }
+    }
+
+    // 如果有绝杀点
 	dist := -1
 	var tpos f.Position
-	var ttank f.Tank
-	for pos, tankid := range r.obs.ShotPos {
-		nd := r.Tank.Pos.SDist(pos)
-		tank := r.obs.EmyTank[tankid]
-		if dist < 0 {
-			dist  = nd
-			ttank = tank
-			tpos  = pos
-		} else if nd > r.obs.State.Params.BulletSpeed * 2 || (r.obs.pathReachable(pos, r.nextPos(pos))) {  // && r.canHunt(tank)) {
-			if nd < dist {
-				dist  = nd
-				ttank = tank
-				tpos  = pos
-			}
-		}
+	for pos, _ := range r.obs.ShotPos {
+		nd   := r.Tank.Pos.SDist(pos)
+        // 很接近目标，且逃跑路线不顺畅，不攻击
+        if nd < r.obs.State.Params.BulletSpeed * 2 && !r.obs.pathReachable(pos, r.nextPos(pos)) {
+            continue
+        }
+        if dist < 0 || nd < dist{
+            dist  = nd
+            tpos  = pos
+        }
 	}
-	r.Target.Tank = ttank
-	r.Target.Pos  = tpos
-	delete(r.obs.ShotPos, tpos)
+
+    // tpos 可能为空
+    if tpos != (f.Position{}) {
+        r.Target = tpos
+        delete(r.obs.ShotPos, tpos)
+
+    } else {
+        r.Target = r.Tank.Pos
+    }
 }
 
-// func (r *CattyRole) checkDone() bool {
-//     // 必死/直线可开火/可朝旗开火/到达目标点
-//     return r.Dodge.Threat == -1 || r.fireAction() != -1 || r.canFireToFlag() || (r.Tank.Pos.X == r.Target.Pos.X && r.Tank.Pos.Y == r.Target.Pos.Y)
-// }
+func (r *CattyRole) neareastEmy() f.Tank {
+    dist := -1
+    var ttank f.Tank
+    for _, tank := range r.obs.EmyTank {
+        if nd:= r.Tank.Pos.SDist(tank.Pos); dist < 0 || nd < dist {
+            dist  = nd
+            ttank = tank
+        }
+    }
+    return ttank
+}
 
 func (r *CattyRole) move() {
-    r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravelWithDodge, Target: r.Target.Pos }
+    r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravelWithDodge, Target: r.Target }
 }
 
 // 行动

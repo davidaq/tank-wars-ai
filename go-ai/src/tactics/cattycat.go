@@ -32,6 +32,7 @@ func (c *Catty) Plan(state *f.GameState, radar *f.RadarResult, objective map[str
 
     for _, role := range c.Roles {
         if c.obs.Flag.Exist && c.obs.Flag.Next <= 5 {
+            fmt.Println("-------in Flag---------")
             role.occupyFlag()
             continue
         }
@@ -60,14 +61,14 @@ func (c *Catty) updateRole() {
 		} else {
 			delete(c.Roles, id)
 		}
-
-		if role.Target != (CattyTarget{}) && role.Target.Tank != (f.Tank{}) {
-			if role.obs.EmyTank[role.Target.Tank.Id] == (f.Tank{}) {
-				role.Target = CattyTarget{}
-			} else {
-				role.Target.Tank = role.obs.EmyTank[role.Target.Tank.Id]
-			}
-		}
+        // 
+		// if role.Target != (CattyTarget{}) && role.Target.Tank != (f.Tank{}) {
+		// 	if role.obs.EmyTank[role.Target.Tank.Id] == (f.Tank{}) {
+		// 		role.Target = CattyTarget{}
+		// 	} else {
+		// 		role.Target.Tank = role.obs.EmyTank[role.Target.Tank.Id]
+		// 	}
+		// }
 	}
 }
 
