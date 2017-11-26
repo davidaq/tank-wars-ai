@@ -121,11 +121,13 @@ func (o *Observation) observeShotPos() {
         // 按距离我方中心点排序
         avgPos := o.avgpos()
         fmt.Printf("avgPos: %+v\n", avgPos)
+
         // 按离中心点距离，给 positions 排序
         o.ShotPos = o.sortByPos(avgPos, o.ShotPos)
 
-        if len(o.ShotPos) > len(o.MyTank) {
-            o.ShotPos = o.ShotPos[0:len(o.MyTank)]
+        // 多选一些点，避免集中
+        if len(o.ShotPos) - len(o.MyTank) >= len(o.MyTank) {
+            o.ShotPos = o.ShotPos[0:len(o.MyTank)+len(o.MyTank)]
         }
     }
     fmt.Printf("observeShotPos: %+v\n", o.ShotPos)
