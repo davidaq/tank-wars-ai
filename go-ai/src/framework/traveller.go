@@ -165,10 +165,13 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 					// if tank.Bullet != "" {
 						nPos := etank.Pos
 						for ti := 0; ti < state.Params.TankSpeed; ti++ {
-							nPos = nPos.step(etank.Pos.Direction)
-							if state.Terain.Get(nPos.X, nPos.Y) == 1 {
+							tPos := nPos.step(etank.Pos.Direction)
+							if state.Terain.Get(tPos.X, tPos.Y) == 1 {
 								break
 							}
+							nPos = tPos
+						}
+						if nPos != etank.Pos {
 							possibles = append(possibles, nPos)
 						}
 					// }
