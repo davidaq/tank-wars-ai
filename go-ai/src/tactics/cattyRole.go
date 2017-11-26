@@ -8,12 +8,18 @@ import (
 
 type CattyRole struct {
     gotoforest   bool
+    forest       f.Forest
     obs          *Observation
     Tank         f.Tank
     Target       f.Position
     Dodge        f.RadarDodge     // 躲避建议
     Fire         f.RadarFireAll   // 开火建议
     ExtDangerSrc []f.ExtDangerSrc   // 躲不掉和火线上的威胁源
+}
+
+// 草内巡逻
+func (r *CattyRole) patrol() {
+
 }
 
 // 抢旗

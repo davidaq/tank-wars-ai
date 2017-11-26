@@ -52,20 +52,21 @@ func (c *Catty) Plan(state *f.GameState, radar *f.RadarResult, objective map[str
         }
         if !role.gotoforest {
             role.hunt()
+            role.act()
+        } else {
+            role.patrol()
         }
-        role.act()
-
         fmt.Printf("catty role target: %+v\n", role.Target)
     }
     fmt.Printf("catty objective: %+v\n", c.obs.Objs)
 }
 
 func (c *Catty) updateRole() {
-    flagcnt := 0
+    foreatcnt := 0
 	for id, role := range c.Roles {
 		if c.obs.MyTank[id] != (f.Tank{}) {
             if role.gotoforest {
-                flagcnt++
+                foreatcnt++
             }
 			role.Tank         = c.obs.MyTank[id]
 			role.Dodge        = c.obs.Radar.DodgeBullet[id]
@@ -75,7 +76,7 @@ func (c *Catty) updateRole() {
 			delete(c.Roles, id)
 		}
 	}
-    if flagcnt <= 0 {
+    if foreatcnt <= 0 {
         for _, role := range c.Roles {
             role.gotoforest = true
             role.Target     = c.obs.Flag.Pos
