@@ -16,8 +16,8 @@ func StartTactics (name string) f.Tactics {
 		return NewNearest()
 	case "less":
 		return NewLess()
-	// case "simple":
-	// 	return NewSimple()
+	case "simple":
+		return NewSimple()
 	case "killall":
 		return NewKillAll()
     case "cattycat":
