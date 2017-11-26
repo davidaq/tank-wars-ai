@@ -1,6 +1,8 @@
+package framework
+
 // 写死防止干蠢事
 
-func BadCase(state *f.GameState, radar *f.RadarResult, movements map[string]int) {
+func BadCase(state *GameState, radar *RadarResult, movements map[string]int) {
 	dangerous := make(map[Position]bool)
 	directions := []int { DirectionUp, DirectionLeft, DirectionDown, DirectionRight }
 	vDirections := []int { DirectionUp, DirectionDown }
@@ -22,7 +24,7 @@ func BadCase(state *f.GameState, radar *f.RadarResult, movements map[string]int)
 		}
 	}
 	for _, tank := range state.MyTank {
-		if prefer, danger := dangerous[tank.Pos.NoDirection()]; danger {
+		if preferVertical, danger := dangerous[tank.Pos.NoDirection()]; danger {
 			preferDirection := make(map[int]bool)
 			dirs := hDirections
 			if preferVertical {
@@ -40,5 +42,5 @@ func BadCase(state *f.GameState, radar *f.RadarResult, movements map[string]int)
 }
 
 // 矫正在危险位置的坦克行为
-func fixMove (state *f.GameState, radar *f.RadarResult, movements map[string]int, tank Tank, preferDirection map[int]bool) {
+func fixMove (state *GameState, radar *RadarResult, movements map[string]int, tank Tank, preferDirection map[int]bool) {
 }
