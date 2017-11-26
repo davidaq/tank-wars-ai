@@ -207,8 +207,10 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 									} else if badDir {
 										val = -3.
 									}
-									if !ok || val < rt {
-										aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = val
+									if state.Terain.Get(pos.X, pos.Y) != 2 || state.Terain.Get(tank.Pos.X, tank.Pos.Y) != 2 {
+										if !ok || val < rt {
+											aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = val
+										}
 									}
 								}
 								pos = pos.step(dir)
