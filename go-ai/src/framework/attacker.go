@@ -5,8 +5,8 @@
 package framework
 
 import (
-	"fmt";
 	"math";
+	"fmt"
 )
 
 type Attacker struct {
