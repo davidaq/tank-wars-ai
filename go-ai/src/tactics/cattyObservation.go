@@ -118,14 +118,17 @@ func (o *Observation) observeShotPos() {
                 o.ShotPos = append(o.ShotPos, pos)
             }
         }
-        fmt.Printf("observeShotPos: %+v\n", o.ShotPos)
         // 按距离我方中心点排序
         avgPos := o.avgpos()
         fmt.Printf("avgPos: %+v\n", avgPos)
         // 按离中心点距离，给 positions 排序
         o.ShotPos = o.sortByPos(avgPos, o.ShotPos)
-        fmt.Printf("after sort: %+v\n", o.ShotPos)
+
+        if len(o.ShotPos) > len(o.MyTank) {
+            o.ShotPos = o.ShotPos[0:len(o.MyTank)]
+        }
     }
+    fmt.Printf("observeShotPos: %+v\n", o.ShotPos)
 }
 
 // 寻找攻击地点【前后选点】
@@ -133,10 +136,10 @@ func (o *Observation) findShotPos() map[f.Position]string {
 	shotPos := make(map[f.Position]string)
     var pos f.Position
 	for _, tank := range o.EmyTank {
-		for i := o.State.Params.BulletSpeed; i > 0; i-- {
+		for i := o.State.Params.BulletSpeed-1 ; i >= 0; i-- {
 	        if tank.Pos.Direction == f.DirectionUp {
                 pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y + o.State.Params.BulletSpeed + i + 2 + o.State.Params.TankSpeed }
-				if o.reachable(pos)  &&  pos.Y - tank.Pos.Y <= 2 * o.State.Params.BulletSpeed{
+                if o.reachable(pos) && (pos.Y - tank.Pos.Y <= 2 * o.State.Params.BulletSpeed){
 					shotPos[pos] = tank.Id
 				}
 				pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y - o.State.Params.BulletSpeed - i - 2}
@@ -175,7 +178,7 @@ func (o *Observation) findShotPos() map[f.Position]string {
             }
 	    }
 	}
-    fmt.Printf("find shot Postion: %+v\n", shotPos)
+    // fmt.Printf("find shot Postion: %+v\n", shotPos)
     return shotPos
 }
 
@@ -208,7 +211,7 @@ func (o *Observation) sortByPos(pos f.Position, ps []f.Position) (positions []f.
         pl[i] = Pair{ p, dist }
         i++
     }
-    sort.Sort(sort.Reverse(pl))
+    sort.Sort(pl)
     for _, p := range pl {
         positions = append(positions, p.Key)
     }
@@ -302,7 +305,6 @@ func (o *Observation) huntable(pos f.Position, tankid string) bool{
     // 追击点两侧的逃生点
     tank := o.EmyTank[tankid]
     positions := make([]f.Position, 2)
-    fmt.Printf("tank pos: %+v\n", tank.Pos)
     if tank.Pos.Direction == f.DirectionUp || tank.Pos.Direction == f.DirectionDown {
         positions = []f.Position {
             f.Position { X: pos.X - o.State.Params.TankSpeed, Y: pos.Y },
@@ -314,15 +316,11 @@ func (o *Observation) huntable(pos f.Position, tankid string) bool{
             f.Position { X: pos.X, Y: pos.Y + o.State.Params.TankSpeed},
         }
     }
-    // 两侧逃生点皆不可达，那么不能去
-    fmt.Printf("huntable pos: %+v\n", pos)
-    fmt.Printf("side positions: %+v\n", positions)
-    fmt.Println("position 0: ", o.pathReachable(pos, positions[0]))
-    fmt.Println("position 1: ", o.pathReachable(pos, positions[1]))
-    if o.pathReachable(pos, positions[0]) && o.pathReachable(pos, positions[1]){
-        return true
-    } else {
+    // 若无可达逃生点，那么不能去
+    if !o.pathReachable(pos, positions[0]) && !o.pathReachable(pos, positions[1]){
         return false
+    } else {
+        return true
     }
 }
 
