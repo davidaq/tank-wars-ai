@@ -222,7 +222,7 @@ func fixMove (state *GameState, radar *RadarResult, movements map[string]int, ta
 		nextActionDirt := movement - ActionTurnUp + DirectionUp
 		moveIsRight := preferDirection[nextActionDirt]
 		if !moveIsRight {
-			movements[tank.Id] = nextDirt - DirectionUp + ActionTurnUp
+			movements[tank.Id] = ActionMove
 		}
 	}
 }
