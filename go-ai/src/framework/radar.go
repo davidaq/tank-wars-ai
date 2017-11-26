@@ -53,10 +53,11 @@ type EnemyThreat struct {
 }
 
 type ExtDangerSrc struct {
-	Source		string 	// 威胁来源
-	Type		int     // 威胁来源种类 BULLET_THREAT = 1 ENEMY_THREAT = 2
-	Urgent 		int		// 威胁度
-	Distance 	int		// 距离
+	Source		string 		// 威胁来源
+	Type		int     	// 威胁来源种类 BULLET_THREAT = 1 ENEMY_THREAT = 2
+	Urgent 		int			// 威胁度
+	SourcePos	Position 	// 极度危险来源
+	Distance 	int			// 距离
 }
 
 // 侦测几回合的威胁
@@ -256,17 +257,33 @@ func (self *Radar) avoidBullet(state *GameState) (bulletApproach bool, bulletThr
 	return false, bulletRadar
 }
 
-func (self *Radar) threat(state *GameState) (threat bool, enemyThreat map[string][]EnemyThreat) {
+func (self *Radar) threat(state *GameState, diff *DiffResult) (threat bool, enemyThreat map[string][]EnemyThreat) {
 	// 雷达半径由步数实际算出
 	radius := state.Params.BulletSpeed * RADAR_ENEMY_STEP
 
 	// 计算敌军在自己的什么方位 无视墙，防止LYB苟墙角
 	enemyRadar := make(map[string][]EnemyThreat)
 
+	// 加上进草预测的坦克集
+	var enemyTanks []Tank
+	for _, v := range state.EnemyTank {
+		enemyTanks = append(enemyTanks, v)
+	}
+	// 草丛坦克
+	for pos, threat := range diff.ForestThreat {
+		if threat == 1 {
+			tmpTank := Tank{}
+			tmpTank.Pos.X = pos.X
+			tmpTank.Pos.Y = pos.Y
+			tmpTank.Pos.Direction = pos.Direction
+			enemyTanks = append(enemyTanks, tmpTank)
+		}
+	}
+
 	// 循环计算多个坦克
 	for _, tank := range state.MyTank {
 		var tmpEnemyThreat []EnemyThreat
-		for _, enemyTank := range state.EnemyTank {
+		for _, enemyTank := range enemyTanks {
 			// 检查是否需要关注 方型雷达
 			if math.Abs(float64(enemyTank.Pos.X - tank.Pos.X)) <= float64(radius) && math.Abs(float64(enemyTank.Pos.Y - tank.Pos.Y)) <= float64(radius) {
 				tmpEnemyThreat = append(tmpEnemyThreat, EnemyThreat{
@@ -459,7 +476,7 @@ func (self *Radar) Scan(state *GameState, diff *DiffResult) *RadarResult {
 	bulletApproach, bullets := self.avoidBullet(state)
 
 	// 敌军威胁
-	enemyApproach, enemy := self.threat(state)
+	enemyApproach, enemy := self.threat(state, diff)
 
 	// 转换象限
 	self.convertQuadrant(state, bulletApproach, &bullets, enemyApproach, &enemy)
