@@ -26,7 +26,6 @@ func badCaseControlEnemy(state *GameState, radar *RadarResult, movements map[str
 
 func badCaseShootSelf(state *GameState, radar *RadarResult, movements map[string]int) {
 	noPass := make(map[Position]bool)
-	noStop := make(map[Position]bool)
 	ePos := make(map[Position]bool)
 	for _, tank  := range state.MyTank {
 		pos := tank.Pos.NoDirection()
@@ -38,13 +37,12 @@ func badCaseShootSelf(state *GameState, radar *RadarResult, movements map[string
 				if state.Terain.Get(nPos.X, nPos.Y) == 1 {
 					break
 				}
-				noPass[pos] = true
+				noPass[nPos] = true
 				pos = nPos
 			}
 		}
-		noStop[pos] = true
 	}
-	fmt.Println("shoot self", noPass, noStop)
+	fmt.Println("shoot self", noPass)
 	for _, etank  := range state.EnemyTank {
 		ePos[etank.Pos] = true
 	}
@@ -59,31 +57,14 @@ func badCaseShootSelf(state *GameState, radar *RadarResult, movements map[string
 			if ePos[pos] {
 				continue tankloop
 			}
-			if noPass[pos] || noStop[pos] {
-				movements[tank.Id] = ActionStay
-				continue tankloop
-			}
-			for i := 0; i < state.Params.BulletSpeed; i++ {
-				pos = pos.step(dir)
-				if state.Terain.Get(pos.X, pos.Y) == 1 {
-					continue tankloop
-				}
+			for i := 0; i <= state.Params.BulletSpeed * 3; i++ {
 				if noPass[pos] {
 					movements[tank.Id] = ActionStay
+					fmt.Println("Self shoot prevented", tank.Id)
 					continue tankloop
 				}
-			}
-			if noStop[pos] {
-				movements[tank.Id] = ActionStay
-				continue tankloop
-			}
-			for i := 0; i < state.Params.BulletSpeed * 2; i++ {
 				pos = pos.step(dir)
 				if state.Terain.Get(pos.X, pos.Y) == 1 {
-					continue tankloop
-				}
-				if noPass[pos] || noStop[pos] {
-					movements[tank.Id] = ActionStay
 					continue tankloop
 				}
 			}
