@@ -240,11 +240,28 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                     }
                 }
                 if tmpBulletUrgent == 1 || tmpBulletUrgent == -1 {
+                    // 将极度危险改为方向
+                    var tmpSourceDir int
+                    if tmpSourcePos.X == tank.Pos.X {
+                        if tmpSourcePos.Y > tank.Pos.Y {
+                            tmpSourceDir = DirectionDown
+                        } else {
+                            tmpSourceDir = DirectionUp
+                        }
+                    }
+                    if tmpSourcePos.Y == tank.Pos.Y {
+                        if tmpSourcePos.X > tank.Pos.X {
+                            tmpSourceDir = DirectionRight
+                        } else {
+                            tmpSourceDir = DirectionLeft
+                        }
+                    }
                     extDangerSrc[tank.Id] = append(extDangerSrc[tank.Id], ExtDangerSrc{
                         Source: b.BulletId,
                         Type:   BULLET_THREAT,
                         Urgent: tmpBulletUrgent,
                         SourcePos: tmpSourcePos,
+                        SourceDir: tmpSourceDir,
                         Distance: b.Distances[b.Quadrant],
                     })
                 }

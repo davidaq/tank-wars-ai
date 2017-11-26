@@ -57,6 +57,7 @@ type ExtDangerSrc struct {
 	Type		int     	// 威胁来源种类 BULLET_THREAT = 1 ENEMY_THREAT = 2
 	Urgent 		int			// 威胁度
 	SourcePos	Position 	// 极度危险来源
+	SourceDir	int			// 极度危险来源方向 相对于整个地图及该坦克而言，用于开火
 	Distance 	int			// 距离
 }
 
