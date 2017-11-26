@@ -133,13 +133,13 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 				}
 			}
 			isDodge := aThreat[astar.Point { Col: from.X, Row: from.Y }] > 0
-			isDodge = true
+			// isDodge = true
 			if !isDodge {
 				directions := []int { DirectionUp, DirectionLeft, DirectionDown, DirectionRight }
 				for _, etank := range state.EnemyTank {
 					var possibles []Position
-					possibles = append(possibles, tank.Pos)
-					if tank.Bullet != "" {
+					possibles = append(possibles, etank.Pos)
+					// if tank.Bullet != "" {
 						nPos := etank.Pos
 						for ti := 0; ti < state.Params.TankSpeed; ti++ {
 							nPos = nPos.step(etank.Pos.Direction)
@@ -148,10 +148,13 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 							}
 							possibles = append(possibles, nPos)
 						}
-					}
+					// }
 					for _, oPos := range possibles {
 						for _, dir := range directions {
 							pos := oPos
+							if abs(pos.X - tank.Pos.X) > state.Params.TankSpeed * 2 && abs(pos.Y - tank.Pos.Y) > state.Params.TankSpeed * 2 {
+								continue
+							}
 							aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = 1
 							badDir := false
 							if dir == DirectionUp || dir == DirectionDown {
@@ -180,15 +183,16 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 										isThreat = true
 									}
 								}
-								if isThreat {
-									aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = 1
+								if state.Terain.Get(pos.X, pos.Y) == 2 {
+									isThreat = false
 								}
-								if etank.Bullet != "" {
-									break
+								if isThreat {
+									aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = -1
 								}
 							}
 						}
 					}
+					fmt.Println("ATHREAT", aThreat)
 				}
 			} else {
 				fmt.Println("IS Dodge")
@@ -227,7 +231,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 					}
 					lock.Unlock()
 					if allowCalc {
-						cache.path = self.path(a, from, to, state.Params.TankSpeed, state.Terain, aThreat, aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }] > 0)
+						cache.path = self.path(a, from, to, state.Params.TankSpeed, state.Terain, aThreat, aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }] > 0.3)
 						for len(cache.path) > 0 {
 							p := cache.path[0]
 							if p.X == from.X && p.Y == from.Y {
@@ -250,38 +254,32 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 			lock.Lock()
 			if action == ActionMove {
 				p := Position { Y: from.Y, X: from.X }
-				dx, dy := 0, 0
-				if nextPoint.Y > from.Y {
-					p.Y++
-					dy = 1
-				} else if nextPoint.Y < from.Y {
-					p.Y--
-					dy = -1
-				} else if nextPoint.X > from.X {
-					p.X++
-					dx = 1
-				} else if nextPoint.X < from.X {
-					p.X--
-					dx = -1
-				}
 				threatPrevent := false
 				thr := 0.
-				for i := 1; i <= state.Params.TankSpeed; i++ {
-					t := aThreat[astar.Point { Col: from.X + i * dx, Row: from.Y + i * dy }]
+				mp := p
+				for i := 0; i < state.Params.TankSpeed; i++ {
+					lp := mp.step(tank.Pos.Direction)
+					if state.Terain.Get(mp.X, mp.Y) == 1 {
+						break;
+					}
+					mp = lp
+					t := aThreat[astar.Point { Col: mp.X, Row: mp.Y }]
 					if t > 0 {
 						thr += t
 					}
-					// if t < 0 && i == state.Params.TankSpeed {
-					// 	thr -= t
-					// }
+				}
+				lastThreat := aThreat[astar.Point { Col: mp.X, Row: mp.Y }]
+				if lastThreat < 0 {
+					thr -= lastThreat
 				}
 				curThreat := aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }]
-				if curThreat < 0 {
+				if curThreat > 0.4 {
+					threatPrevent = false
+				} else {
 					threatPrevent = thr > 0.5
 				}
 				if threatPrevent {
 					action = ActionStay
-					p = Position { Y: from.Y, X: from.X }
 					fmt.Println("Travel threat stay!!")
 				} else if _, exists := occupy[p]; exists {
 					action = ActionStay
@@ -289,8 +287,8 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 						cache.path = nil
 						firstColide = false
 					}
-					p = Position { Y: from.Y, X: from.X }
 				} else {
+					p = p.step(tank.Pos.Direction)
 					cache.expect = &nextPoint
 				}
 				occupy[p] = true
