@@ -2,31 +2,37 @@ package tactics
 
 import (
 	f "framework"
-	// "fmt"
+	"fmt"
 )
 
 type Simplest struct {
+	mapanalysis  *f.MapAnalysis
 	tankGroupA map[string]f.Tank
 	tankGroupB map[string]f.Tank
 }
 
 func NewSimplest() *Simplest {
 	return &Simplest {
+		mapanalysis: &f.MapAnalysis{},
 		tankGroupA: make(map[string]f.Tank),
 		tankGroupB: make(map[string]f.Tank),
 	}
 }
 
 func (self *Simplest) Init(state *f.GameState) {
+	self.mapanalysis.Analysis(state)
+
+	groupNum, _ := forestGrouping(len(state.MyTank), *state.Terain, *self.mapanalysis)
 	i:=0
 	for _, tank := range state.MyTank {
-		if i<1 {
+		if i<groupNum {
 			self.tankGroupA[tank.Id] = tank
 		} else {
 			self.tankGroupB[tank.Id] = tank
 		}
 		i++
 	}
+	fmt.Println("分组:",groupNum)
 }
 
 func (self *Simplest) Plan(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
@@ -52,8 +58,8 @@ func (self *Simplest) Plan(state *f.GameState, radar *f.RadarResult, objective m
 
 		// 动态分组
 		if len(self.tankGroupA) <= 1 && len(self.tankGroupB) <= 1 {
-			self.tankGroupB[tank.Id] = tank
-			delete(self.tankGroupA, tank.Id)
+			self.tankGroupA[tank.Id] = tank
+			delete(self.tankGroupB, tank.Id)
 		}
 
 		// faith排序

@@ -322,13 +322,13 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 		// 	}
 		// }
 
-		if state.Terain.Data[tank.Pos.Y][tank.Pos.X] == 2 {
-			pos := forestPartol(tank.Pos, *state.Terain, state.Params.TankSpeed)
-			objective[tank.Id] = f.Objective {
-				Action: f.ActionTravel,
-				Target: pos,
-			}
-		}
+		// if state.Terain.Data[tank.Pos.Y][tank.Pos.X] == 2 {
+		// 	pos := forestPartol(tank.Pos, *state.Terain, state.Params.TankSpeed)
+		// 	objective[tank.Id] = f.Objective {
+		// 		Action: f.ActionTravel,
+		// 		Target: pos,
+		// 	}
+		// }
 
 		// 夺旗
 		if len(self.tankGroupA) > 0 {
