@@ -21,6 +21,7 @@ type MapAnalysis struct {
 type Forest struct {
     Area        int         // 面积
     Center      Position    // 中心点
+    Nearest     Position    // 离出生点最近的入口
     Entrance    int         // 出口数量
     XLength     int         // 森林X长度
     YLength     int         // 森林Y长度
@@ -181,5 +182,13 @@ func (m *MapAnalysis) bftForest(state *GameState, firstForest Position, execedFo
         }
     }
     forest.Entrance = len(tmpForestExit)
+    //遍历离出生点（0,0）最近的那片
+    min := math.MaxInt32
+    for pos := range tmpForestExit {
+        if min > pos.SDist(Position{X: 0, Y: 0}) {
+            min = pos.SDist(Position{X: 0, Y: 0})
+            forest.Nearest = pos
+        }
+    }
     return forest
 }
