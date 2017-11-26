@@ -77,7 +77,7 @@ func (self *Less) Plan(state *f.GameState, radar *f.RadarResult, objective map[s
 		if self.round > 20 {
 			for _, etank := range state.EnemyTank {
 				dist := abs(tank.Pos.X - etank.Pos.X) + abs(tank.Pos.Y - etank.Pos.Y)
-				if tank.Pos.Y >= 6 && tank.Pos.X <= 12 {
+				if etank.Pos.Y >= 6 && etank.Pos.X <= 12 {
 					if dist < least {
 						ttank = &etank
 						least = dist
