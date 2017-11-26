@@ -207,9 +207,9 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 			}
 			if from.X != to.X || from.Y != to.Y {
 				cache.path = nil
-				// if to.SDist(from) <= state.Params.TankSpeed {
-				// 	cache.path = []Position { to }
-				// }
+				if isDodge && to.SDist(from) <= state.Params.TankSpeed {
+					cache.path = []Position { to }
+				}
 				cache.target = to
 				if cache.expect != nil {
 					lock.Lock()
