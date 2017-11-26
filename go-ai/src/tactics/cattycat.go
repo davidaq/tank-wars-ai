@@ -35,6 +35,7 @@ func (c *Catty) Plan(state *f.GameState, radar *f.RadarResult, objective map[str
             role.occupyFlag()
             continue
         }
+
         role.hunt()
         role.act()
 
@@ -46,9 +47,10 @@ func (c *Catty) Plan(state *f.GameState, radar *f.RadarResult, objective map[str
 func (c *Catty) updateRole() {
 	for id, role := range c.Roles {
 		if c.obs.MyTank[id] != (f.Tank{}) {
-			role.Tank  = c.obs.MyTank[id]
-			role.Dodge = c.obs.Radar.DodgeBullet[id]
-            role.Fire  = c.obs.Radar.Fire[id]
+			role.Tank         = c.obs.MyTank[id]
+			role.Dodge        = c.obs.Radar.DodgeBullet[id]
+            role.ExtDangerSrc = c.obs.Radar.ExtDangerSrc[id]
+            role.Fire         = c.obs.Radar.Fire[id]
 		} else {
 			delete(c.Roles, id)
 		}
