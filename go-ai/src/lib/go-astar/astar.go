@@ -85,7 +85,7 @@ func (a *gridStruct) ClearTile(p Point) {
 func (a *gridStruct) FindPath(config AStarConfig, source, target []Point, movelen int, startdir int, threat map[Point]float64, brave bool) *PathPoint {
     var openList = make(map[Point]*PathPoint)
     var closeList = make(map[Point]*PathPoint)
-    stepsLimit := a.rows + a.cols
+    stepsLimit := (a.rows + a.cols) * 2
     if stepsLimit < 20 {
         stepsLimit = 20
     }
@@ -267,12 +267,17 @@ func (a *gridStruct) getSurrounding(p Point, movelen int, threat map[Point]float
         if trow < 0 || a.filledTiles[Point{trow, col}] == -1 {
             break
         }
-        thr += threat[Point{trow, col}]
+        if t := threat[Point{trow, col}]; t > 0 {
+            thr += t
+        }
         v = trow
     }
-    if v >= 0 && (brave || thr < 0.5) {
+    if t := threat[Point{v, col}]; v >= 0 && t < 0 {
+        thr -= t
+    }
+    if v >= 0 && (brave || thr < 0.8) {
         surrounding = append(surrounding, Point{v, col})
-        extWeight = append(extWeight, int(thr * 10))
+        extWeight = append(extWeight, int(thr * 5))
     }
 
     v = -1
@@ -282,12 +287,17 @@ func (a *gridStruct) getSurrounding(p Point, movelen int, threat map[Point]float
         if trow >= a.rows || a.filledTiles[Point{trow, col}] == -1 {
             break
         }
-        thr += threat[Point{trow, col}]
+        if t := threat[Point{trow, col}]; t > 0 {
+            thr += t
+        }
         v = trow
     }
-    if v >= 0 && (brave || thr < 0.5) {
+    if t := threat[Point{v, col}]; v >= 0 && t < 0 {
+        thr -= t
+    }
+    if v >= 0 && (brave || thr < 0.8) {
         surrounding = append(surrounding, Point{v, col})
-        extWeight = append(extWeight, int(thr * 10))
+        extWeight = append(extWeight, int(thr * 5))
     }
 
     v = -1
@@ -297,12 +307,17 @@ func (a *gridStruct) getSurrounding(p Point, movelen int, threat map[Point]float
         if tcol < 0 || a.filledTiles[Point{row, tcol}] == -1 {
             break
         }
-        thr += threat[Point{row, tcol}]
+        if t := threat[Point{row, tcol}]; t > 0 {
+            thr += t
+        }
         v = tcol
     }
-    if v >= 0 && (brave || thr < 0.5) {
+    if t := threat[Point{row, v}]; v >= 0 && t < 0 {
+        thr -= t
+    }
+    if v >= 0 && (brave || thr < 0.8) {
         surrounding = append(surrounding, Point{row, v})
-        extWeight = append(extWeight, int(thr * 10))
+        extWeight = append(extWeight, int(thr * 5))
     }
 
     v = -1
@@ -312,12 +327,17 @@ func (a *gridStruct) getSurrounding(p Point, movelen int, threat map[Point]float
         if tcol >= a.cols || a.filledTiles[Point{row, tcol}] == -1 {
             break
         }
-        thr += threat[Point{row, tcol}]
+        if t := threat[Point{row, tcol}]; t > 0 {
+            thr += t
+        }
         v = tcol
     }
-    if v >= 0 && (brave || thr < 0.5) {
+    if t := threat[Point{row, v}]; v >= 0 && t < 0 {
+        thr -= t
+    }
+    if v >= 0 && (brave || thr < 0.8) {
         surrounding = append(surrounding, Point{row, v})
-        extWeight = append(extWeight, int(thr * 10))
+        extWeight = append(extWeight, int(thr * 5))
     }
     return surrounding, extWeight
 }

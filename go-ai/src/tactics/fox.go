@@ -305,7 +305,7 @@ func (self *Fox) Plan(state *f.GameState, radar *f.RadarResult, objective map[st
 					Action: f.ActionTravel,
 					Target: resPos,
 				}
-				// if abs(tank.Pos.X - ttank.Pos.X) < mid ||	abs(tank.Pos.Y - ttank.Pos.Y) < mid {
+				// if abs(tank.Pos.X - ttank.Pos.X) < dis/3 ||	abs(tank.Pos.Y - ttank.Pos.Y) < dis/3 {
 				// 	objective[tank.Id] = f.Objective {
 				// 		Action: f.ActionTravel,
 				// 		Target: patrolPos[(n-1)%4],

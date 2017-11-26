@@ -30,6 +30,8 @@ func StartTactics (name string) f.Tactics {
 		return NewWaitSweep()
 	case "fox":
 		return NewFox()
+	case "terminator":
+		return NewTerminator()
 	default:
 		return NewRandom()
 	}

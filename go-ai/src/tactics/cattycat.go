@@ -41,7 +41,7 @@ func (c *Catty) Plan(state *f.GameState, radar *f.RadarResult, objective map[str
 
         fmt.Printf("catty role target: %+v\n", role.Target)
 
-		if role.Tank.Bullet != "" || !role.checkDone() {
+		if !role.checkDone() {
 			role.move()
 		} else {
 			role.act()
