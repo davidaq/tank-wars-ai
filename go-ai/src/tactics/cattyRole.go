@@ -19,7 +19,50 @@ type CattyRole struct {
 
 // 草内巡逻
 func (r *CattyRole) patrol() {
+    // 有旗子草丛
+    if r.forest.Center.X == r.obs.Terain.Width/2 && r.forest.Center.Y == r.obs.Terain.Height/2 {
+        // 夺旗
+        if r.obs.Flag.Exist && r.obs.Flag.Next <= 5 {
+            r.occupyFlag()
+        } else {
+            pos := forestPartol(r.Tank.Pos, r.obs.Terain, r.obs.State.Params.TankSpeed)
+            // 必死
+            if r.Dodge.Threat == -1 {
+                r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.fireBeforeDying() }
 
+            // 可开火
+            } else if r.doFire() != -1 && r.Dodge.Threat < 1 {
+                r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.doFire() }
+
+            // 可朝旗开火（加入随机量，避免太频繁）
+            } else if r.canFireToFlag() && rand.Int() % 3 == 0 {
+                r.fireToFlag()
+
+            // 其余情况寻路
+            } else {
+                r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravelWithDodge, Target: pos }
+            }
+        }
+    } else {
+        // 无旗子草丛
+        pos := forestPartol(r.Tank.Pos, r.obs.Terain, r.obs.State.Params.TankSpeed)
+        // 必死
+        if r.Dodge.Threat == -1 {
+            r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.fireBeforeDying() }
+
+        // 可开火
+        } else if r.doFire() != -1 && r.Dodge.Threat < 1 {
+            r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.doFire() }
+
+        // 可朝旗开火（加入随机量，避免太频繁）
+        } else if r.canFireToFlag() && rand.Int() % 3 == 0 {
+            r.fireToFlag()
+
+        // 其余情况寻路
+        } else {
+            r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravelWithDodge, Target: pos }
+        }
+    }
 }
 
 // 抢旗
