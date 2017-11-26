@@ -35,12 +35,24 @@ func (c *Catty) dispatch() {
                 forest          := c.obs.Forests[forestid]
                 role.gotoforest = true
                 role.forest     = forest
-                role.Target     = forest.Center
+                role.Target     = c.nfEntrance(role.Tank.Pos, forest)
                 i++
             }
         }
     }
+}
 
+// 草丛最近入口
+func (c *Catty) nfEntrance(pos f.Position, forest f.Forest) f.Position {
+    var target f.Position
+    dist := -1
+    for p, _ := range forest.ForestMap {
+        if nd := pos.SDist(p); dist < 0 || nd < dist {
+            dist   = nd
+            target = p
+        }
+    }
+    return target
 }
 
 // 有旗的草丛才补充人员
@@ -57,7 +69,7 @@ func (c *Catty) redispatch() {
                 if role.gotoforest == false {
                     role.gotoforest = true
                     role.forest     = forest
-                    role.Target     = forest.Center
+                    role.Target     = c.nfEntrance(role.Tank.Pos, forest)
                     curcnt++
                 }
             }
@@ -72,11 +84,11 @@ func (c *Catty) forestinfo() map[int]int{
             forestinfo[role.forest.Id] += 1
         }
     }
+    fmt.Printf("forestinfo: %+v\n", forestinfo)
     return forestinfo
 }
 
 func (c *Catty) Init(state *f.GameState) {
-
     // 初始化角色
     c.obs = NewObservation(state)
 	for _, tank := range state.MyTank {
@@ -84,11 +96,14 @@ func (c *Catty) Init(state *f.GameState) {
 	}
 
     c.forestmap = forestGrouping(len(c.obs.MyTank), c.obs.State.Terain, c.obs.mapanalysis)
-
-    c.dispatch()
+    if len(c.forestmap) > 0 {
+        c.dispatch()
+    }
 }
 
 func (c *Catty) Plan(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {
+    fmt.Printf("forestmap: %+v\n", c.forestmap)
+
     for tankid := range objective {
         delete(objective, tankid)
     }
@@ -97,31 +112,40 @@ func (c *Catty) Plan(state *f.GameState, radar *f.RadarResult, objective map[str
 
     c.updateRole()
 
-    c.redispatch()
+    if len(c.forestmap) > 0{
+        c.redispatch()
+    }
 
-    for _, role := range c.Roles {
-        if c.obs.Flag.Exist && c.obs.Flag.Next <= 5 {
-            role.occupyFlag()
-            continue
-        }
-        if !role.gotoforest {
+    // 无草
+    if len(c.forestmap) == 0 {
+        for _, role := range c.Roles {
+            if role.obs.Flag.Exist && role.obs.Flag.Next <= 5 {
+                role.occupyFlag()
+                continue
+            }
             role.hunt()
             role.act()
-        } else {
-            role.patrol()
+            fmt.Printf("catty role: %+v\n", role)
         }
-        fmt.Printf("catty role target: %+v\n", role.Target)
+
+    // 有草
+    } else {
+        for _, role := range c.Roles {
+            if !role.gotoforest {
+                role.hunt()
+                role.act()
+            } else {
+                role.patrol()
+            }
+            fmt.Printf("catty role: %+v\n", role)
+        }
     }
     fmt.Printf("catty objective: %+v\n", c.obs.Objs)
 }
 
 func (c *Catty) updateRole() {
-    foreatcnt := 0
 	for id, role := range c.Roles {
 		if c.obs.MyTank[id] != (f.Tank{}) {
-            if role.gotoforest {
-                foreatcnt++
-            }
 			role.Tank         = c.obs.MyTank[id]
 			role.Dodge        = c.obs.Radar.DodgeBullet[id]
             role.ExtDangerSrc = c.obs.Radar.ExtDangerSrc[id]
@@ -130,13 +154,6 @@ func (c *Catty) updateRole() {
 			delete(c.Roles, id)
 		}
 	}
-    if foreatcnt <= 0 {
-        for _, role := range c.Roles {
-            role.gotoforest = true
-            role.Target     = c.obs.Flag.Pos
-            break
-        }
-    }
 }
 
 func (c *Catty) End(state *f.GameState) { }
