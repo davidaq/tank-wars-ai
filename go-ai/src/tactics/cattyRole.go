@@ -207,6 +207,10 @@ func (r *CattyRole) canFireToFlag() bool {
         if (r.Tank.Pos.X == r.obs.Flag.Pos.X && r.Tank.Pos.Y == r.obs.Flag.Pos.Y){
             return false
         }
+
+        // 自己周边无敌方坦克
+        // TODO
+
         // 可以向旗子开火
         if r.Dodge.Threat == 0 && r.obs.pathReachable(r.Tank.Pos, r.obs.Flag.Pos) {
             // 判断友伤

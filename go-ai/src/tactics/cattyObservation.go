@@ -118,7 +118,6 @@ func (o *Observation) observeShotPos() {
                 o.ShotPos = append(o.ShotPos, pos)
             }
         }
-        fmt.Printf("observeShotPos: %+v\n", o.ShotPos)
         // 按距离我方中心点排序
         avgPos := o.avgpos()
         fmt.Printf("avgPos: %+v\n", avgPos)
@@ -129,6 +128,7 @@ func (o *Observation) observeShotPos() {
             o.ShotPos = o.ShotPos[0:len(o.MyTank)]
         }
     }
+    fmt.Printf("observeShotPos: %+v\n", o.ShotPos)
 }
 
 // 寻找攻击地点【前后选点】
@@ -136,7 +136,6 @@ func (o *Observation) findShotPos() map[f.Position]string {
 	shotPos := make(map[f.Position]string)
     var pos f.Position
 	for _, tank := range o.EmyTank {
-        fmt.Printf("emytank: %+v\n", tank)
 		for i := o.State.Params.BulletSpeed-1 ; i >= 0; i-- {
 	        if tank.Pos.Direction == f.DirectionUp {
                 pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y + o.State.Params.BulletSpeed + i + 2 + o.State.Params.TankSpeed }
@@ -179,7 +178,7 @@ func (o *Observation) findShotPos() map[f.Position]string {
             }
 	    }
 	}
-    fmt.Printf("find shot Postion: %+v\n", shotPos)
+    // fmt.Printf("find shot Postion: %+v\n", shotPos)
     return shotPos
 }
 
@@ -317,11 +316,11 @@ func (o *Observation) huntable(pos f.Position, tankid string) bool{
             f.Position { X: pos.X, Y: pos.Y + o.State.Params.TankSpeed},
         }
     }
-    // 两侧逃生点皆不可达，那么不能去
-    if o.pathReachable(pos, positions[0]) && o.pathReachable(pos, positions[1]){
-        return true
-    } else {
+    // 若无可达逃生点，那么不能去
+    if !o.pathReachable(pos, positions[0]) && !o.pathReachable(pos, positions[1]){
         return false
+    } else {
+        return true
     }
 }
 
