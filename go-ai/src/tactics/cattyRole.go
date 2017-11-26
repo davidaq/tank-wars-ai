@@ -2,71 +2,105 @@ package tactics
 
 import (
 	f "framework"
-	// "math"
-	"fmt"
+	// "fmt"
 )
 
 type CattyRole struct {
-    obs       *Observation
-    Tank      f.Tank
-    Target    f.Position
-    Dodge     f.RadarDodge     // 躲避建议
-    Fire      f.RadarFireAll   // 开火建议
+    obs          *Observation
+    Tank         f.Tank
+    Target       f.Position
+    Dodge        f.RadarDodge     // 躲避建议
+    Fire         f.RadarFireAll   // 开火建议
+    ExtDangerSrc []f.ExtDangerSrc   // 躲不掉和火线上的威胁源
 }
 
-// type CattyTarget struct {
-//     Pos     f.Position    // 目标地点
-// }
-
+// 抢旗
 func (r *CattyRole) occupyFlag() {
-    travel := f.ActionTravel
-    if r.Dodge.Threat == 1 {
-        travel = f.ActionTravelWithDodge
-    }
-    r.obs.Objs[r.Tank.Id] = f.Objective {
-        Action: travel,
-        Target: r.obs.Flag.Pos,
+    // 光荣弹
+    if r.Dodge.Threat == -1 {
+        r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.fireBeforeDying() }
+
+    // faith == 1
+    } else if action := r.fireByFaith(1.0, 0.5); action > 0 {
+        r.obs.Objs[r.Tank.Id] = f.Objective { Action: action }
+
+    // 寻路
+    } else {
+        travel := f.ActionTravel
+        if r.Dodge.Threat == 1 {
+            travel = f.ActionTravelWithDodge
+        }
+        r.obs.Objs[r.Tank.Id] = f.Objective {
+            Action: travel,
+            Target: r.obs.Flag.Pos,
+        }
     }
 }
 
-// 距离最近的可攻击位置
-// 如果敌方坦克密度较大，放弃那个位置
+// 寻找追击点
 func (r *CattyRole) hunt() {
-    fmt.Printf("r.obs.ShotPos: %+v\n", r.obs.ShotPos)
-
     // 如果没有绝杀点
     if len(r.obs.ShotPos) == 0 {
+        // 距离最近的坦克
         ttank := r.neareastEmy()
-        // 距离最近的坦克很远
+        // 如果它在安全距离外，直接定位到它身上
         if nd := r.Tank.Pos.SDist(ttank.Pos); nd > r.obs.State.Params.BulletSpeed * 2 {    // TODO 中心点附近
             r.Target = ttank.Pos
             return
         }
     }
 
-    // 如果有绝杀点
-	dist := -1
-	var tpos f.Position
-	for pos, _ := range r.obs.ShotPos {
-		nd := r.Tank.Pos.SDist(pos)
-        // 很接近目标，且逃跑路线不顺畅，不攻击
-        if nd < r.obs.State.Params.BulletSpeed * 2 && !r.obs.pathReachable(pos, r.nextPos(pos)) {
-            continue
-        }
-        if dist < 0 || nd < dist {
+    // 如果有绝杀点，去最近的绝杀点
+    var tpos f.Position
+    dist  := -1
+    index := -1
+    for i, pos := range r.obs.ShotPos {
+        if nd := r.Tank.Pos.SDist(pos); dist < 0 || nd < dist {
             dist  = nd
             tpos  = pos
+            index = i
         }
-	}
+    }
 
     // tpos 可能为空
     if tpos != (f.Position{}) {
         r.Target = tpos
-        delete(r.obs.ShotPos, tpos)
 
+        // 删除已被选择的点
+        if index == 0 {
+            r.obs.ShotPos = r.obs.ShotPos[index+1:]
+        } else if index == len(r.obs.ShotPos) {
+            r.obs.ShotPos = r.obs.ShotPos[:index]
+        } else {
+            r.obs.ShotPos = append(r.obs.ShotPos[:index], r.obs.ShotPos[index+1:]...)
+        }
     } else {
-        r.Target = r.Tank.Pos      // TODO 中心点附近
+        r.Target = r.Tank.Pos         // 原地躲避
     }
+}
+
+// 追击
+func (r *CattyRole) act() {
+    // 必死
+	if r.Dodge.Threat == -1 {
+		r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.fireBeforeDying() }
+
+    // 可开火
+	} else if r.doFire() != -1 && r.Dodge.Threat < 1 {
+		r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.doFire() }
+
+    // 可朝旗开火
+    // } else if r.canFireToFlag() {
+    //     r.fireToFlag()
+
+    // 其余情况寻路
+	} else {
+		r.move()
+	}
+}
+
+func (r *CattyRole) move() {
+    r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravelWithDodge, Target: r.Target }
 }
 
 func (r *CattyRole) neareastEmy() f.Tank {
@@ -81,31 +115,7 @@ func (r *CattyRole) neareastEmy() f.Tank {
     return ttank
 }
 
-func (r *CattyRole) move() {
-    r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravelWithDodge, Target: r.Target }
-}
-
-// 行动
-func (r *CattyRole) act() {
-    // 必死
-	if r.Dodge.Threat == -1 {
-		r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.fireBeforeDying() }
-
-    // 可开火
-	} else if r.fireAction() != -1 && r.Dodge.Threat < 1 {
-		r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.fireAction() }
-
-    // 可朝旗开火
-    } else if r.canFireToFlag() {
-        r.fireFlag()
-
-    // 其余情况寻路
-	} else {
-		r.move()
-	}
-}
-
-// 光荣弹
+// 光荣弹开火逻辑
 func (r *CattyRole) fireBeforeDying() int {
     var mrf *f.RadarFire
     for _, rf := range []*f.RadarFire{ r.Fire.Up, r.Fire.Down, r.Fire.Left, r.Fire.Right } {
@@ -114,15 +124,68 @@ func (r *CattyRole) fireBeforeDying() int {
             mrf = rf
         }
     }
-	if mrf == nil || mrf.Faith == 0 || mrf.Sin >= 0.5 {
-		return 0
-	} else {
-		return mrf.Action
-	}
+
+    // 无可开火方向，朝子弹来源方向开火
+    if mrf == nil || mrf.Faith <= 0  {
+        // 威胁子弹来源
+        direct := -1
+        for _, extd := range r.ExtDangerSrc {
+            if extd.Type == f.BULLET_THREAT && extd.Urgent == -1 {
+                direct = extd.SourceDir
+                break
+            }
+        }
+
+        // 判断能否发出光辉弹
+        var action int
+        switch direct {
+        case f.DirectionUp:
+            mrf    = r.Fire.Up
+            action = f.ActionFireUp
+        case f.DirectionDown:
+            mrf    = r.Fire.Down
+            action = f.ActionFireDown
+        case f.DirectionRight:
+            mrf    = r.Fire.Left
+            action = f.ActionFireRight
+        case f.DirectionLeft:
+            mrf    = r.Fire.Left
+            action = f.ActionFireLeft
+        }
+        if mrf == nil || mrf.Sin < 0.5 {
+            return action
+        } else {
+            return -1
+        }
+
+    // 有可开火方向
+    } else {
+        if mrf.Sin < 0.5 {
+            return mrf.Action
+        } else {
+            return -1
+        }
+    }
 }
 
-// 选择最适合的开火方向，没有可开火方向返回- 1
-func (r *CattyRole) fireAction() int {
+// 极高的命中信仰才开炮
+func (r *CattyRole) fireByFaith(faith float64, sin float64) int {
+    var mrf *f.RadarFire
+    for _, rf := range []*f.RadarFire{ r.Fire.Up, r.Fire.Down, r.Fire.Left, r.Fire.Right } {
+        if rf != nil && rf.Faith >= faith && rf.Sin < sin {
+            mrf = rf
+        }
+    }
+    if mrf == nil {
+        return -1
+    } else {
+        return mrf.Action
+    }
+}
+
+
+// 是否有合适的开火方向 TODO
+func (r *CattyRole) doFire() int {
     var mrf *f.RadarFire
     for _, rf := range []*f.RadarFire{ r.Fire.Up, r.Fire.Down, r.Fire.Left, r.Fire.Right } {
         if rf == nil || !rf.IsStraight { continue }
@@ -137,65 +200,51 @@ func (r *CattyRole) fireAction() int {
 	}
 }
 
-// 下一步位置
-func (r *CattyRole) nextPos(pos f.Position) f.Position {
-	if r.Tank.Pos.Direction == f.DirectionUp {
-		return f.Position { X: pos.X, Y: pos.Y + r.obs.State.Params.TankSpeed	 }
-	} else if pos.Direction == f.DirectionDown {
-		return f.Position { X: pos.X, Y: pos.Y - r.obs.State.Params.TankSpeed}
-	} else if pos.Direction == f.DirectionRight {
-		return f.Position { X: pos.X - r.obs.State.Params.TankSpeed, Y: pos.Y }
-	} else {
-		return f.Position { X: pos.X + r.obs.State.Params.TankSpeed, Y: pos.Y }
-	}
-}
-
 // 是否可以朝旗子开火
-func (r *CattyRole) canFireToFlag() bool {
-    return false
-    if r.Tank.Pos.X == r.obs.Flag.Pos.X || r.Tank.Pos.Y == r.obs.Flag.Pos.Y {
-        // 自己在旗子中不开火
-        if (r.Tank.Pos.X == r.obs.Flag.Pos.X && r.Tank.Pos.Y == r.obs.Flag.Pos.Y){
-            return false
-        }
-        // 可以向旗子开火
-        if r.Dodge.Threat == 0 && r.obs.pathReachable(r.Tank.Pos, r.obs.Flag.Pos) {
-            // 判断友伤
-            var rf *f.RadarFire
-            if r.Tank.Pos.X == r.obs.Flag.Pos.X {
-                if r.Tank.Pos.Y > r.obs.Flag.Pos.Y {
-                     rf = r.Fire.Up
-                } else {
-                    rf = r.Fire.Down
-                }
-            } else {
-                if r.Tank.Pos.X > r.obs.Flag.Pos.X {
-                    rf = r.Fire.Left
-                } else {
-                    rf = r.Fire.Right
-                }
-            }
-            if rf != nil && rf.Sin <= 0.2 {
-                return true
-            }
-        }
-    }
-    return false
-}
+// func (r *CattyRole) canFireToFlag() bool {
+//     if r.Tank.Pos.X == r.obs.Flag.Pos.X || r.Tank.Pos.Y == r.obs.Flag.Pos.Y {
+//         // 自己在旗子中不开火
+//         if (r.Tank.Pos.X == r.obs.Flag.Pos.X && r.Tank.Pos.Y == r.obs.Flag.Pos.Y){
+//             return false
+//         }
+//         // 可以向旗子开火
+//         if r.Dodge.Threat == 0 && r.obs.pathReachable(r.Tank.Pos, r.obs.Flag.Pos) {
+//             // 判断友伤
+//             var rf *f.RadarFire
+//             if r.Tank.Pos.X == r.obs.Flag.Pos.X {
+//                 if r.Tank.Pos.Y > r.obs.Flag.Pos.Y {
+//                     rf = r.Fire.Up
+//                 } else {
+//                     rf = r.Fire.Down
+//                 }
+//             } else {
+//                 if r.Tank.Pos.X > r.obs.Flag.Pos.X {
+//                     rf = r.Fire.Left
+//                 } else {
+//                     rf = r.Fire.Right
+//                 }
+//             }
+//             if rf != nil && rf.Sin <= 0.2 {
+//                 return true
+//             }
+//         }
+//     }
+//     return false
+// }
 
 // 向旗子开火
-func (r *CattyRole) fireFlag() {
-    if r.Tank.Pos.X == r.obs.Flag.Pos.X {
-        if r.Tank.Pos.Y > r.obs.Flag.Pos.Y {
-            r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionFireUp }
-        } else {
-            r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionFireDown }
-        }
-    } else {
-        if r.Tank.Pos.X > r.obs.Flag.Pos.X {
-            r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionFireLeft }
-        } else {
-            r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionFireRight }
-        }
-    }
-}
+// func (r *CattyRole) fireToFlag() {
+//     if r.Tank.Pos.X == r.obs.Flag.Pos.X {
+//         if r.Tank.Pos.Y > r.obs.Flag.Pos.Y {
+//             r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionFireUp }
+//         } else {
+//             r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionFireDown }
+//         }
+//     } else {
+//         if r.Tank.Pos.X > r.obs.Flag.Pos.X {
+//             r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionFireLeft }
+//         } else {
+//             r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionFireRight }
+//         }
+//     }
+// }
