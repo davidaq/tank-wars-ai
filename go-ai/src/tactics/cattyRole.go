@@ -2,7 +2,7 @@ package tactics
 
 import (
 	f "framework"
-	"fmt"
+	// "fmt"
     "math/rand"
 )
 
