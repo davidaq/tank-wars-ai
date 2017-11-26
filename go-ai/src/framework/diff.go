@@ -10,8 +10,13 @@ type Diff struct {
 	watchList *ObservationList
 }
 
+type WatchedTank struct {
+	count int
+	data Tank
+}
+
 type ObservationList struct {
-	tank map[string]Tank
+	tank map[string]WatchedTank
 	bullet map[string]Bullet
 }
 
@@ -229,8 +234,10 @@ func searchForest(preState *GameState, watchList *ObservationList, state *GameSt
 
 	// 检查观察列表中坦克的状态
 	if watchList.tank != nil {
-		for k,v := range(watchList.tank) {
+		for k,value := range(watchList.tank) {
+			v := value.data
 			disappear := true
+			var tempPos Position
 			// 判断坦克是否消失
 			for i:=0;i<len(state.EnemyTank);i++ {
 				if k==state.EnemyTank[i].Id {
@@ -240,38 +247,46 @@ func searchForest(preState *GameState, watchList *ObservationList, state *GameSt
 				}
 			}
 
-			if disappear {
-				switch v.Pos.Direction {
-				case DirectionUp:
-					tempPos := Position {
-						X: v.Pos.X,
-						Y: v.Pos.Y-tankSpeed,
-						Direction: v.Pos.Direction,
-					}
-					ret.ForestThreat[tempPos] = 1
-				case DirectionLeft:
-					tempPos := Position {
-						X: v.Pos.X-tankSpeed,
-						Y: v.Pos.Y,
-						Direction: v.Pos.Direction,
-					}
-					ret.ForestThreat[tempPos] = 1
-				case DirectionDown:
-					tempPos := Position {
-						X: v.Pos.X,
-						Y: v.Pos.Y+tankSpeed,
-						Direction: v.Pos.Direction,
-					}
-					ret.ForestThreat[tempPos] = 1
-				case DirectionRight:
-					tempPos := Position {
-						X: v.Pos.X+tankSpeed,
-						Y: v.Pos.Y,
-						Direction: v.Pos.Direction,
-					}
-					ret.ForestThreat[tempPos] = 1
+			wtank := WatchedTank {
+				count: value.count+1,
+				data: v,
+			}
+
+			watchList.tank[k] = wtank
+			switch v.Pos.Direction {
+			case DirectionUp:
+				tempPos = Position {
+					X: v.Pos.X,
+					Y: v.Pos.Y-tankSpeed,
+					Direction: v.Pos.Direction,
 				}
+			case DirectionLeft:
+				tempPos = Position {
+					X: v.Pos.X-tankSpeed,
+					Y: v.Pos.Y,
+					Direction: v.Pos.Direction,
+				}
+			case DirectionDown:
+				tempPos = Position {
+					X: v.Pos.X,
+					Y: v.Pos.Y+tankSpeed,
+					Direction: v.Pos.Direction,
+				}
+			case DirectionRight:
+				tempPos = Position {
+					X: v.Pos.X+tankSpeed,
+					Y: v.Pos.Y,
+					Direction: v.Pos.Direction,
+				}
+			}
+			if disappear {
+				ret.ForestThreat[tempPos] = 1
+			} else {
+				delete(ret.ForestThreat, tempPos)
+			}
+			if watchList.tank[k].count == 3 {
 				delete(watchList.tank, k)
+				delete(ret.ForestThreat, tempPos)
 			}
 		}
 	}
@@ -337,6 +352,10 @@ func searchForest(preState *GameState, watchList *ObservationList, state *GameSt
 	for i:= 0; i<len(state.EnemyTank); i++ {
 		curItemPos := state.EnemyTank[i].Pos
 		step := 0
+		wtank := WatchedTank {
+			count: 0,
+			data: state.EnemyTank[i],
+		}
 
 		switch curItemPos.Direction {
 		case DirectionUp:
@@ -347,7 +366,7 @@ func searchForest(preState *GameState, watchList *ObservationList, state *GameSt
 			}
 			for j:= 1; j<=step; j++ {
 				if terain[curItemPos.Y-j][curItemPos.X] == 2 {
-					watchList.tank[state.EnemyTank[i].Id] = state.EnemyTank[i]
+					watchList.tank[state.EnemyTank[i].Id] = wtank
 					break
 				}
 			}
@@ -359,7 +378,7 @@ func searchForest(preState *GameState, watchList *ObservationList, state *GameSt
 			}
 			for j:= 1; j<=step; j++ {
 				if terain[curItemPos.Y][curItemPos.X-j] == 2 {
-					watchList.tank[state.EnemyTank[i].Id] = state.EnemyTank[i]
+					watchList.tank[state.EnemyTank[i].Id] = wtank
 					break
 				}
 			}
@@ -371,7 +390,7 @@ func searchForest(preState *GameState, watchList *ObservationList, state *GameSt
 			}
 			for j:= 1; j<=step; j++ {
 				if terain[curItemPos.Y+j][curItemPos.X] == 2 {
-					watchList.tank[state.EnemyTank[i].Id] = state.EnemyTank[i]
+					watchList.tank[state.EnemyTank[i].Id] = wtank
 					break
 				}
 			}
@@ -383,7 +402,7 @@ func searchForest(preState *GameState, watchList *ObservationList, state *GameSt
 			}
 			for j:= 1; j<=step; j++ {
 				if terain[curItemPos.Y][curItemPos.X+j] == 2 {
-					watchList.tank[state.EnemyTank[i].Id] = state.EnemyTank[i]
+					watchList.tank[state.EnemyTank[i].Id] = wtank
 					break
 				}
 			}
@@ -454,7 +473,7 @@ func (self *Diff) Compare(newState *GameState, collidedEnemyInForest[]Position) 
 	}
 	if self.watchList == nil {
 		self.watchList = &ObservationList {
-			tank: make(map[string]Tank),
+			tank: make(map[string]WatchedTank),
 			bullet: make(map[string]Bullet),
 		}
 	}
@@ -463,5 +482,7 @@ func (self *Diff) Compare(newState *GameState, collidedEnemyInForest[]Position) 
 		searchForest(self.prevState, self.watchList ,newState, collidedEnemyInForest, ret, )
 	}
 	self.prevState = newState
+	fmt.Println("watchlist:",self.watchList)
+	fmt.Println("tankThred:",ret.ForestThreat)
 	return ret
 }
