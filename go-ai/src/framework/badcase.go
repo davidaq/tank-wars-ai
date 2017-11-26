@@ -118,7 +118,7 @@ func badCaseDangerZone(state *GameState, radar *RadarResult, movements map[strin
 				}
 			}
 		}
-		getPrefer := func (preferVertical bool, ignoreAlly bool) map[int]bool {
+		getPreferB := func (preferVertical bool, ignoreAlly bool) map[int]bool {
 			preferDirection := make(map[int]bool)
 			dirs := hDirections
 			if preferVertical {
@@ -139,13 +139,17 @@ func badCaseDangerZone(state *GameState, radar *RadarResult, movements map[strin
 					preferDirection[dir] = true
 				}
 			}
-			if len(preferDirection) == 0 && !ignoreAlly {
-				return getPrefer(preferVertical, true)
-			}
 			return preferDirection
 		}
+		getPrefer := func (preferVertical bool) map[int]bool {
+			ret := getPreferB(preferVertical, false)
+			if len(ret) == 0 {
+				ret = getPreferB(preferVertical, true)
+			}
+			return ret
+		}
 		if preferVertical, danger := dangerous[tank.Pos.NoDirection()]; danger {  // 位于危险区域
-			preferDirection := getPrefer(preferVertical, false)
+			preferDirection := getPrefer(preferVertical)
 			if len(preferDirection) > 0 {
 				oldMove := movements[tank.Id]
 				fixMove(state, radar, movements, tank, preferDirection)
@@ -161,8 +165,8 @@ func badCaseDangerZone(state *GameState, radar *RadarResult, movements map[strin
 				pos = nPos
 			}
 			if preferVertical, danger := dangerous[tank.Pos.NoDirection()]; danger { // 下一步走进危险区
-				preferDirection := getPrefer(preferVertical, false)
-				if !preferDirection[tank.Direction] {
+				preferDirection := getPrefer(preferVertical)
+				if !preferDirection[tank.Pos.Direction] {
 					movements[tank.Id] = ActionStay
 				}
 			}
