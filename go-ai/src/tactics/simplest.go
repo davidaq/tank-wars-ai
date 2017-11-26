@@ -20,7 +20,7 @@ func NewSimplest() *Simplest {
 func (self *Simplest) Init(state *f.GameState) {
 	i:=0
 	for _, tank := range state.MyTank {
-		if i<2 {
+		if i<1 {
 			self.tankGroupA[tank.Id] = tank
 		} else {
 			self.tankGroupB[tank.Id] = tank
@@ -110,6 +110,7 @@ func (self *Simplest) Plan(state *f.GameState, radar *f.RadarResult, objective m
 
 		distance := state.Params.BulletSpeed +1
 		patrolPos := []f.Position{
+			{ X: state.Terain.Width/2, Y: state.Terain.Height/2 },
 			{ X: state.Terain.Width/2-distance, Y: state.Terain.Height/2 },
 			{ X: state.Terain.Width/2, Y: state.Terain.Height/2-distance },
 			{ X: state.Terain.Width/2+distance, Y: state.Terain.Height/2 },
@@ -121,6 +122,15 @@ func (self *Simplest) Plan(state *f.GameState, radar *f.RadarResult, objective m
 			objective[tank.Id] = f.Objective {
 				Action: f.ActionTravel,
 				Target: patrolPos[(n-1)%4],
+			}
+
+			// 草丛巡逻
+			if state.Terain.Data[tank.Pos.Y][tank.Pos.X] == 2 {
+				pos := forestPartol(tank.Pos, *state.Terain, state.Params.TankSpeed)
+				objective[tank.Id] = f.Objective {
+					Action: f.ActionTravel,
+					Target: pos,
+				}
 			}
 		}
 		// 战斗B组
@@ -171,15 +181,6 @@ func (self *Simplest) Plan(state *f.GameState, radar *f.RadarResult, objective m
 				}
 			}
 		}
-
-		// // 草丛巡逻
-		// if state.Terain.Data[tank.Pos.Y][tank.Pos.X] == 2 {
-		// 	pos := forestPartol(tank.Pos, *state.Terain, state.Params.TankSpeed)
-		// 	objective[tank.Id] = f.Objective {
-		// 		Action: f.ActionTravel,
-		// 		Target: pos,
-		// 	}
-		// }
 
 		// 夺旗
 		if len(self.tankGroupA) > 0 {
