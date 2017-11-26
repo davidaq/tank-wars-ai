@@ -169,3 +169,39 @@ func caculateEnemyCost(bullet f.Bullet, terain *f.Terain, bulletSpeed int) float
 	}
 	return math.Ceil(float64(count/bulletSpeed))
 }
+
+func forestGrouping (tankNum int, terain f.Terain, mapAnalysis f.MapAnalysis) (int, f.Forest) {
+	// o := mapAnalysis.Ocnt
+	// f := mapAnalysis.Fcnt
+	// w := mapAnalysis.Wcnt
+	forests := mapAnalysis.Forests
+	width := terain.Width
+	height := terain.Height
+	// tData := terain.Data
+	mapArea := width*height
+	var large f.Forest
+
+	if len(forests) == 0 {
+		return 0, large
+	} else {
+		large = forests[0]
+		// 寻找最大草丛
+		for _, forest := range forests {
+			if forest.Area >large.Area {
+				large = forest
+			} else if forest.Area == large.Area {
+				if forest.Center.X + forest.Center.Y < large.Center.X + large.Center.Y {
+					large = forest
+				}
+			}
+		}
+
+		if float64(float64(large.Area)/float64(mapArea)) > 0.3 {
+			return tankNum, large
+		} else if float64(float64(large.Area)/float64(mapArea)) > 0.15 {
+			return tankNum/2, large
+		}	else {
+			return 1, large
+		}
+	}
+}
