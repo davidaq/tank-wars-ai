@@ -210,7 +210,7 @@ func (m *MapAnalysis) bftForest(state *GameState, firstForest Position, execedFo
 /**
  * 判断点是否在那片草丛，如果命中则返回那片草丛
  */
-func (m *MapAnalysis) CheckForest(pos Position) Forest{
+func (m *MapAnalysis) GetForestByPos(pos Position) Forest{
     for _, f := range m.Forests {
         if f.ForestMap[pos] == true {
             return f
