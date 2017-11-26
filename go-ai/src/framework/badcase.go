@@ -100,29 +100,29 @@ func badCaseDangerZone(state *GameState, radar *RadarResult, movements map[strin
 		}
 	}
 	for _, tank := range state.MyTank {
-		if preferVertical, danger := dangerous[tank.Pos.NoDirection()]; danger {
+		noPass := make(map[Position]string)
+		for _, oTank  := range state.MyTank {
+			if oTank.Id != tank.Id {
+				pos := oTank.Pos.NoDirection()
+				noPass[pos] = oTank.Id
+				action := movements[oTank.Id]
+				if action == ActionMove {
+					for i := 0; i < state.Params.TankSpeed; i++ {
+						nPos := pos.step(oTank.Pos.Direction)
+						if state.Terain.Get(nPos.X, nPos.Y) == 1 {
+							break
+						}
+						noPass[nPos] = oTank.Id
+						pos = nPos
+					}
+				}
+			}
+		}
+		getPreferB := func (preferVertical bool, ignoreAlly bool) map[int]bool {
 			preferDirection := make(map[int]bool)
 			dirs := hDirections
 			if preferVertical {
 				dirs = vDirections
-			}
-			noPass := make(map[Position]string)
-			for _, oTank  := range state.MyTank {
-				if oTank.Id != tank.Id {
-					pos := oTank.Pos.NoDirection()
-					noPass[pos] = oTank.Id
-					action := movements[oTank.Id]
-					if action == ActionMove {
-						for i := 0; i < state.Params.TankSpeed; i++ {
-							nPos := pos.step(oTank.Pos.Direction)
-							if state.Terain.Get(nPos.X, nPos.Y) == 1 {
-								break
-							}
-							noPass[nPos] = oTank.Id
-							pos = nPos
-						}
-					}
-				}
 			}
 			for _, dir := range dirs {
 				nPos := tank.Pos.step(dir).NoDirection()
@@ -130,17 +130,45 @@ func badCaseDangerZone(state *GameState, radar *RadarResult, movements map[strin
 				if state.Terain.Get(nPos.X, nPos.Y) == 1 {
 					blocked = true
 				}
-				if id, ok := noPass[nPos]; ok && id != tank.Id {
-					blocked = true
+				if ignoreAlly {
+					if id, ok := noPass[nPos]; ok && id != tank.Id {
+						blocked = true
+					}
 				}
 				if !blocked {
 					preferDirection[dir] = true
 				}
 			}
+			return preferDirection
+		}
+		getPrefer := func (preferVertical bool) map[int]bool {
+			ret := getPreferB(preferVertical, false)
+			if len(ret) == 0 {
+				ret = getPreferB(preferVertical, true)
+			}
+			return ret
+		}
+		if preferVertical, danger := dangerous[tank.Pos.NoDirection()]; danger {  // 位于危险区域
+			preferDirection := getPrefer(preferVertical)
 			if len(preferDirection) > 0 {
 				oldMove := movements[tank.Id]
 				fixMove(state, radar, movements, tank, preferDirection)
 				fmt.Println("Fix Danger Zone", tank.Id, oldMove, movements[tank.Id])
+			}
+		} else if movements[tank.Id] == ActionMove {
+			pos := tank.Pos.NoDirection()
+			for i := 0; i < state.Params.TankSpeed; i++ {
+				nPos := pos.step(tank.Pos.Direction)
+				if state.Terain.Get(nPos.X, nPos.Y) == 1 {
+					break
+				}
+				pos = nPos
+			}
+			if preferVertical, danger := dangerous[tank.Pos.NoDirection()]; danger { // 下一步走进危险区
+				preferDirection := getPrefer(preferVertical)
+				if !preferDirection[tank.Pos.Direction] {
+					movements[tank.Id] = ActionStay
+				}
 			}
 		}
 	}
