@@ -170,8 +170,8 @@ func caculateEnemyCost(bullet f.Bullet, terain *f.Terain, bulletSpeed int) float
 	return math.Ceil(float64(count/bulletSpeed))
 }
 
-func forestGrouping (tankNum int, terain f.Terain, mapAnalysis f.MapAnalysis) (int, f.Forest) {
-// func forestGrouping (tankNum int, terain f.Terain, mapAnalysis f.MapAnalysis) map[f.Forest]int {
+// func forestGrouping (tankNum int, terain f.Terain, mapAnalysis f.MapAnalysis) (int, f.Forest) {
+func forestGrouping (tankNum int, terain f.Terain, mapAnalysis f.MapAnalysis) map[f.Forest]int {
 	// o := mapAnalysis.Ocnt
 	// f := mapAnalysis.Fcnt
 	// w := mapAnalysis.Wcnt
@@ -181,7 +181,7 @@ func forestGrouping (tankNum int, terain f.Terain, mapAnalysis f.MapAnalysis) (i
 	// tData := terain.Data
 	mapArea := width*height
 	var large f.Forest
-	// res := make(map[f.Forest]int)
+	res := make(map[f.Forest]int)
 
 	if len(forests) == 0 {
 		return 0, large
@@ -198,31 +198,31 @@ func forestGrouping (tankNum int, terain f.Terain, mapAnalysis f.MapAnalysis) (i
 			}
 		} 
 
+		// if float64(float64(large.Area)/float64(mapArea)) > 0.3 {
+		// 	return tankNum, large
+		// } else if float64(float64(large.Area)/float64(mapArea)) > 0.15 {
+		// 	return tankNum/2, large
+		// }	else {
+		// 	return 1, large
+		// }
+
 		if float64(float64(large.Area)/float64(mapArea)) > 0.3 {
-			return tankNum, large
+			res[large] = tankNum
 		} else if float64(float64(large.Area)/float64(mapArea)) > 0.15 {
-			return tankNum/2, large
+			res[large] = tankNum/2
 		}	else {
-			return 1, large
+			res[large] = 1
 		}
 
-		// if float64(float64(large.Area)/float64(mapArea)) > 0.3 {
-		// 	res[large] = tankNum
-		// } else if float64(float64(large.Area)/float64(mapArea)) > 0.15 {
-		// 	res[large] = tankNum/2
-		// }	else {
-		// 	res[large] = 1
-		// }
-
-		// // 旗子非最大草丛
-		// for _, forest := range forests {
-		// 	if forest.Center.X == width/2 && forest.Center.Y == height/2 {
-		// 		if res[forest] == 0 {
-		// 			res[forest] = 1
-		// 		}
-		// 	}
-		// }
+		// 旗子非最大草丛
+		for _, forest := range forests {
+			if forest.Center.X == width/2 && forest.Center.Y == height/2 {
+				if res[forest] == 0 {
+					res[forest] = 1
+				}
+			}
+		}
 	
-		// return res
+		return res
 	}
 }
