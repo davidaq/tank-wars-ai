@@ -212,49 +212,6 @@ func fixMove (state *GameState, radar *RadarResult, movements map[string]int, ta
 		} else {
 			nextDirt = dirt
 		}
-
-		// switch dirt {
-		// case DirectionUp:
-		// 	if preferDirection[DirectionDown] {
-		// 		if radar.FullMapThreat[{X: tank.Pos.X, Y: tank.Pos.Y - state.Params.tankSpeed, Direction: DirectionUp}] > radar.FullMapThreat[{X: tank.Pos.X, Y: tank.Pos.Y + state.Params.tankSpeed, Direction: DirectionDown}] {
-		// 			nextDirt = ActionTurnDown
-		// 		} else {
-		// 			nextDirt = ActionTurnUp
-		// 		}
-		// 	} else {
-		// 		nextDirt = ActionTurnUp
-		// 	}
-		// case DirectionLeft:
-		// 	if preferDirection[Right] {
-		// 		if radar.FullMapThreat[{X: tank.Pos.X + state.Params.tankSpeed, Y: tank.Pos.Y, Direction: DirectionRight}] > radar.FullMapThreat[{X: tank.Pos.X - state.Params.tankSpeed, Y: tank.Pos.Y, Direction: DirectionLeft}] {
-		// 			nextDirt = ActionTurnLeft
-		// 		} else {
-		// 			nextDirt = ActionTureRight
-		// 		}
-		// 	} else {
-		// 		nextDirt = ActionTurnLeft
-		// 	}
-		// case DirectionDown:
-		// 	if preferDirection[DirectionUp] {
-		// 		if radar.FullMapThreat[{X: tank.Pos.X, Y: tank.Pos.Y - state.Params.tankSpeed, Direction: DirectionUp}] > radar.FullMapThreat[{X: tank.Pos.X, Y: tank.Pos.Y + state.Params.tankSpeed, Direction: DirectionDown}] {
-		// 			nextDirt = ActionTurnDown
-		// 		} else {
-		// 			nextDirt = ActionTurnUp
-		// 		}
-		// 	} else {
-		// 		nextDirt = ActionTurnDown
-		// 	}
-		// case DirectionRight:
-		// 	if preferDirection[DirectionLeft] {
-		// 		if radar.FullMapThreat[{X: tank.Pos.X + state.Params.tankSpeed, Y: tank.Pos.Y, Direction: DirectionRight}] > radar.FullMapThreat[{X: tank.Pos.X - state.Params.tankSpeed, Y: tank.Pos.Y, Direction: DirectionLeft}] {
-		// 			nextDirt = ActionTurnLeft
-		// 		} else {
-		// 			nextDirt = ActionTureRight
-		// 		}
-		// 	} else {
-		// 		nextDirt = ActionTurnRight
-		// 	}
-		// }
 	}
 
 	movement := movements[tank.Id]
