@@ -1,5 +1,9 @@
 package framework
 
+import (
+	"fmt"
+)
+
 // 写死防止干蠢事
 
 func BadCase(state *GameState, radar *RadarResult, movements map[string]int) {
@@ -126,7 +130,9 @@ func badCaseDangerZone(state *GameState, radar *RadarResult, movements map[strin
 				}
 			}
 			if len(preferDirection) > 0 {
+				oldMove := movements[tank.Id]
 				fixMove(state, radar, movements, tank, preferDirection)
+				fmt.Println("Fix Danger Zone", tank.Id, oldMove, movements[tank.Id])
 			}
 		}
 	}
