@@ -32,6 +32,8 @@ func StartTactics (name string) f.Tactics {
 		return NewFox()
 	case "terminator":
 		return NewTerminator()
+	case "simplest":
+		return NewSimplest()
 	default:
 		return NewRandom()
 	}
