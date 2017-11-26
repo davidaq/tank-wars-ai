@@ -8,47 +8,68 @@ import (
 type Catty struct {
     obs           *Observation
     Roles         map[string]*CattyRole
-    
+    forestmap     map[int]int
 }
 
 func NewCatty() *Catty{
     return &Catty {
-        // mapanalysis:  &f.MapAnalysis{},
         Roles: make(map[string]*CattyRole),
     }
 }
 
 // 分析草丛人员分配
-func (c *Catty) analysis() map[f.Forest]int {
-    return make(map[f.Forest]int)
+func (c *Catty) analysis() {
+
 }
 
 // 分配
 func (c *Catty) dispatch() {
-    forestinfo := c.forestinfo()
-
     // 分配一些去旗子，其它在草外
-    for forest, cnt := range c.analysis() {
-        curcnt := forestinfo[forest]
+    for forestid, cnt := range c.forestmap {
+        i := 0
         for _, role := range c.Roles {
-            if curcnt == cnt {
+            if i == cnt {
                 break
             }
             if role.gotoforest == false {
+                forest          := c.obs.Forests[forestid]
                 role.gotoforest = true
                 role.forest     = forest
                 role.Target     = forest.Center
-                curcnt++
+                i++
+            }
+        }
+    }
+
+}
+
+// 有旗的草丛才补充人员
+func (c *Catty) redispatch() {
+    forestinfo := c.forestinfo()
+    for forestid, cnt := range c.forestmap {
+        forest := c.obs.Forests[forestid]
+        if forest.HasFlag {
+            curcnt := forestinfo[forestid]
+            for _, role := range c.Roles {
+                if curcnt == cnt {
+                    break
+                }
+                if role.gotoforest == false {
+                    role.gotoforest = true
+                    role.forest     = forest
+                    role.Target     = forest.Center
+                    curcnt++
+                }
             }
         }
     }
 }
 
-func (c *Catty) forestinfo() map[f.Forest]int{
-    forestinfo := make(map[f.Forest]int)
+func (c *Catty) forestinfo() map[int]int{
+    forestinfo := make(map[int]int)
     for _, role := range c.Roles {
         if role.gotoforest {
-            forestinfo[role.forest] += 1
+            forestinfo[role.forest.Id] += 1
         }
     }
     return forestinfo
@@ -62,14 +83,9 @@ func (c *Catty) Init(state *f.GameState) {
 		c.Roles[tank.Id] = &CattyRole { obs: c.obs, Tank: tank}
 	}
 
-    c.dispatch()
+    c.forestmap = forestGrouping(len(c.obs.MyTank), c.obs.State.Terain, c.obs.mapanalysis)
 
-    // 分配一个去旗子
-    // for _, role := range c.Roles {
-    //     role.gotoforest = true
-    //     role.Target     = c.obs.Flag.Pos
-    //     break
-    // }
+    c.dispatch()
 }
 
 func (c *Catty) Plan(state *f.GameState, radar *f.RadarResult, objective map[string]f.Objective) {

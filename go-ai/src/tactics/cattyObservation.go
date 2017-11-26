@@ -21,6 +21,7 @@ type Observation struct {
     Flag         Flag
 	Terain       *f.Terain
 	ShotPos      []f.Position
+    Forests      map[int]f.Forest
 }
 
 type Flag struct {
@@ -44,7 +45,12 @@ func NewObservation(state *f.GameState) (obs *Observation) {
     obs = &Observation{ TotalSteps: state.Params.MaxRound, Steps: 0, State: state, Terain: state.Terain}
     // 地图分析
     obs.mapanalysis.Analysis(state)
-    
+
+    obs.Forests = make(map[int]f.Forest)
+    for _, forest := range obs.mapanalysis.Forests {
+        obs.Forests[forest.Id] = forest
+    }
+
     // 观察坦克
     obs.observeTank()
 
