@@ -188,8 +188,8 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 									badDir = true
 								}
 							}
-							dangerDist := state.Params.BulletSpeed + 2
-							for i, N := 1, dangerDist + state.Params.BulletSpeed + 1; i <= N; i++ {
+							dangerDist := state.Params.BulletSpeed + 1
+							for i, N := 1, dangerDist + state.Params.BulletSpeed; i <= N; i++ {
 								pos = pos.step(dir)
 								if state.Terain.Get(pos.X, pos.Y) == 1 {
 									break
@@ -211,10 +211,12 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 								if isThreat {
 									if rt, ok := aThreat[astar.Point { Col: pos.X, Row: pos.Y }]; !ok || rt < 0.6 {
 										val := -1.
-										if badDir {
-											val = -2.
-										} else if possibleI == 0 {
-											val = -3.
+										if possibleI == 0 {
+											if badDir {
+												val = -2.
+											} else {
+												val = -3.
+											}
 										}
 										if !ok || rt > val {
 											aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = val
