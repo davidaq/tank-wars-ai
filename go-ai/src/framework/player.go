@@ -135,7 +135,7 @@ func (self *Player) Play(state *GameState) map[string]int {
 				pos := tank.Pos
 				for i, c := 0, state.Params.BulletSpeed * 2 + 2; i < c; i++ {
 					pos = pos.step(pos.Direction)
-					radarResult.FullMapThreat[pos.NoDirection()] = 2
+					radarResult.FullMapThreat[pos.NoDirection()] = 5
 				}
 			}
 		}
