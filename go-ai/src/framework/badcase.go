@@ -101,7 +101,7 @@ func badCaseDangerZone(state *GameState, radar *RadarResult, movements map[strin
 				preferVertical = false
 			}
 			pos := eTank.Pos.NoDirection()
-			for i := 0; i < 2 + state.Params.BulletSpeed; i++ {
+			for i := 0; i < 1 + state.Params.BulletSpeed; i++ {
 				pos = pos.step(dir)
 				if state.Terain.Get(pos.X, pos.Y) == 1 {
 					continue
