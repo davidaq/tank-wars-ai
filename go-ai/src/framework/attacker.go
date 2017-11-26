@@ -85,7 +85,7 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 	if verticalDistance <= bulletSpeed + 1 {
 		faith = float64(1)
 	} else if verticalDistance <= bulletSpeed * 2 + 1 {
-		faith = 0.8
+		faith = 0.91
 	} else if verticalDistance <= bulletSpeed * 3 + 1 {
 		faith = 0.6
 	} else if verticalDistance <= bulletSpeed * 4 + 1 {
@@ -134,7 +134,7 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 		}
 
 		// 敌方朝向和开火方向垂直，且在火线上
-		return faith * 0.9
+		return faith * 0.91
 	} else {
 		// 敌方不在火线，开火方向是上或下
 		faith = faith / float64(2)

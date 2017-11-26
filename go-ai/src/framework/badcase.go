@@ -26,7 +26,6 @@ func badCaseControlEnemy(state *GameState, radar *RadarResult, movements map[str
 
 func badCaseShootSelf(state *GameState, radar *RadarResult, movements map[string]int) {
 	noPass := make(map[Position]bool)
-	noStop := make(map[Position]bool)
 	ePos := make(map[Position]bool)
 	for _, tank  := range state.MyTank {
 		pos := tank.Pos.NoDirection()
@@ -38,13 +37,12 @@ func badCaseShootSelf(state *GameState, radar *RadarResult, movements map[string
 				if state.Terain.Get(nPos.X, nPos.Y) == 1 {
 					break
 				}
-				noPass[pos] = true
+				noPass[nPos] = true
 				pos = nPos
 			}
 		}
-		noStop[pos] = true
 	}
-	fmt.Println("shoot self", noPass, noStop)
+	fmt.Println("shoot self", noPass)
 	for _, etank  := range state.EnemyTank {
 		ePos[etank.Pos] = true
 	}
@@ -59,31 +57,14 @@ func badCaseShootSelf(state *GameState, radar *RadarResult, movements map[string
 			if ePos[pos] {
 				continue tankloop
 			}
-			if noPass[pos] || noStop[pos] {
-				movements[tank.Id] = ActionStay
-				continue tankloop
-			}
-			for i := 0; i < state.Params.BulletSpeed; i++ {
-				pos = pos.step(dir)
-				if state.Terain.Get(pos.X, pos.Y) == 1 {
-					continue tankloop
-				}
+			for i := 0; i <= state.Params.BulletSpeed * 3; i++ {
 				if noPass[pos] {
 					movements[tank.Id] = ActionStay
+					fmt.Println("Self shoot prevented", tank.Id)
 					continue tankloop
 				}
-			}
-			if noStop[pos] {
-				movements[tank.Id] = ActionStay
-				continue tankloop
-			}
-			for i := 0; i < state.Params.BulletSpeed * 2; i++ {
 				pos = pos.step(dir)
 				if state.Terain.Get(pos.X, pos.Y) == 1 {
-					continue tankloop
-				}
-				if noPass[pos] || noStop[pos] {
-					movements[tank.Id] = ActionStay
 					continue tankloop
 				}
 			}
@@ -96,26 +77,8 @@ func badCaseDangerZone(state *GameState, radar *RadarResult, movements map[strin
 	directions := []int { DirectionUp, DirectionLeft, DirectionDown, DirectionRight }
 	vDirections := []int { DirectionUp, DirectionDown }
 	hDirections := []int { DirectionLeft, DirectionRight }
-	noPass := make(map[Position]bool)
-	noStop := make(map[Position]bool)
-	for _, tank  := range state.MyTank {
-		pos := tank.Pos.NoDirection()
-		noPass[pos] = true
-		action := movements[tank.Id]
-		if action == ActionMove {
-			for i := 0; i < state.Params.TankSpeed; i++ {
-				nPos := pos.step(tank.Pos.Direction)
-				if state.Terain.Get(nPos.X, nPos.Y) == 1 {
-					break
-				}
-				noPass[pos] = true
-				pos = nPos
-			}
-		}
-		noStop[pos] = true
-	}
 	for _, eTank := range state.EnemyTank {
-		for _, dir := range directions {
+		dirloop: for _, dir := range directions {
 			preferVertical := true
 			if dir == DirectionDown || dir == DirectionUp {
 				preferVertical = false
@@ -124,20 +87,38 @@ func badCaseDangerZone(state *GameState, radar *RadarResult, movements map[strin
 			for i := 0; i < 1 + state.Params.BulletSpeed; i++ {
 				pos = pos.step(dir)
 				if state.Terain.Get(pos.X, pos.Y) == 1 {
-					continue
+					continue dirloop
 				}
 			}
 			for i := 0; i < state.Params.BulletSpeed; i++ {
 				pos = pos.step(dir)
 				if state.Terain.Get(pos.X, pos.Y) == 1 {
-					continue
+					continue dirloop
 				}
 				dangerous[pos] = preferVertical
 			}
 		}
 	}
 	for _, tank := range state.MyTank {
-		if preferVertical, danger := dangerous[tank.Pos.NoDirection()]; danger {
+		noPass := make(map[Position]string)
+		for _, oTank  := range state.MyTank {
+			if oTank.Id != tank.Id {
+				pos := oTank.Pos.NoDirection()
+				noPass[pos] = oTank.Id
+				action := movements[oTank.Id]
+				if action == ActionMove {
+					for i := 0; i < state.Params.TankSpeed; i++ {
+						nPos := pos.step(oTank.Pos.Direction)
+						if state.Terain.Get(nPos.X, nPos.Y) == 1 {
+							break
+						}
+						noPass[nPos] = oTank.Id
+						pos = nPos
+					}
+				}
+			}
+		}
+		getPreferB := func (preferVertical bool, ignoreAlly bool) map[int]bool {
 			preferDirection := make(map[int]bool)
 			dirs := hDirections
 			if preferVertical {
@@ -149,17 +130,45 @@ func badCaseDangerZone(state *GameState, radar *RadarResult, movements map[strin
 				if state.Terain.Get(nPos.X, nPos.Y) == 1 {
 					blocked = true
 				}
-				if noPass[nPos] {
-					blocked = true
+				if ignoreAlly {
+					if id, ok := noPass[nPos]; ok && id != tank.Id {
+						blocked = true
+					}
 				}
 				if !blocked {
 					preferDirection[dir] = true
 				}
 			}
+			return preferDirection
+		}
+		getPrefer := func (preferVertical bool) map[int]bool {
+			ret := getPreferB(preferVertical, false)
+			if len(ret) == 0 {
+				ret = getPreferB(preferVertical, true)
+			}
+			return ret
+		}
+		if preferVertical, danger := dangerous[tank.Pos.NoDirection()]; danger {  // 位于危险区域
+			preferDirection := getPrefer(preferVertical)
 			if len(preferDirection) > 0 {
 				oldMove := movements[tank.Id]
 				fixMove(state, radar, movements, tank, preferDirection)
 				fmt.Println("Fix Danger Zone", tank.Id, oldMove, movements[tank.Id])
+			}
+		} else if movements[tank.Id] == ActionMove {
+			pos := tank.Pos.NoDirection()
+			for i := 0; i < state.Params.TankSpeed; i++ {
+				nPos := pos.step(tank.Pos.Direction)
+				if state.Terain.Get(nPos.X, nPos.Y) == 1 {
+					break
+				}
+				pos = nPos
+			}
+			if preferVertical, danger := dangerous[tank.Pos.NoDirection()]; danger { // 下一步走进危险区
+				preferDirection := getPrefer(preferVertical)
+				if !preferDirection[tank.Pos.Direction] {
+					movements[tank.Id] = ActionStay
+				}
 			}
 		}
 	}
@@ -215,9 +224,11 @@ func fixMove (state *GameState, radar *RadarResult, movements map[string]int, ta
 	}
 
 	movement := movements[tank.Id]
-	
+	fmt.Println("Danger zone threat", radar.FullMapThreat[tank.Pos.NoDirection()], preferDirection, tank.Pos.Direction, tank.Id)
 	if !dirtIsRight {
 		movements[tank.Id] = nextDirt - DirectionUp + ActionTurnUp
+	} else if radar.FullMapThreat[tank.Pos.NoDirection()] > 0.2 {
+		movements[tank.Id] = ActionMove
 	} else if movement >= ActionTurnUp && movement <= ActionTurnRight {
 		nextActionDirt := movement - ActionTurnUp + DirectionUp
 		moveIsRight := preferDirection[nextActionDirt]

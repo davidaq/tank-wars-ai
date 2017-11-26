@@ -34,8 +34,8 @@ func (r *CattyRole) patrol() {
                 r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.doFireInForest() }
 
             // 可朝旗开火（加入随机量，避免太频繁）
-            } else if r.canFireToFlag() && rand.Int() % 3 == 0 {
-                r.fireToFlag()
+            // } else if r.canFireToFlag() && rand.Int() % 3 == 0 {
+            //     r.fireToFlag()
 
             // 其余情况寻路
             } else {
@@ -155,6 +155,7 @@ func (r *CattyRole) act() {
 }
 
 func (r *CattyRole) move() {
+    // fmt.Println("----in move-----")
     r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravelWithDodge, Target: r.Target }
 }
 
