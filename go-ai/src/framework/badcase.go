@@ -105,5 +105,80 @@ func badCaseDangerZone(state *GameState, radar *RadarResult, movements map[strin
 }
 
 // 矫正在危险位置的坦克行为
-func fixMove (state *GameState, radar *RadarResult, movements map[string]int, tank Tank, preferDirection map[int]bool) {
+func fixMove (state *f.GameState, radar *f.RadarResult, movements map[string]int, tank Tank, preferDirection map[int]bool) {
+
+	dirtIsRight := false
+
+	nextDirt := 9999
+
+	for dirt, isRight := preferDirection {
+		if !isRight {
+			continue
+		}
+
+		if tank.Pos.Direction == dirt {
+			dirtIsRight = true
+		}
+
+		switch dirt {
+		case DirectionUp:
+			if preferDirection[DirectionDown] {
+				if radar.FullMapThreat[{X: tank.Pos.X, Y: tank.Pos.Y - state.Params.tankSpeed, Direction: DirectionUp}] > radar.FullMapThreat[{X: tank.Pos.X, Y: tank.Pos.Y + state.Params.tankSpeed, Direction: DirectionDown}] {
+					nextDirt = ActionTurnDown
+				} else {
+					nextDirt = ActionTurnUp
+				}
+			} else {
+				nextDirt = ActionTurnUp
+			}
+		case DirectionLeft:
+			if preferDirection[Right] {
+				if radar.FullMapThreat[{X: tank.Pos.X + state.Params.tankSpeed, Y: tank.Pos.Y, Direction: DirectionRight}] > radar.FullMapThreat[{X: tank.Pos.X - state.Params.tankSpeed, Y: tank.Pos.Y, Direction: DirectionLeft}] {
+					nextDirt = ActionTurnLeft
+				} else {
+					nextDirt = ActionTureRight
+				}
+			} else {
+				nextDirt = ActionTurnLeft
+			}
+		case DirectionDown:
+			if preferDirection[DirectionUp] {
+				if radar.FullMapThreat[{X: tank.Pos.X, Y: tank.Pos.Y - state.Params.tankSpeed, Direction: DirectionUp}] > radar.FullMapThreat[{X: tank.Pos.X, Y: tank.Pos.Y + state.Params.tankSpeed, Direction: DirectionDown}] {
+					nextDirt = ActionTurnDown
+				} else {
+					nextDirt = ActionTurnUp
+				}
+			} else {
+				nextDirt = ActionTurnDown
+			}
+		case DirectionRight:
+			if preferDirection[DirectionLeft] {
+				if radar.FullMapThreat[{X: tank.Pos.X + state.Params.tankSpeed, Y: tank.Pos.Y, Direction: DirectionRight}] > radar.FullMapThreat[{X: tank.Pos.X - state.Params.tankSpeed, Y: tank.Pos.Y, Direction: DirectionLeft}] {
+					nextDirt = ActionTurnLeft
+				} else {
+					nextDirt = ActionTureRight
+				}
+			} else {
+				nextDirt = ActionTurnRight
+			}
+		}
+	}
+
+	movement := movements[tank.Id]
+	
+	if !dirtIsRight {
+		movements[tank.Id] = nextDirt
+	} else if movement >= ActionTurnUp && movement <= ActionTurnRight {
+		nextActionDirt := movement - ActionTurnUp + DirectionUp
+		moveIsRight := false
+		for dirt, isRight := preferDirection {
+			if isRight && nextActionDirt == dirt {
+				moveIsRight = true
+				break
+			}
+		}
+		if !moveIsRight {
+			movements[tank.Id] = nextDirt
+		}
+	}
 }
