@@ -30,10 +30,8 @@ func StartTactics (name string) f.Tactics {
 		return NewWaitSweep()
 	case "fox":
 		return NewFox()
-	case "simplest":
-		return NewSimplest()
-	case "forest":
-		return NewForest()
+	// case "simplest":
+	// 	return NewSimplest()
 	// case "terminator":
 		// return NewTerminator()
     // case "snake":

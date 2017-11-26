@@ -39,7 +39,7 @@ func (r *CattyRole) patrol() {
 
             // 其余情况寻路
             } else {
-                if r.obs.mapanalysis.GetForestByPos() == r.forest {
+                if r.obs.mapanalysis.GetForestByPos(r.Tank.Pos).Id == r.forest.Id {
                     pos := forestPartol(r.Tank.Pos, r.obs.Terain, r.obs.State.Params.TankSpeed)
                     r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravel, Target: pos }
                 } else {
