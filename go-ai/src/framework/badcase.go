@@ -47,6 +47,9 @@ func badCaseShootSelf(state *GameState, radar *RadarResult, movements map[string
 		if action >= ActionFireUp && action <= ActionFireRight {
 			dir := action - ActionFireUp + DirectionUp
 			pos := tank.Pos.NoDirection().step(dir)
+			if state.Terain.Get(pos.X, pos.Y) == 1 {
+				continue tankloop
+			}
 			if ePos[pos] {
 				continue tankloop
 			}
@@ -56,6 +59,9 @@ func badCaseShootSelf(state *GameState, radar *RadarResult, movements map[string
 			}
 			for i := 0; i < state.Params.BulletSpeed; i++ {
 				pos = pos.step(dir)
+				if state.Terain.Get(pos.X, pos.Y) == 1 {
+					continue tankloop
+				}
 				if noPass[pos] {
 					movements[tank.Id] = ActionStay
 					continue tankloop
@@ -67,6 +73,9 @@ func badCaseShootSelf(state *GameState, radar *RadarResult, movements map[string
 			}
 			for i := 0; i < state.Params.BulletSpeed; i++ {
 				pos = pos.step(dir)
+				if state.Terain.Get(pos.X, pos.Y) == 1 {
+					continue tankloop
+				}
 				if noStop[pos] {
 					movements[tank.Id] = ActionStay
 					continue tankloop
@@ -81,7 +90,7 @@ func badCaseDangerZone(state *GameState, radar *RadarResult, movements map[strin
 	directions := []int { DirectionUp, DirectionLeft, DirectionDown, DirectionRight }
 	vDirections := []int { DirectionUp, DirectionDown }
 	hDirections := []int { DirectionLeft, DirectionRight }
-	for _, eTank := range state.EnemyTank {
+	tankloop: for _, eTank := range state.EnemyTank {
 		for _, dir := range directions {
 			preferVertical := true
 			if dir == DirectionDown || dir == DirectionUp {
@@ -90,9 +99,15 @@ func badCaseDangerZone(state *GameState, radar *RadarResult, movements map[strin
 			pos := eTank.Pos.NoDirection()
 			for i := 0; i < 2 + state.Params.BulletSpeed; i++ {
 				pos = pos.step(dir)
+				if state.Terain.Get(pos.X, pos.Y) == 1 {
+					continue tankloop
+				}
 			}
 			for i := 0; i < state.Params.BulletSpeed; i++ {
 				pos = pos.step(dir)
+				if state.Terain.Get(pos.X, pos.Y) == 1 {
+					continue tankloop
+				}
 				dangerous[pos] = preferVertical
 			}
 		}
