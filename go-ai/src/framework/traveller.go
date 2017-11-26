@@ -112,6 +112,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 		}
 	}
 	firstColide := true
+	tAThreats := make(map[string]map[astar.Point]float64)
 	for _, mtank := range myTanks {
 		tank := mtank
 		id := tank.Id
@@ -155,7 +156,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 							possibles = append(possibles, nPos)
 						}
 					// }
-					for _, oPos := range possibles {
+					for possibleI, oPos := range possibles {
 						for _, dir := range directions {
 							pos := oPos
 							if abs(pos.X - tank.Pos.X) > state.Params.TankSpeed * 2 && abs(pos.Y - tank.Pos.Y) > state.Params.TankSpeed * 2 {
@@ -197,6 +198,8 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 										val := -1.
 										if badDir {
 											val = -2.
+										} else if possibleI == 0 {
+											val = -3.
 										}
 										aThreat[astar.Point { Col: pos.X, Row: pos.Y }] = val
 									}
@@ -207,6 +210,8 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 					fmt.Println("ATHREAT", aThreat)
 				}
 			}
+			tAThreats[id] = aThreat
+			curThreat := aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }]
 			if from.X != to.X || from.Y != to.Y {
 				cache.path = nil
 				if isDodge && to.SDist(from) <= state.Params.TankSpeed {
@@ -241,7 +246,7 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 					}
 					lock.Unlock()
 					if allowCalc {
-						cache.path = self.path(a, from, to, state.Params.TankSpeed, state.Terain, aThreat, aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }] > 0.3)
+						cache.path = self.path(a, from, to, state.Params.TankSpeed, state.Terain, aThreat, curThreat > 0.3 || curThreat < -1.1)
 						for len(cache.path) > 0 {
 							p := cache.path[0]
 							if p.X == from.X && p.Y == from.Y {
@@ -262,52 +267,38 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 			action := toAction(from, nextPoint)
 			cache.expect = nil
 			lock.Lock()
-			curThreat := aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }]
-			if curThreat < 0 { // 身处绝杀位
-				
-			}
-			if action == ActionMove {
-				p := Position { Y: from.Y, X: from.X }
-				threatPrevent := false
-				thr := 0.
-				mp := p
-				for i := 0; i < state.Params.TankSpeed; i++ {
-					lp := mp.step(tank.Pos.Direction)
-					if state.Terain.Get(mp.X, mp.Y) == 1 {
-						break;
-					}
-					mp = lp
-					t := aThreat[astar.Point { Col: mp.X, Row: mp.Y }]
-					if t > 0 {
-						thr += t
-					}
-				}
-				lastThreat := aThreat[astar.Point { Col: mp.X, Row: mp.Y }]
-				if lastThreat < 0 {
-					thr -= lastThreat
-				}
-				if curThreat > 0.4 {
-					threatPrevent = false
+			if curThreat < -2.9 { // 身处绝杀位
+				nPos := tank.Pos.step(tank.Pos.Direction)
+				if state.Terain.Get(nPos.X, nPos.Y) == 1 {
+					fmt.Println("Dodge Dread Kill Back", tank.Id)
+					action = (tank.Pos.Direction - DirectionUp + 2) % 4 + ActionTurnUp
 				} else {
-					threatPrevent = thr > 0.5
+					action = ActionMove
+					fmt.Println("Dodge Dread Kill Move", tank.Id)
 				}
-				if threatPrevent {
-					action = ActionStay
-					fmt.Println("Travel threat stay!!")
-				} else if _, exists := occupy[p]; exists {
-					action = ActionStay
-					if firstColide {
-						cache.path = nil
-						firstColide = false
-					}
+			} else if curThreat < -1.9 { // 身处方向不好的绝杀位
+				preferAct := make(map[int]bool)
+				if tank.Pos.Direction == DirectionUp || tank.Pos.Direction == DirectionDown {
+					preferAct[ActionTurnLeft] = true
+					preferAct[ActionTurnRight] = true
 				} else {
-					p = p.step(tank.Pos.Direction)
-					cache.expect = &nextPoint
+					preferAct[ActionTurnUp] = true
+					preferAct[ActionTurnDown] = true
 				}
-				occupy[p] = true
-			} else {
-				p := Position { Y: from.Y, X: from.X }
-				occupy[p] = true
+				suggestAct := action
+				for act, _ := range preferAct {
+					nPos := tank.Pos.step(act - ActionTurnUp + DirectionUp)
+					if state.Terain.Get(nPos.X, nPos.Y) == 1 {
+						preferAct[act] = false
+					} else {
+						suggestAct = act
+					}
+				}
+				if !preferAct[action] {
+					action = suggestAct
+					fmt.Println("Dodge Dread Kill Turn", tank.Id)
+				}
+			} else if curThreat < -0.9 { // 身处预判绝杀位
 			}
 			movements[id] = action
 			lock.Unlock()
@@ -317,6 +308,61 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 	lock.Unlock()
 	for _, _ = range myTanks {
 		_ = <- waitchan
+	}
+	// 解决冲突
+	for _, tank := range myTanks {
+		action := movements[tank.Id]
+		aThreat := tAThreats[tank.Id]
+		curThreat := aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }]
+		cache := self.cache[tank.Id]
+		if action == ActionMove {
+			p := Position { Y: tank.Pos.Y, X: tank.Pos.X }
+			threatPrevent := false
+			thr := 0.
+			mp := p
+			for i := 0; i < state.Params.TankSpeed; i++ {
+				lp := mp.step(tank.Pos.Direction)
+				if state.Terain.Get(mp.X, mp.Y) == 1 {
+					break;
+				}
+				mp = lp
+				t := aThreat[astar.Point { Col: mp.X, Row: mp.Y }]
+				if t > 0 {
+					thr += t
+				}
+			}
+			lastThreat := aThreat[astar.Point { Col: mp.X, Row: mp.Y }]
+			if lastThreat < 0 {
+				thr -= lastThreat
+			}
+			if curThreat > 0.4 {
+				threatPrevent = false
+			} else {
+				threatPrevent = thr > 0.5
+			}
+			if threatPrevent {
+				action = ActionStay
+				fmt.Println("Travel threat stay!!")
+			} else if _, exists := occupy[p]; exists {
+				action = ActionStay
+				if firstColide {
+					cache.path = nil
+					firstColide = false
+				}
+			} else {
+				nextPoint := tank.Pos
+				for i := 0; i < state.Params.TankSpeed; i++ {
+					nextPoint = nextPoint.step(tank.Pos.Direction)
+				}
+				cache.expect = &nextPoint
+				p = p.step(tank.Pos.Direction)
+			}
+			occupy[p] = true
+		} else {
+			p := Position { Y: tank.Pos.Y, X: tank.Pos.X }
+			occupy[p] = true
+		}
+		movements[tank.Id] = action
 	}
 }
 
