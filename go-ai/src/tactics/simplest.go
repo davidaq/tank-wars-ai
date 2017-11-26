@@ -21,7 +21,7 @@ func NewSimplest() *Simplest {
 func (self *Simplest) Init(state *f.GameState) {
 	i:=0
 	for _, tank := range state.MyTank {
-		if i<1 {
+		if i<2 {
 			self.tankGroupA[tank.Id] = tank
 		} else {
 			self.tankGroupB[tank.Id] = tank
@@ -98,7 +98,7 @@ func (self *Simplest) Plan(state *f.GameState, radar *f.RadarResult, objective m
 		}
 
 		// 开火
-		if tempRadarFire != nil && tempRadarFire.Sin < 0.5 && tempRadarFire.Faith >= 0.6 && tank.Bullet == "" {
+		if tempRadarFire != nil && tempRadarFire.Sin < 0.5 && tempRadarFire.Faith >= 0.4 && tank.Bullet == "" {
 			objective[tank.Id] = f.Objective {
 				Action: tempRadarFire.Action,
 			}
@@ -148,22 +148,22 @@ func (self *Simplest) Plan(state *f.GameState, radar *f.RadarResult, objective m
 				case f.DirectionUp:
 					p.Y -= 2 * state.Params.TankSpeed + 2
 					if ttank.Bullet != "" {
-						p.Y -= 2*state.Params.TankSpeed
+						p.Y -= 2 * state.Params.TankSpeed
 					}
 				case f.DirectionDown:
 					p.Y += 2 * state.Params.TankSpeed + 2
 					if ttank.Bullet != "" {
-						p.Y += 2*state.Params.TankSpeed
+						p.Y += 2 * state.Params.TankSpeed
 					}
 				case f.DirectionLeft:
 					p.X -= 2 * state.Params.TankSpeed + 2
 					if ttank.Bullet != "" {
-						p.Y -= 2*state.Params.TankSpeed
+						p.Y -= 2 * state.Params.TankSpeed
 					}
 				case f.DirectionRight:
 					p.X += 2 * state.Params.TankSpeed + 2
 					if ttank.Bullet != "" {
-						p.Y += 2*state.Params.TankSpeed
+						p.Y += 2 * state.Params.TankSpeed
 					}
 				}
 				objective[tank.Id] = f.Objective {
