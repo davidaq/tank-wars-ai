@@ -85,7 +85,7 @@ func calcFaith (verticalDistance, bulletSpeed int, tankSpeed int, fireLine bool,
 	if verticalDistance <= bulletSpeed + 1 {
 		faith = float64(1)
 	} else if verticalDistance <= bulletSpeed * 2 + 1 {
-		faith = 0.8
+		faith = 0.91
 	} else if verticalDistance <= bulletSpeed * 3 + 1 {
 		faith = 0.6
 	} else if verticalDistance <= bulletSpeed * 4 + 1 {

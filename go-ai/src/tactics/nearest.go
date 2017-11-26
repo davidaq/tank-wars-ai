@@ -65,8 +65,8 @@ func (self *Nearest) Plan(state *f.GameState, radar *f.RadarResult, objective ma
 			}
 			objective[tank.Id] = f.Objective {
 				Action: travel,
-				// Target: p,
-				Target: f.Position { X: 15, Y: 15 },
+				Target: p,
+				// Target: f.Position { X: 15, Y: 15 },
 			}
 		}
 	}

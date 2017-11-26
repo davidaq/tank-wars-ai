@@ -7,7 +7,7 @@ export SIDE=red
 export TACTICS=cattycat
 # export TACTICS=proxy PROXY_PORT=8776
 
-go run src/ai-client.go > /dev/null &
+go run src/ai-client.go > log.txt &
 SIDE=blue TACTICS=nearest go run src/ai-client.go
 
 # run forever

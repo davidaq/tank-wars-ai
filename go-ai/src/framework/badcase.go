@@ -96,24 +96,6 @@ func badCaseDangerZone(state *GameState, radar *RadarResult, movements map[strin
 	directions := []int { DirectionUp, DirectionLeft, DirectionDown, DirectionRight }
 	vDirections := []int { DirectionUp, DirectionDown }
 	hDirections := []int { DirectionLeft, DirectionRight }
-	noPass := make(map[Position]bool)
-	noStop := make(map[Position]bool)
-	for _, tank  := range state.MyTank {
-		pos := tank.Pos.NoDirection()
-		noPass[pos] = true
-		action := movements[tank.Id]
-		if action == ActionMove {
-			for i := 0; i < state.Params.TankSpeed; i++ {
-				nPos := pos.step(tank.Pos.Direction)
-				if state.Terain.Get(nPos.X, nPos.Y) == 1 {
-					break
-				}
-				noPass[pos] = true
-				pos = nPos
-			}
-		}
-		noStop[pos] = true
-	}
 	for _, eTank := range state.EnemyTank {
 		for _, dir := range directions {
 			preferVertical := true
@@ -143,13 +125,31 @@ func badCaseDangerZone(state *GameState, radar *RadarResult, movements map[strin
 			if preferVertical {
 				dirs = vDirections
 			}
+			noPass := make(map[Position]string)
+			for _, oTank  := range state.MyTank {
+				if oTank.Id != tank.Id {
+					pos := oTank.Pos.NoDirection()
+					noPass[pos] = oTank.Id
+					action := movements[oTank.Id]
+					if action == ActionMove {
+						for i := 0; i < state.Params.TankSpeed; i++ {
+							nPos := pos.step(oTank.Pos.Direction)
+							if state.Terain.Get(nPos.X, nPos.Y) == 1 {
+								break
+							}
+							noPass[pos] = oTank.Id
+							pos = nPos
+						}
+					}
+				}
+			}
 			for _, dir := range dirs {
 				nPos := tank.Pos.step(dir).NoDirection()
 				blocked := false
 				if state.Terain.Get(nPos.X, nPos.Y) == 1 {
 					blocked = true
 				}
-				if noPass[nPos] {
+				if id, ok := noPass[nPos]; ok && id != tank.Id {
 					blocked = true
 				}
 				if !blocked {
@@ -215,9 +215,11 @@ func fixMove (state *GameState, radar *RadarResult, movements map[string]int, ta
 	}
 
 	movement := movements[tank.Id]
-	
+	fmt.Println("Danger zone threat", radar.FullMapThreat[tank.Pos.NoDirection()], preferDirection, tank.Pos.Direction, tank.Id)
 	if !dirtIsRight {
 		movements[tank.Id] = nextDirt - DirectionUp + ActionTurnUp
+	} else if radar.FullMapThreat[tank.Pos.NoDirection()] > 0.2 {
+		movements[tank.Id] = ActionMove
 	} else if movement >= ActionTurnUp && movement <= ActionTurnRight {
 		nextActionDirt := movement - ActionTurnUp + DirectionUp
 		moveIsRight := preferDirection[nextActionDirt]
