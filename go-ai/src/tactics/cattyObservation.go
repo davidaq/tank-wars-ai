@@ -42,7 +42,14 @@ func (p PairList) Less(i, j int) bool { return p[i].Value < p[j].Value }
 func (p PairList) Swap(i, j int){ p[i], p[j] = p[j], p[i] }
 
 func NewObservation(state *f.GameState) (obs *Observation) {
-    obs = &Observation{ TotalSteps: state.Params.MaxRound, Steps: 0, State: state, Terain: state.Terain}
+    obs = &Observation{
+        TotalSteps: state.Params.MaxRound,
+        Steps: 0,
+        State: state,
+        Terain: state.Terain,
+        mapanalysis: &f.MapAnalysis{},
+    }
+
     // 地图分析
     obs.mapanalysis.Analysis(state)
 
