@@ -38,6 +38,7 @@ func badCaseShootSelf(state *GameState, radar *RadarResult, movements map[string
 				if state.Terain.Get(nPos.X, nPos.Y) == 1 {
 					break
 				}
+				noPass[pos] = true
 				pos = nPos
 			}
 		}
@@ -74,6 +75,16 @@ func badCaseShootSelf(state *GameState, radar *RadarResult, movements map[string
 			if noStop[pos] {
 				movements[tank.Id] = ActionStay
 				continue tankloop
+			}
+			for i := 0; i < state.Params.BulletSpeed * 2; i++ {
+				pos = pos.step(dir)
+				if state.Terain.Get(pos.X, pos.Y) == 1 {
+					continue tankloop
+				}
+				if noPass[pos] || noStop[pos] {
+					movements[tank.Id] = ActionStay
+					continue tankloop
+				}
 			}
 		}
 	}
