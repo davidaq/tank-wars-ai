@@ -2,7 +2,7 @@ cd `dirname $0`
 export GOPATH=`pwd`
 
 export HOST=ml.niven.cn:8777
-export GAME=HynRxg_gf
+export GAME=r103iM_lf
 export SIDE=red
 export TACTICS=nearest
 # export TACTICS=proxy PROXY_PORT=8776

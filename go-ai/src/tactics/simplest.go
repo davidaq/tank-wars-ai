@@ -2,7 +2,6 @@ package tactics
 
 import (
 	f "framework"
-	"math"
 	// "fmt"
 )
 
@@ -173,6 +172,15 @@ func (self *Simplest) Plan(state *f.GameState, radar *f.RadarResult, objective m
 			}
 		}
 
+		// 草丛巡逻
+		if state.Terain.Data[tank.Pos.Y][tank.Pos.X] == 2 {
+			pos := forestPartol(tank.Pos, *state.Terain, state.Params.TankSpeed)
+			objective[tank.Id] = f.Objective {
+				Action: f.ActionTravel,
+				Target: pos,
+			}
+		}
+
 		// 夺旗
 		if len(self.tankGroupA) > 0 {
 			if state.FlagWait <= 5 {
@@ -199,39 +207,3 @@ func (self *Simplest) Plan(state *f.GameState, radar *f.RadarResult, objective m
 func (self *Simplest) End(state *f.GameState) {
 }
 
-func caculateEnemyCost(bullet f.Bullet, terain *f.Terain, bulletSpeed int) float64 {
-	count := 0
-	status := true
-	pos := bullet.Pos
-	switch pos.Direction {
-	case f.DirectionDown:
-		for status {
-			count++
-			if terain.Data[pos.Y+count][pos.X] == 1 {
-				status = false
-			}
-		}
-	case f.DirectionUp:
-		for status {
-			count++
-			if terain.Data[pos.Y-count][pos.X] == 1 {
-				status = false
-			}
-		}
-	case f.DirectionLeft:
-		for status {
-			count++
-			if terain.Data[pos.Y][pos.X-count] == 1 {
-				status = false
-			}
-		}
-	case f.DirectionRight:
-		for status {
-			count++
-			if terain.Data[pos.Y][pos.X+count] == 1 {
-				status = false
-			}
-		}
-	}
-	return math.Ceil(float64(count/bulletSpeed))
-}
