@@ -3,8 +3,21 @@ package framework
 // 写死防止干蠢事
 
 func BadCase(state *GameState, radar *RadarResult, movements map[string]int) {
+	badCaseControlEnemy(state, radar, movements)
 	badCaseDangerZone(state, radar, movements)
 	badCaseShootSelf(state, radar, movements)
+}
+
+func badCaseControlEnemy(state *GameState, radar *RadarResult, movements map[string]int) {
+	safe := make(map[string]bool)
+	for _, tank  := range state.MyTank {
+		safe[tank.Id] = true
+	}
+	for key, _ := range movements {
+		if !safe[key] {
+			delete(movements, key)
+		}
+	}
 }
 
 func badCaseShootSelf(state *GameState, radar *RadarResult, movements map[string]int) {
