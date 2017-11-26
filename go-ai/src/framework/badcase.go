@@ -12,10 +12,10 @@ func badCaseShootSelf(state *GameState, radar *RadarResult, movements map[string
 	noStop := make(map[Position]bool)
 	ePos := make(map[Position]bool)
 	for _, tank  := range state.MyTank {
-		noPass[tank.Pos.NoDirection()] = true
+		pos := tank.Pos.NoDirection()
+		noPass[pos] = true
 		action := movements[tank.Id]
 		if action == ActionMove {
-			pos := tank.Pos.NoDirection()
 			for i := 0; i < state.Params.TankSpeed; i++ {
 				nPos := pos.step(tank.Pos.Direction)
 				if state.Terain.Get(nPos.X, nPos.Y) == 1 {
@@ -23,8 +23,8 @@ func badCaseShootSelf(state *GameState, radar *RadarResult, movements map[string
 				}
 				pos = nPos
 			}
-			noStop[pos] = true
 		}
+		noStop[pos] = true
 	}
 	for _, etank  := range state.EnemyTank {
 		ePos[etank.Pos] = true
@@ -54,7 +54,7 @@ func badCaseShootSelf(state *GameState, radar *RadarResult, movements map[string
 			}
 			for i := 0; i < state.Params.BulletSpeed; i++ {
 				pos = pos.step(dir)
-				if noPass[pos] {
+				if noStop[pos] {
 					movements[tank.Id] = ActionStay
 					continue tankloop
 				}
@@ -105,63 +105,95 @@ func badCaseDangerZone(state *GameState, radar *RadarResult, movements map[strin
 }
 
 // 矫正在危险位置的坦克行为
-func fixMove (state *f.GameState, radar *f.RadarResult, movements map[string]int, tank Tank, preferDirection map[int]bool) {
+func fixMove (state *GameState, radar *RadarResult, movements map[string]int, tank Tank, preferDirection map[int]bool) {
 
-	dirtIsRight := false
+	dirtIsRight := preferDirection[tank.Pos.Direction]
 
 	nextDirt := 9999
-
-	for dirt, isRight := preferDirection {
+	for dirt, isRight := range preferDirection {
 		if !isRight {
 			continue
 		}
-
-		if tank.Pos.Direction == dirt {
-			dirtIsRight = true
+		nextDirt = dirt
+		break
+	}
+	if len(preferDirection) > 1 {
+		dirt := nextDirt
+		revDirt := (dirt - DirectionUp + 2) % 4 + DirectionUp
+		curDirtThreat, revDirtThreat := 0., 0.
+		pos := tank.Pos.NoDirection()
+		for i := 0; i < state.Params.TankSpeed; i++ {
+			pos = pos.step(dirt)
+			if state.Terain.Get(pos.X, pos.Y) == 1 {
+				break
+			}
+			curDirtThreat += radar.FullMapThreat[pos]
+		}
+		pos = pos.step(dirt)
+		if state.Terain.Get(pos.X, pos.Y) == 1 {
+			curDirtThreat += 0.1
+		}
+		pos = tank.Pos.NoDirection()
+		for i := 0; i < state.Params.TankSpeed; i++ {
+			pos = pos.step(revDirt)
+			if state.Terain.Get(pos.X, pos.Y) == 1 {
+				break
+			}
+			revDirtThreat += radar.FullMapThreat[pos]
+		}
+		pos = pos.step(dirt)
+		if state.Terain.Get(pos.X, pos.Y) == 1 {
+			revDirtThreat += 0.1
 		}
 
-		switch dirt {
-		case DirectionUp:
-			if preferDirection[DirectionDown] {
-				if radar.FullMapThreat[{X: tank.Pos.X, Y: tank.Pos.Y - state.Params.tankSpeed, Direction: DirectionUp}] > radar.FullMapThreat[{X: tank.Pos.X, Y: tank.Pos.Y + state.Params.tankSpeed, Direction: DirectionDown}] {
-					nextDirt = ActionTurnDown
-				} else {
-					nextDirt = ActionTurnUp
-				}
-			} else {
-				nextDirt = ActionTurnUp
-			}
-		case DirectionLeft:
-			if preferDirection[Right] {
-				if radar.FullMapThreat[{X: tank.Pos.X + state.Params.tankSpeed, Y: tank.Pos.Y, Direction: DirectionRight}] > radar.FullMapThreat[{X: tank.Pos.X - state.Params.tankSpeed, Y: tank.Pos.Y, Direction: DirectionLeft}] {
-					nextDirt = ActionTurnLeft
-				} else {
-					nextDirt = ActionTureRight
-				}
-			} else {
-				nextDirt = ActionTurnLeft
-			}
-		case DirectionDown:
-			if preferDirection[DirectionUp] {
-				if radar.FullMapThreat[{X: tank.Pos.X, Y: tank.Pos.Y - state.Params.tankSpeed, Direction: DirectionUp}] > radar.FullMapThreat[{X: tank.Pos.X, Y: tank.Pos.Y + state.Params.tankSpeed, Direction: DirectionDown}] {
-					nextDirt = ActionTurnDown
-				} else {
-					nextDirt = ActionTurnUp
-				}
-			} else {
-				nextDirt = ActionTurnDown
-			}
-		case DirectionRight:
-			if preferDirection[DirectionLeft] {
-				if radar.FullMapThreat[{X: tank.Pos.X + state.Params.tankSpeed, Y: tank.Pos.Y, Direction: DirectionRight}] > radar.FullMapThreat[{X: tank.Pos.X - state.Params.tankSpeed, Y: tank.Pos.Y, Direction: DirectionLeft}] {
-					nextDirt = ActionTurnLeft
-				} else {
-					nextDirt = ActionTureRight
-				}
-			} else {
-				nextDirt = ActionTurnRight
-			}
+		if curDirtThreat > revDirtThreat {
+			nextDirt = revDirt
+		} else {
+			nextDirt = dirt
 		}
+
+		// switch dirt {
+		// case DirectionUp:
+		// 	if preferDirection[DirectionDown] {
+		// 		if radar.FullMapThreat[{X: tank.Pos.X, Y: tank.Pos.Y - state.Params.tankSpeed, Direction: DirectionUp}] > radar.FullMapThreat[{X: tank.Pos.X, Y: tank.Pos.Y + state.Params.tankSpeed, Direction: DirectionDown}] {
+		// 			nextDirt = ActionTurnDown
+		// 		} else {
+		// 			nextDirt = ActionTurnUp
+		// 		}
+		// 	} else {
+		// 		nextDirt = ActionTurnUp
+		// 	}
+		// case DirectionLeft:
+		// 	if preferDirection[Right] {
+		// 		if radar.FullMapThreat[{X: tank.Pos.X + state.Params.tankSpeed, Y: tank.Pos.Y, Direction: DirectionRight}] > radar.FullMapThreat[{X: tank.Pos.X - state.Params.tankSpeed, Y: tank.Pos.Y, Direction: DirectionLeft}] {
+		// 			nextDirt = ActionTurnLeft
+		// 		} else {
+		// 			nextDirt = ActionTureRight
+		// 		}
+		// 	} else {
+		// 		nextDirt = ActionTurnLeft
+		// 	}
+		// case DirectionDown:
+		// 	if preferDirection[DirectionUp] {
+		// 		if radar.FullMapThreat[{X: tank.Pos.X, Y: tank.Pos.Y - state.Params.tankSpeed, Direction: DirectionUp}] > radar.FullMapThreat[{X: tank.Pos.X, Y: tank.Pos.Y + state.Params.tankSpeed, Direction: DirectionDown}] {
+		// 			nextDirt = ActionTurnDown
+		// 		} else {
+		// 			nextDirt = ActionTurnUp
+		// 		}
+		// 	} else {
+		// 		nextDirt = ActionTurnDown
+		// 	}
+		// case DirectionRight:
+		// 	if preferDirection[DirectionLeft] {
+		// 		if radar.FullMapThreat[{X: tank.Pos.X + state.Params.tankSpeed, Y: tank.Pos.Y, Direction: DirectionRight}] > radar.FullMapThreat[{X: tank.Pos.X - state.Params.tankSpeed, Y: tank.Pos.Y, Direction: DirectionLeft}] {
+		// 			nextDirt = ActionTurnLeft
+		// 		} else {
+		// 			nextDirt = ActionTureRight
+		// 		}
+		// 	} else {
+		// 		nextDirt = ActionTurnRight
+		// 	}
+		// }
 	}
 
 	movement := movements[tank.Id]
@@ -170,13 +202,7 @@ func fixMove (state *f.GameState, radar *f.RadarResult, movements map[string]int
 		movements[tank.Id] = nextDirt
 	} else if movement >= ActionTurnUp && movement <= ActionTurnRight {
 		nextActionDirt := movement - ActionTurnUp + DirectionUp
-		moveIsRight := false
-		for dirt, isRight := preferDirection {
-			if isRight && nextActionDirt == dirt {
-				moveIsRight = true
-				break
-			}
-		}
+		moveIsRight := preferDirection[nextActionDirt]
 		if !moveIsRight {
 			movements[tank.Id] = nextDirt
 		}
