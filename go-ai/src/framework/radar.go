@@ -53,10 +53,11 @@ type EnemyThreat struct {
 }
 
 type ExtDangerSrc struct {
-	Source		string 	// 威胁来源
-	Type		int     // 威胁来源种类 BULLET_THREAT = 1 ENEMY_THREAT = 2
-	Urgent 		int		// 威胁度
-	Distance 	int		// 距离
+	Source		string 		// 威胁来源
+	Type		int     	// 威胁来源种类 BULLET_THREAT = 1 ENEMY_THREAT = 2
+	Urgent 		int			// 威胁度
+	SourcePos	Position 	// 极度危险来源
+	Distance 	int			// 距离
 }
 
 // 侦测几回合的威胁

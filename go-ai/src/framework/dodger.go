@@ -105,6 +105,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
         tmpMoveUrgentBullet[ActionBack] = MAX
         tmpMoveUrgentBullet[ActionRight] = MAX
         tmpBulletUrgent := MAX
+        var tmpSourcePos Position
 
         // 敌军情况
         tmpMoveUrgentEnemy := make(map[int]int)
@@ -123,6 +124,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                     if b.Distances[b.Quadrant] <= state.Params.BulletSpeed * 4 {
                         tmpUrgent = 1
                         tmpBulletUrgent = 1
+                        tmpSourcePos = b.BulletPosition
                     }
 
                     // 影响火线上的操作
@@ -160,10 +162,12 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                     if (b.Quadrant == QUADRANT_U || b.Quadrant == QUADRANT_D) && b.Distances[b.Quadrant] <= state.Params.BulletSpeed * 2 {
                         tmpUrgent = -1
                         tmpBulletUrgent = -1
+                        tmpSourcePos = b.BulletPosition
                     }
                     if (b.Quadrant == QUADRANT_L || b.Quadrant == QUADRANT_R) && b.Distances[b.Quadrant] <= state.Params.BulletSpeed {
                         tmpUrgent = -1
                         tmpBulletUrgent = -1
+                        tmpSourcePos = b.BulletPosition
                     }
 
                 } else {
@@ -177,6 +181,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                             tmpMoveUrgentBullet[ActionMove] = b.Distances[QUADRANT_U]
                             tmpUrgent = 1
                             tmpBulletUrgent = 1
+                            tmpSourcePos = b.BulletPosition
                             continue
                         }
                     }
@@ -189,6 +194,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                             tmpMoveUrgentBullet[ActionMove] = b.Distances[QUADRANT_U]
                             tmpUrgent = 1
                             tmpBulletUrgent = 1
+                            tmpSourcePos = b.BulletPosition
                             continue
                         }
                     }
@@ -238,6 +244,7 @@ func (self *Radar) dodge(state *GameState, bulletApproach bool, bullets *map[str
                         Source: b.BulletId,
                         Type:   BULLET_THREAT,
                         Urgent: tmpBulletUrgent,
+                        SourcePos: tmpSourcePos,
                         Distance: b.Distances[b.Quadrant],
                     })
                 }
