@@ -124,6 +124,7 @@ func (r *CattyRole) occupyFlag() {
     }
 }
 
+
 // 寻找追击点
 func (r *CattyRole) hunt() {
     // 如果没有绝杀点
@@ -140,27 +141,33 @@ func (r *CattyRole) hunt() {
     // 如果有绝杀点，去最近的绝杀点
     var tpos f.Position
     dist  := -1
-    index := -1
-    for i, pos := range r.obs.ShotPos {
-        if nd := r.Tank.Pos.SDist(pos); dist < 0 || nd < dist {
+    for pos, tankid := range r.obs.ShotPos {
+        nd := r.Tank.Pos.SDist(pos)
+        // 增加夹角概率
+        if r.obs.Objs[tankid] != (f.Objective{}) {
+            nd -= r.obs.State.Params.BulletSpeed
+        }
+        if dist < 0 || nd < dist {
+            fmt.Println("tankid:", tankid)
             dist  = nd
             tpos  = pos
-            index = i
         }
     }
+    fmt.Println("dist:", dist)
+    fmt.Println("tpos:", tpos)
 
     // tpos 可能为空
     if tpos != (f.Position{}) {
         r.Target = tpos
-
-        // 删除已被选择的点
-        if index == 0 {
-            r.obs.ShotPos = r.obs.ShotPos[index+1:]
-        } else if index == len(r.obs.ShotPos) {
-            r.obs.ShotPos = r.obs.ShotPos[:index]
-        } else {
-            r.obs.ShotPos = append(r.obs.ShotPos[:index], r.obs.ShotPos[index+1:]...)
-        }
+        delete(r.obs.ShotPos, tpos)
+        // // 删除已被选择的点
+        // if index == 0 {
+        //     r.obs.ShotPos = r.obs.ShotPos[index+1:]
+        // } else if index == len(r.obs.ShotPos) {
+        //     r.obs.ShotPos = r.obs.ShotPos[:index]
+        // } else {
+        //     r.obs.ShotPos = append(r.obs.ShotPos[:index], r.obs.ShotPos[index+1:]...)
+        // }
     } else {
         r.Target = r.Tank.Pos         // 原地躲避
     }
@@ -187,7 +194,6 @@ func (r *CattyRole) act() {
 }
 
 func (r *CattyRole) move() {
-    // fmt.Println("----in move-----")
     r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravelWithDodge, Target: r.Target }
 }
 
@@ -271,7 +277,7 @@ func (r *CattyRole) fireByFaith(faith float64, sin float64) int {
     }
 }
 
-// 是否有合适的开火方向 TODO
+// 是否有合适的开火方向
 func (r *CattyRole) doFire() int {
     var mrf *f.RadarFire
     for _, rf := range []*f.RadarFire{ r.Fire.Up, r.Fire.Down, r.Fire.Left, r.Fire.Right } {
@@ -280,7 +286,7 @@ func (r *CattyRole) doFire() int {
             mrf = rf
         }
     }
-	if mrf == nil || mrf.Faith < 0.8 || mrf.Sin >= 0.5 {
+	if mrf == nil || mrf.Faith < 0.6 || mrf.Sin >= 0.5 {
 		return -1
 	} else {
 		return mrf.Action
@@ -310,9 +316,6 @@ func (r *CattyRole) canFireToFlag() bool {
         if (r.Tank.Pos.X == r.obs.Flag.Pos.X && r.Tank.Pos.Y == r.obs.Flag.Pos.Y){
             return false
         }
-
-        // 自己周边无敌方坦克
-        // TODO
 
         // 可以向旗子开火
         if r.Dodge.Threat == 0 && r.obs.pathReachable(r.Tank.Pos, r.obs.Flag.Pos) {
