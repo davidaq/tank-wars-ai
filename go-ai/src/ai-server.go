@@ -110,6 +110,9 @@ func (self *PlayerServer) LatestState(raw *player.GameState) (err error) {
 	shotTank := make(map[int32]bool)
 	fmt.Println("Raw", raw.Shells, raw.Tanks)
 	fmt.Println(self.params)
+	for _, line := range self.terain.Data {
+		fmt.Println(line)
+	}
 	for _, bulletIn := range raw.Shells {
 		shotTank[bulletIn.ID] = true
 		id := strconv.Itoa(int(bulletIn.ID))
