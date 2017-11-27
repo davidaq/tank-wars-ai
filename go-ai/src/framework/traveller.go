@@ -357,12 +357,15 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 			}
 			lastThreat := aThreat[astar.Point { Col: mp.X, Row: mp.Y }]
 			if lastThreat < 0 {
-				thr -= lastThreat
+				curThr := aThreat[astar.Point { Col: tank.Pos.X, Row: tank.Pos.Y }]
+				if curThr > -1.1 && curThr < 0.9 {
+					thr -= lastThreat	
+				}
 			}
-			if curThreat > 0.4 {
+			if curThreat > 0.6 {
 				threatPrevent = false
 			} else {
-				threatPrevent = thr > 0.5
+				threatPrevent = thr > 0.6
 			}
 			if threatPrevent {
 				action = ActionStay
