@@ -267,9 +267,9 @@ func (a *gridStruct) getSurrounding(p Point, movelen int, threat map[Point]float
         if trow < 0 || a.filledTiles[Point{trow, col}] == -1 {
             break
         }
-        if t := threat[Point{trow, col}]; t > 0 {
-            thr += t
-        }
+        // if t := threat[Point{trow, col}]; t > 0 {
+        //     thr += t
+        // }
         v = trow
     }
     // if t := threat[Point{v, col}]; !brave && v >= 0 && t < 0 {
@@ -287,9 +287,9 @@ func (a *gridStruct) getSurrounding(p Point, movelen int, threat map[Point]float
         if trow >= a.rows || a.filledTiles[Point{trow, col}] == -1 {
             break
         }
-        if t := threat[Point{trow, col}]; t > 0 {
-            thr += t
-        }
+        // if t := threat[Point{trow, col}]; t > 0 {
+        //     thr += t
+        // }
         v = trow
     }
     // if t := threat[Point{v, col}]; !brave && v >= 0 && t < 0 {
@@ -307,9 +307,9 @@ func (a *gridStruct) getSurrounding(p Point, movelen int, threat map[Point]float
         if tcol < 0 || a.filledTiles[Point{row, tcol}] == -1 {
             break
         }
-        if t := threat[Point{row, tcol}]; t > 0 {
-            thr += t
-        }
+        // if t := threat[Point{row, tcol}]; t > 0 {
+        //     thr += t
+        // }
         v = tcol
     }
     // if t := threat[Point{row, v}]; !brave && v >= 0 && t < 0 {
@@ -327,9 +327,9 @@ func (a *gridStruct) getSurrounding(p Point, movelen int, threat map[Point]float
         if tcol >= a.cols || a.filledTiles[Point{row, tcol}] == -1 {
             break
         }
-        if t := threat[Point{row, tcol}]; t > 0 {
-            thr += t
-        }
+        // if t := threat[Point{row, tcol}]; t > 0 {
+        //     thr += t
+        // }
         v = tcol
     }
     // if t := threat[Point{row, v}]; !brave && v >= 0 && t < 0 {
