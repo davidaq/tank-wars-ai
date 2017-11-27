@@ -61,6 +61,7 @@ func (self *Player) Play(state *GameState) map[string]int {
 		state.MyBullet = self.rotateBullet(state.MyBullet, state)
 		state.EnemyBullet = self.rotateBullet(state.EnemyBullet, state)
 	}
+	fmt.Println("State", state.MyTank, state.EnemyTank)
 	// 预测旗子等待时间
 	if state.FlagWait > 0 {
 		state.FlagWait = 999999
