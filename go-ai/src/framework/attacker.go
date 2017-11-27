@@ -320,7 +320,7 @@ func (self *Radar) Attack(state *GameState, enemyThreats *map[string][]EnemyThre
 				if _, ok := allies[pos]; ok {
 					curSin := 0.
 					curSin = 1.
-					if i > 2 + state.Params.BulletSpeed {
+					if i > 2 + state.Params.BulletSpeed * 2 {
 						curSin = 0.5
 					}
 					if curSin > sin {
