@@ -255,6 +255,8 @@ func searchForest(preState *GameState, watchList *ObservationList, state *GameSt
 				data: v,
 			}
 
+			singleGrove := false
+
 			watchList.tank[k] = wtank
 			switch v.Pos.Direction {
 			case DirectionUp:
@@ -282,14 +284,28 @@ func searchForest(preState *GameState, watchList *ObservationList, state *GameSt
 					Direction: v.Pos.Direction,
 				}
 			}
+
+			if terain[tempPos.Y-1][tempPos.X] != 2 && terain[tempPos.Y+1][tempPos.X] != 2 && terain[tempPos.Y][tempPos.X-1] != 2 &&terain[tempPos.Y][tempPos.X+1] != 2 {
+				singleGrove = true
+			}
+			fmt.Println("==singleGrove===",singleGrove)
+
 			if disappear {
 				ret.ForestThreat[tempPos] = 1
 			} else {
 				delete(ret.ForestThreat, tempPos)
 			}
-			if watchList.tank[k].count == 3 {
-				delete(watchList.tank, k)
-				delete(ret.ForestThreat, tempPos)
+			
+			if singleGrove {
+				if watchList.tank[k].count == 5 {
+					delete(watchList.tank, k)
+					delete(ret.ForestThreat, tempPos)
+				}
+			} else {
+				if watchList.tank[k].count == 3 {
+					delete(watchList.tank, k)
+					delete(ret.ForestThreat, tempPos)
+				}
 			}
 		}
 	}
