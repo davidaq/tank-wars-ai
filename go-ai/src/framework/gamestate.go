@@ -70,6 +70,10 @@ type Position struct {
 	X, Y, Direction int
 }
 
+func (p Position) Step(direction int) Position {
+	return p.step(direction)
+}
+
 func (p Position) step(direction int) Position {
 	ret := p
 	switch direction {

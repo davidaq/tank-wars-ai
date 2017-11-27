@@ -3,11 +3,43 @@ package tactics
 import (
 	f "framework"
 	"math"
-	// "fmt"
+	"math/rand"
+	"fmt"
 )
 
 
 func forestPartol(pos f.Position, terain *f.Terain, tankSpeed int) f.Position {
+	if n := nextPos(pos.Direction, pos, terain, tankSpeed); n != pos && (terain.Get(n.X, n.Y) == 2 || rand.Int() % 8 == 0) {
+		fmt.Println("Patrol", n)
+		return n
+	} else {
+		var canDirection []f.Position
+		for _, dir := range []int { f.DirectionUp, f.DirectionLeft, f.DirectionDown, f.DirectionRight } {
+			if n := nextPos(dir, pos, terain, tankSpeed); n != pos && terain.Get(n.X, n.Y) == 2 {
+				canDirection = append(canDirection, n)
+			}
+		}
+		fmt.Println("Patrol", canDirection)
+		if len(canDirection) > 0 {
+			return canDirection[rand.Int() % len(canDirection)]
+		}
+	}
+	return pos
+}
+
+func nextPos (direction int, pos f.Position, terain *f.Terain, tankSpeed int) f.Position {
+	nextPos := pos
+	for i := 0; i < tankSpeed; i++ {
+		tPos := nextPos.Step(direction)
+		if terain.Get(tPos.X, tPos.Y) == 1 {
+			break
+		}
+		nextPos = tPos
+	}
+	return nextPos
+}
+
+func forestPartolA(pos f.Position, terain *f.Terain, tankSpeed int) f.Position {
 	inputPos := pos
 	forestExist, posRes := judgeDirectionGrove(inputPos, terain, tankSpeed)
 

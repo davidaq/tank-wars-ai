@@ -1,6 +1,7 @@
 package tactics
 
 import (
+	"fmt"
 	f "framework"
 	// "fmt"
     "math/rand"
@@ -19,37 +20,11 @@ type CattyRole struct {
 
 // 草内巡逻
 func (r *CattyRole) patrol() {
-    // 有旗子草丛
-    if r.forest.Center.X == r.obs.Terain.Width/2 && r.forest.Center.Y == r.obs.Terain.Height/2 {
-        // 夺旗
-        if r.obs.Flag.Exist && r.obs.Flag.Next <= 5 {
-            r.occupyFlag()
-        } else {
-            // 必死
-            if r.Dodge.Threat == -1 {
-                r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.fireBeforeDying() }
-
-            // 可开火
-            } else if r.doFireInForest() != -1 && r.Dodge.Threat < 1 {
-                r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.doFireInForest() }
-
-            // 可朝旗开火（加入随机量，避免太频繁）
-            // } else if r.canFireToFlag() && rand.Int() % 3 == 0 {
-            //     r.fireToFlag()
-
-            // 其余情况寻路
-            } else {
-                if r.obs.mapanalysis.GetForestByPos(r.Tank.Pos).Id == r.forest.Id {
-                    pos := forestPartol(r.Tank.Pos, r.obs.Terain, r.obs.State.Params.TankSpeed)
-                    r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravel, Target: pos }
-                } else {
-                    r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravelWithDodge, Target: r.forest.Center }
-                }
-            }
-        }
+    // 夺旗
+    if r.forest.HasFlag && r.obs.State.FlagWait < 5 {
+        fmt.Println("Get Flag", r.forest.HasFlag, r.obs.Flag.Next)
+        r.occupyFlag()
     } else {
-        // 无旗子草丛
-        pos := forestPartol(r.Tank.Pos, r.obs.Terain, r.obs.State.Params.TankSpeed)
         // 必死
         if r.Dodge.Threat == -1 {
             r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.fireBeforeDying() }
@@ -59,14 +34,71 @@ func (r *CattyRole) patrol() {
             r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.doFireInForest() }
 
         // 可朝旗开火（加入随机量，避免太频繁）
-        } else if r.canFireToFlag() && rand.Int() % 3 == 0 {
-            r.fireToFlag()
-
-        // 其余情况寻路
+        // } else if r.canFireToFlag() && rand.Int() % 3 == 0 {
+        //     r.fireToFlag()
         } else {
-            r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravel, Target: pos }
+            if r.obs.mapanalysis.GetForestByPos(r.Tank.Pos).Id == r.forest.Id {
+                fmt.Println("In Forest")
+                randomFire := r.selectRandomFire(5)
+                if randomFire != nil {
+                    r.obs.Objs[r.Tank.Id] = f.Objective { Action: randomFire.Action }
+                } else {
+                    pos := forestPartol(r.Tank.Pos, r.obs.Terain, r.obs.State.Params.TankSpeed)
+                    fmt.Println("Patrol", pos)
+                    r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravel, Target: pos }
+                }
+            } else {
+                fmt.Println("On the way")
+                r.obs.Objs[r.Tank.Id] = f.Objective { Action: f.ActionTravelWithDodge, Target: nfEntrance(r.Tank.Pos, r.forest) }
+            }
         }
     }
+}
+
+// 草丛最近入口
+func nfEntrance(pos f.Position, forest f.Forest) f.Position {
+    var target f.Position
+    dist := -1
+    for p, _ := range forest.ForestMap {
+        if nd := pos.SDist(p); dist < 0 || nd < dist {
+            dist   = nd
+            target = p
+        }
+    }
+    return target
+}
+
+
+func (r *CattyRole) selectRandomFire(rarity int) *f.RadarFire {
+    var randomFire *f.RadarFire
+    if rand.Int() % rarity == 0 {
+        var canFire []*f.RadarFire
+        for _, fire := range []*f.RadarFire { r.Fire.Up, r.Fire.Left, r.Fire.Down, r.Fire.Right } {
+            if fire != nil && fire.Sin < 0.9 && fire.Cost > 0 {
+                if fire.Cost > 1 {
+                    canFire = append(canFire, fire)
+                }
+                if fire.Cost > 2 {
+                    canFire = append(canFire, fire)
+                    if fire.Action == f.ActionFireRight {
+                        canFire = append(canFire, fire)
+                        canFire = append(canFire, fire)
+                        canFire = append(canFire, fire)
+                    }
+                    if fire.Action == f.ActionFireDown {
+                        canFire = append(canFire, fire)
+                        canFire = append(canFire, fire)
+                        canFire = append(canFire, fire)
+                    }
+                }
+                canFire = append(canFire, fire)
+            }
+        }
+        if len(canFire) > 0 {
+            randomFire = canFire[rand.Int() % len(canFire)]
+        }
+    }
+    return randomFire
 }
 
 // 抢旗

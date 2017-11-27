@@ -114,7 +114,7 @@ func (c *Catty) Plan(state *f.GameState, radar *f.RadarResult, objective map[str
     // 无草
     if len(c.forestmap) == 0 {
         for _, role := range c.Roles {
-            if role.obs.Flag.Exist && role.obs.Flag.Next <= 5 {
+            if role.obs.State.FlagWait < 4 {
                 role.occupyFlag()
                 continue
             }
