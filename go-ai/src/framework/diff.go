@@ -3,11 +3,13 @@ package framework
 
 import (
 	"fmt"
+	"strconv"
 )
 
 type Diff struct {
 	prevState *GameState
 	watchList *ObservationList
+	counter int
 }
 
 type WatchedTank struct {
@@ -24,6 +26,7 @@ func NewDiff() *Diff {
 	return &Diff {
 		prevState: nil,
 		watchList: nil,
+		counter: 0,
 	}
 }
 
@@ -448,16 +451,33 @@ func missingBullet (prevBullet []Bullet, newBullet []Bullet, state *GameState) [
 	return newBullet
 }
 
-func (self *Diff) patchForestBullet (newState *GameState) {
+func (self *Diff) patchForestBullet (newState *GameState, prevMove map[string]int) {
 	if self.prevState == nil {
 		return
+	}
+	for _, tank := range newState.MyTank {
+		prevAction := prevMove[tank.Id]
+		if prevAction >= ActionFireUp && prevAction <= ActionFireRight {
+			dir := prevAction - ActionFireUp + DirectionUp
+			pos := tank.Pos.step(dir)
+			if newState.Terain.Get(pos.X, pos.Y) == 2 {
+				pos.Direction = dir
+				self.counter++
+				nb := Bullet {
+					Id: "Patch" + tank.Id + strconv.Itoa(self.counter),
+					From: tank.Bullet,
+					Pos: pos,
+				}
+				newState.MyBullet = append(newState.MyBullet, nb)
+			}
+		}
 	}
 	newState.MyBullet = missingBullet(self.prevState.MyBullet, newState.MyBullet, self.prevState)
 	newState.EnemyBullet = missingBullet(self.prevState.EnemyBullet, newState.EnemyBullet, self.prevState)
 }
 
-func (self *Diff) Compare(newState *GameState, collidedEnemyInForest[]Position) *DiffResult {
-	self.patchForestBullet(newState)
+func (self *Diff) Compare(newState *GameState, prevMove map[string]int, collidedEnemyInForest[]Position) *DiffResult {
+	self.patchForestBullet(newState, prevMove)
 	ret := &DiffResult {
 		ForestThreat: make(map[Position]float64),
 	}

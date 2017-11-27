@@ -24,6 +24,7 @@ type Player struct {
 	nextFlag int
 	rotated bool
 	rotatedTerain *Terain
+	prevMove map[string]int
 }
 
 func NewPlayer(tactics Tactics) *Player {
@@ -39,6 +40,7 @@ func NewPlayer(tactics Tactics) *Player {
 		firstFlagGenerated: false,
 		initTank: 0,
 		nextFlag: 0,
+		prevMove: make(map[string]int),
 	}
 	return inst
 }
@@ -87,7 +89,7 @@ func (self *Player) Play(state *GameState) map[string]int {
 		self.radar = NewRadar()
 		self.traveller = NewTraveller()
 	}
-	diff := self.differ.Compare(state, self.traveller.CollidedTankInForest(state))
+	diff := self.differ.Compare(state, self.prevMove, self.traveller.CollidedTankInForest(state))
 	radarResult := self.radar.Scan(state, diff)
 	radarResult.ForestThreat = diff.ForestThreat
 	self.tactics.Plan(state, radarResult, self.objectives)
@@ -167,6 +169,10 @@ func (self *Player) Play(state *GameState) map[string]int {
 		}
 	}
 	BadCase(state, radarResult, movement)
+	self.prevMove = make(map[string]int)
+	for k, v := range movement {
+		self.prevMove[k] = v
+	}
 	if self.rotated {
 		for tankId, action := range movement {
 			switch action {
