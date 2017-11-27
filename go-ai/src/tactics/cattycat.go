@@ -90,9 +90,18 @@ func (c *Catty) Init(state *f.GameState) {
 		c.Roles[tank.Id] = &CattyRole { obs: c.obs, Tank: tank}
 	}
 
-    c.forestmap = forestGrouping(len(c.obs.MyTank), c.obs.State.Terain, c.obs.mapanalysis)
-    if len(c.forestmap) > 0 {
-        c.dispatch()
+    // 分组
+    if c.obs.TankCnt > 1 {
+        c.forestmap = forestGrouping(len(c.obs.MyTank), c.obs.State.Terain, c.obs.mapanalysis)
+        if len(c.forestmap) > 0 {
+            c.dispatch()
+        }
+    // 直奔旗点
+    } else {
+        tank := c.obs.State.MyTank[0]
+        role := c.Roles[tank.Id]
+        role.gotoflag = true
+        role.Target   = c.obs.Flag.Pos
     }
 }
 
@@ -111,8 +120,14 @@ func (c *Catty) Plan(state *f.GameState, radar *f.RadarResult, objective map[str
         c.redispatch()
     }
 
+    // 初始只有一辆坦克
+    if c.obs.TankCnt == 1 {
+        for _, role := range c.Roles {
+            role.occupyFlagAlone()
+        }
+
     // 无草
-    if len(c.forestmap) == 0 {
+    } else if len(c.forestmap) == 0 {
         for _, role := range c.Roles {
             if role.obs.State.FlagWait < 4 {
                 role.occupyFlag()
