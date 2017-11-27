@@ -1210,8 +1210,8 @@ type PlayerServer interface {
   //  - Gamemap
   UploadMap(gamemap [][]int32) (err error)
   // Parameters:
-  //  - Arguments
-  UploadParamters(arguments *Args_) (err error)
+  //  - Paras
+  UploadParamters(paras *Args_) (err error)
   // Assign a list of tank id to the player.
   // each player may have more than one tank, so the parameter is a list.
   // 
@@ -1338,13 +1338,13 @@ func (p *PlayerServerClient) recvUploadMap() (err error) {
 }
 
 // Parameters:
-//  - Arguments
-func (p *PlayerServerClient) UploadParamters(arguments *Args_) (err error) {
-  if err = p.sendUploadParamters(arguments); err != nil { return }
+//  - Paras
+func (p *PlayerServerClient) UploadParamters(paras *Args_) (err error) {
+  if err = p.sendUploadParamters(paras); err != nil { return }
   return p.recvUploadParamters()
 }
 
-func (p *PlayerServerClient) sendUploadParamters(arguments *Args_)(err error) {
+func (p *PlayerServerClient) sendUploadParamters(paras *Args_)(err error) {
   oprot := p.OutputProtocol
   if oprot == nil {
     oprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -1355,7 +1355,7 @@ func (p *PlayerServerClient) sendUploadParamters(arguments *Args_)(err error) {
       return
   }
   args := PlayerServerUploadParamtersArgs{
-  Arguments : arguments,
+  Paras : paras,
   }
   if err = args.Write(oprot); err != nil {
       return
@@ -1755,7 +1755,7 @@ func (p *playerServerProcessorUploadParamters) Process(seqId int32, iprot, oprot
   iprot.ReadMessageEnd()
   result := PlayerServerUploadParamtersResult{}
   var err2 error
-  if err2 = p.handler.UploadParamters(args.Arguments); err2 != nil {
+  if err2 = p.handler.UploadParamters(args.Paras); err2 != nil {
     x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing uploadParamters: " + err2.Error())
     oprot.WriteMessageBegin("uploadParamters", thrift.EXCEPTION, seqId)
     x.Write(oprot)
@@ -2100,24 +2100,24 @@ func (p *PlayerServerUploadMapResult) String() string {
 }
 
 // Attributes:
-//  - Arguments
+//  - Paras
 type PlayerServerUploadParamtersArgs struct {
-  Arguments *Args_ `thrift:"arguments,1" db:"arguments" json:"arguments"`
+  Paras *Args_ `thrift:"paras,1" db:"paras" json:"paras"`
 }
 
 func NewPlayerServerUploadParamtersArgs() *PlayerServerUploadParamtersArgs {
   return &PlayerServerUploadParamtersArgs{}
 }
 
-var PlayerServerUploadParamtersArgs_Arguments_DEFAULT *Args_
-func (p *PlayerServerUploadParamtersArgs) GetArguments() *Args_ {
-  if !p.IsSetArguments() {
-    return PlayerServerUploadParamtersArgs_Arguments_DEFAULT
+var PlayerServerUploadParamtersArgs_Paras_DEFAULT *Args_
+func (p *PlayerServerUploadParamtersArgs) GetParas() *Args_ {
+  if !p.IsSetParas() {
+    return PlayerServerUploadParamtersArgs_Paras_DEFAULT
   }
-return p.Arguments
+return p.Paras
 }
-func (p *PlayerServerUploadParamtersArgs) IsSetArguments() bool {
-  return p.Arguments != nil
+func (p *PlayerServerUploadParamtersArgs) IsSetParas() bool {
+  return p.Paras != nil
 }
 
 func (p *PlayerServerUploadParamtersArgs) Read(iprot thrift.TProtocol) error {
@@ -2153,9 +2153,9 @@ func (p *PlayerServerUploadParamtersArgs) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *PlayerServerUploadParamtersArgs)  ReadField1(iprot thrift.TProtocol) error {
-  p.Arguments = &Args_{}
-  if err := p.Arguments.Read(iprot); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.Arguments), err)
+  p.Paras = &Args_{}
+  if err := p.Paras.Read(iprot); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.Paras), err)
   }
   return nil
 }
@@ -2174,13 +2174,13 @@ func (p *PlayerServerUploadParamtersArgs) Write(oprot thrift.TProtocol) error {
 }
 
 func (p *PlayerServerUploadParamtersArgs) writeField1(oprot thrift.TProtocol) (err error) {
-  if err := oprot.WriteFieldBegin("arguments", thrift.STRUCT, 1); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:arguments: ", p), err) }
-  if err := p.Arguments.Write(oprot); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.Arguments), err)
+  if err := oprot.WriteFieldBegin("paras", thrift.STRUCT, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:paras: ", p), err) }
+  if err := p.Paras.Write(oprot); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.Paras), err)
   }
   if err := oprot.WriteFieldEnd(); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:arguments: ", p), err) }
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:paras: ", p), err) }
   return err
 }
 

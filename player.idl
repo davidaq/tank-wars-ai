@@ -71,7 +71,7 @@ service PlayerServer {
     * In the map array, 0 means empty field, 1 means barrier, 2 means woods, 3 means flag.
     **/
     void uploadMap(1:list<list<i32>> gamemap);
-    void uploadParamters(1:Args arguments);
+    void uploadParamters(1:Args paras);
     /**
     * Assign a list of tank id to the player.
     * each player may have more than one tank, so the parameter is a list.

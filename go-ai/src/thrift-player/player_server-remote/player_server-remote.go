@@ -22,7 +22,7 @@ func Usage() {
   flag.PrintDefaults()
   fmt.Fprintln(os.Stderr, "\nFunctions:")
   fmt.Fprintln(os.Stderr, "  void uploadMap( gamemap)")
-  fmt.Fprintln(os.Stderr, "  void uploadParamters(Args arguments)")
+  fmt.Fprintln(os.Stderr, "  void uploadParamters(Args paras)")
   fmt.Fprintln(os.Stderr, "  void assignTanks( tanks)")
   fmt.Fprintln(os.Stderr, "  void latestState(GameState state)")
   fmt.Fprintln(os.Stderr, "   getNewOrders()")
