@@ -23,6 +23,7 @@ type Observation struct {
 	// ShotPos      []f.Position
     ShotPos      map[f.Position]string
     Forests      map[int]f.Forest
+    TankCnt      int   // 初始坦克数量
 }
 
 type Flag struct {
@@ -50,6 +51,8 @@ func NewObservation(state *f.GameState) (obs *Observation) {
         Terain: state.Terain,
         mapanalysis: &f.MapAnalysis{},
     }
+
+    obs.TankCnt = len(state.MyTank)
 
     // 地图分析
     obs.mapanalysis.Analysis(state)

@@ -9,6 +9,7 @@ import (
 
 type CattyRole struct {
     gotoforest   bool
+    gotoflag     bool
     forest       f.Forest
     obs          *Observation
     Tank         f.Tank
@@ -114,6 +115,29 @@ func (r *CattyRole) occupyFlag() {
 
     // faith == 1
     } else if action := r.fireByFaith(0.9, 0.5); action > 0 {
+        r.obs.Objs[r.Tank.Id] = f.Objective { Action: action }
+
+    // 寻路
+    } else {
+        travel := f.ActionTravel
+        if r.Dodge.Threat == 1 {
+            travel = f.ActionTravelWithDodge
+        }
+        r.obs.Objs[r.Tank.Id] = f.Objective {
+            Action: travel,
+            Target: r.obs.Flag.Pos,
+        }
+    }
+}
+
+// 孤单地守旗
+func (r *CattyRole) occupyFlagAlone() {
+    // 光荣弹
+    if r.Dodge.Threat == -1 {
+        r.obs.Objs[r.Tank.Id] = f.Objective { Action: r.fireBeforeDying() }
+
+    // faith == 1
+    } else if action := r.fireByFaith(0.6, 1); action > 0 {
         r.obs.Objs[r.Tank.Id] = f.Objective { Action: action }
 
     // 寻路

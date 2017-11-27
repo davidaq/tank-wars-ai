@@ -223,7 +223,7 @@ func (self *PlayerServer) GetNewOrders() (r []*player.Order, err error) {
 			orders = append(orders, order)
 		}
 	}
-	fmt.Println(orders)
+	fmt.Println("Thrift orders:", orders)
 	return orders, nil
 }
 
