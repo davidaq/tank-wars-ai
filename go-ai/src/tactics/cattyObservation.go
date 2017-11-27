@@ -20,7 +20,8 @@ type Observation struct {
     EmyTank      map[string]f.Tank // 敌方存活坦克
     Flag         Flag
 	Terain       *f.Terain
-	ShotPos      []f.Position
+	// ShotPos      []f.Position
+    ShotPos      map[f.Position]string
     Forests      map[int]f.Forest
 }
 
@@ -124,22 +125,22 @@ func (o *Observation) observeTerain() {
 
 func (o *Observation) observeShotPos() {
     // 清空上一步结果
-    o.ShotPos = []f.Position{}
-
+    // o.ShotPos = []f.Position{}
+    o.ShotPos = make(map[f.Position]string)
     shotPos := o.findShotPos()
     if len(shotPos) > 0 {
         // 如果有绝杀点，筛选掉其中不能去的点
         for pos, tankid := range shotPos {
             if o.huntable(pos, tankid) {
-                o.ShotPos = append(o.ShotPos, pos)
+                o.ShotPos[pos] = tankid
             }
         }
         // 按距离我方中心点排序
-        avgPos := o.avgpos()
-        fmt.Printf("avgPos: %+v\n", avgPos)
+        // avgPos := o.avgpos()
+        // fmt.Printf("avgPos: %+v\n", avgPos)
 
         // 按离中心点距离，给 positions 排序
-        o.ShotPos = o.sortByPos(avgPos, o.ShotPos)
+        // o.ShotPos = o.sortByPos(avgPos, o.ShotPos)
 
         // 多选一些点，避免集中
         // if len(o.ShotPos) - len(o.MyTank) >= len(o.MyTank) {
@@ -150,55 +151,52 @@ func (o *Observation) observeShotPos() {
 }
 
 // 寻找攻击地点【前后选点】
-func (o *Observation) findShotPos() map[f.Position]string {
-	shotPos := make(map[f.Position]string)
-    var pos f.Position
-	for _, tank := range o.EmyTank {
-		// for i := o.State.Params.BulletSpeed-1 ; i >= 0; i-- {
-	        if tank.Pos.Direction == f.DirectionUp {
-                pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y + o.State.Params.BulletSpeed + 2 + o.State.Params.TankSpeed }
-                if o.reachable(pos) && (pos.Y - tank.Pos.Y <= 2 * o.State.Params.BulletSpeed) {
-					shotPos[pos] = tank.Id
-				}
-				pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y - o.State.Params.BulletSpeed - 2}
-				if o.reachable(pos) {
-					shotPos[pos] = tank.Id
-				}
-
-            } else if tank.Pos.Direction == f.DirectionDown {
-				pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y + o.State.Params.BulletSpeed + 2}
-				if o.reachable(pos) {
-					shotPos[pos] = tank.Id
-				}
-				pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y - o.State.Params.BulletSpeed - 2 - o.State.Params.TankSpeed }
-				if o.reachable(pos) && tank.Pos.Y - pos.Y <= 2 * o.State.Params.BulletSpeed {
-					shotPos[pos] = tank.Id
-				}
-
-	        } else if tank.Pos.Direction == f.DirectionLeft {
-				pos = f.Position { X: tank.Pos.X + o.State.Params.BulletSpeed + 2, Y: tank.Pos.Y}
-				if o.reachable(pos) {
-					shotPos[pos] = tank.Id
-				}
-				pos = f.Position { X: tank.Pos.X - o.State.Params.BulletSpeed - 2 - o.State.Params.TankSpeed, Y: tank.Pos.Y}
-				if o.reachable(pos) && tank.Pos.X - pos.X <= 2 * o.State.Params.BulletSpeed{
-					shotPos[pos] = tank.Id
-				}
-	        } else {
-                pos = f.Position { X: tank.Pos.X + o.State.Params.BulletSpeed + 2 + o.State.Params.TankSpeed, Y: tank.Pos.Y}
-				if o.reachable(pos) && pos.X - tank.Pos.X <= 2 * o.State.Params.BulletSpeed {
-					shotPos[pos] = tank.Id
-				}
-				pos = f.Position { X: tank.Pos.X - o.State.Params.BulletSpeed - 2, Y: tank.Pos.Y}
-				if o.reachable(pos) {
-					shotPos[pos] = tank.Id
-				}
-            }
-	    // }
-	}
-    // fmt.Printf("find shot Postion: %+v\n", shotPos)
-    return shotPos
-}
+// func (o *Observation) findShotPos() map[f.Position]string {
+// 	shotPos := make(map[f.Position]string)
+//     var pos f.Position
+// 	for _, tank := range o.EmyTank {
+//         if tank.Pos.Direction == f.DirectionUp {
+//             pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y + 2*o.State.Params.BulletSpeed + 1 + o.State.Params.TankSpeed }
+//             if o.reachable(pos) && (pos.Y - tank.Pos.Y <= 2 * o.State.Params.BulletSpeed) {
+// 				shotPos[pos] = tank.Id
+// 			}
+// 			pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y - 2*o.State.Params.BulletSpeed - 1}
+// 			if o.reachable(pos) {
+// 				shotPos[pos] = tank.Id
+// 			}
+//
+//         } else if tank.Pos.Direction == f.DirectionDown {
+// 			pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y + 2*o.State.Params.BulletSpeed + 1}
+// 			if o.reachable(pos) {
+// 				shotPos[pos] = tank.Id
+// 			}
+// 			pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y - 2*o.State.Params.BulletSpeed - 1 - o.State.Params.TankSpeed }
+// 			if o.reachable(pos) && tank.Pos.Y - pos.Y <= 2 * o.State.Params.BulletSpeed {
+// 				shotPos[pos] = tank.Id
+// 			}
+//
+//         } else if tank.Pos.Direction == f.DirectionLeft {
+// 			pos = f.Position { X: tank.Pos.X + 2*o.State.Params.BulletSpeed + 1, Y: tank.Pos.Y}
+// 			if o.reachable(pos) {
+// 				shotPos[pos] = tank.Id
+// 			}
+// 			pos = f.Position { X: tank.Pos.X - 2*o.State.Params.BulletSpeed - 1 - o.State.Params.TankSpeed, Y: tank.Pos.Y}
+// 			if o.reachable(pos) && tank.Pos.X - pos.X <= 2 * o.State.Params.BulletSpeed{
+// 				shotPos[pos] = tank.Id
+// 			}
+//         } else {
+//             pos = f.Position { X: tank.Pos.X + 2*o.State.Params.BulletSpeed + 1 + o.State.Params.TankSpeed, Y: tank.Pos.Y}
+// 			if o.reachable(pos) && pos.X - tank.Pos.X <= 2 * o.State.Params.BulletSpeed {
+// 				shotPos[pos] = tank.Id
+// 			}
+// 			pos = f.Position { X: tank.Pos.X - 2*o.State.Params.BulletSpeed - 1, Y: tank.Pos.Y}
+// 			if o.reachable(pos) {
+// 				shotPos[pos] = tank.Id
+// 			}
+//         }
+// 	}
+//     return shotPos
+// }
 
 
 // 我方坦克中心(含旗点)
@@ -219,7 +217,6 @@ func (o *Observation) avgpos() f.Position {
     return f.Position { X: sumX / count, Y: sumY / count }
 }
 
-
 // 按距离给一组点排序
 func (o *Observation) sortByPos(pos f.Position, ps []f.Position) (positions []f.Position) {
     pl := make(PairList, len(ps))
@@ -238,108 +235,98 @@ func (o *Observation) sortByPos(pos f.Position, ps []f.Position) (positions []f.
 
 
 // 寻找攻击地点【十字围杀】
-// func (o *Observation) observeShotPos() {
-// 	o.ShotPos = make(map[f.Position]string)
-//     var pos f.Position
-// 	for _, tank := range o.EmyTank {
-// 		for i := o.State.Params.BulletSpeed; i > 0; i-- {
-// 	        if tank.Pos.Direction == f.DirectionUp {
-//                 pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y + o.State.Params.BulletSpeed + i + 2 + o.State.Params.TankSpeed }
-// 				if o.reachable(pos) { // && pos.Y - tank.Pos.Y <= 2 * o.State.Params.BulletSpeed {
-// 					o.ShotPos[pos] = tank.Id
-// 				}
-// 				pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y - o.State.Params.BulletSpeed - i - 2}
-// 				if o.reachable(pos) {
-// 					o.ShotPos[pos] = tank.Id
-// 				}
-//                 pos = f.Position { X: tank.Pos.X + o.State.Params.BulletSpeed + i + 2, Y: tank.Pos.Y}
-// 				if o.reachable(pos) {
-// 					o.ShotPos[pos] = tank.Id
-// 				}
-//                 pos = f.Position { X: tank.Pos.X - o.State.Params.BulletSpeed - i - 2, Y: tank.Pos.Y}
-//                 if o.reachable(pos) {
-//                     o.ShotPos[pos] = tank.Id
-//                 }
+func (o *Observation) findShotPos() map[f.Position]string{
+    shotPos := make(map[f.Position]string)
+    var pos f.Position
+	for _, tank := range o.EmyTank {
+        if tank.Pos.Direction == f.DirectionUp {
+			pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y - 2*o.State.Params.BulletSpeed - 2}
+			if o.reachable(pos) {
+				shotPos[pos] = tank.Id
+			}
+            pos = f.Position { X: tank.Pos.X + 2*o.State.Params.BulletSpeed + 2, Y: tank.Pos.Y}
+			if o.reachable(pos) {
+				shotPos[pos] = tank.Id
+			}
+            pos = f.Position { X: tank.Pos.X - 2*o.State.Params.BulletSpeed - 2, Y: tank.Pos.Y}
+            if o.reachable(pos) {
+                shotPos[pos] = tank.Id
+            }
 
-//             } else if tank.Pos.Direction == f.DirectionDown {
-// 				pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y + o.State.Params.BulletSpeed + i + 2}
-// 				if o.reachable(pos) {
-// 					o.ShotPos[pos] = tank.Id
-// 				}
-// 				pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y - o.State.Params.BulletSpeed - i - 2 - o.State.Params.TankSpeed }
-// 				if o.reachable(pos) { // && tank.Pos.Y - pos.Y <= 2 * o.State.Params.BulletSpeed {
-// 					o.ShotPos[pos] = tank.Id
-// 				}
-//                 pos = f.Position { X: tank.Pos.X + o.State.Params.BulletSpeed + i + 2, Y: tank.Pos.Y}
-//                 if o.reachable(pos) {
-//                     o.ShotPos[pos] = tank.Id
-//                 }
-//                 pos = f.Position { X: tank.Pos.X - o.State.Params.BulletSpeed - i - 2, Y: tank.Pos.Y}
-//                 if o.reachable(pos) {
-//                     o.ShotPos[pos] = tank.Id
-//                 }
+        } else if tank.Pos.Direction == f.DirectionDown {
+			pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y + 2*o.State.Params.BulletSpeed + 2}
+			if o.reachable(pos) {
+				shotPos[pos] = tank.Id
+			}
+            pos = f.Position { X: tank.Pos.X + 2*o.State.Params.BulletSpeed + 2, Y: tank.Pos.Y}
+            if o.reachable(pos) {
+                shotPos[pos] = tank.Id
+            }
+            pos = f.Position { X: tank.Pos.X - 2*o.State.Params.BulletSpeed - 2, Y: tank.Pos.Y}
+            if o.reachable(pos) {
+                shotPos[pos] = tank.Id
+            }
 
-// 	        } else if tank.Pos.Direction == f.DirectionLeft {
-//                 pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y + o.State.Params.BulletSpeed + i + 2}
-//                 if o.reachable(pos) {
-//                     o.ShotPos[pos] = tank.Id
-//                 }
-//                 pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y - o.State.Params.BulletSpeed - i - 2}
-//                 if o.reachable(pos) {
-//                     o.ShotPos[pos] = tank.Id
-//                 }
-// 				pos = f.Position { X: tank.Pos.X + o.State.Params.BulletSpeed + i + 2, Y: tank.Pos.Y}
-// 				if o.reachable(pos) {
-// 					o.ShotPos[pos] = tank.Id
-// 				}
-// 				pos = f.Position { X: tank.Pos.X - o.State.Params.BulletSpeed - i - 2 - o.State.Params.TankSpeed, Y: tank.Pos.Y}
-// 				if o.reachable(pos) { // && tank.Pos.X - pos.X <= 2 * o.State.Params.BulletSpeed{
-// 					o.ShotPos[pos] = tank.Id
-// 				}
-// 	        } else {
-//                 pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y + o.State.Params.BulletSpeed + i + 2}
-//                 if o.reachable(pos) {
-//                     o.ShotPos[pos] = tank.Id
-//                 }
-//                 pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y - o.State.Params.BulletSpeed - i - 2}
-//                 if o.reachable(pos) {
-//                     o.ShotPos[pos] = tank.Id
-//                 }
-//                 pos = f.Position { X: tank.Pos.X + o.State.Params.BulletSpeed + i + 2 + o.State.Params.TankSpeed, Y: tank.Pos.Y}
-// 				if o.reachable(pos) { // && pos.X - tank.Pos.X <= 2 * o.State.Params.BulletSpeed {
-// 					o.ShotPos[pos] = tank.Id
-// 				}
-// 				pos = f.Position { X: tank.Pos.X - o.State.Params.BulletSpeed - i - 2, Y: tank.Pos.Y}
-// 				if o.reachable(pos) {
-// 					o.ShotPos[pos] = tank.Id
-// 				}
-//             }
-// 	    }
-// 	}
-// }
+        } else if tank.Pos.Direction == f.DirectionLeft {
+            pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y + 2*o.State.Params.BulletSpeed + 2}
+            if o.reachable(pos) {
+                shotPos[pos] = tank.Id
+            }
+            pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y - 2*o.State.Params.BulletSpeed - 2}
+            if o.reachable(pos) {
+                shotPos[pos] = tank.Id
+            }
+			pos = f.Position { X: tank.Pos.X + 2*o.State.Params.BulletSpeed + 2, Y: tank.Pos.Y}
+			if o.reachable(pos) {
+				shotPos[pos] = tank.Id
+			}
+        } else {
+            pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y + 2*o.State.Params.BulletSpeed + 2}
+            if o.reachable(pos) {
+                shotPos[pos] = tank.Id
+            }
+            pos = f.Position { X: tank.Pos.X, Y: tank.Pos.Y - 2*o.State.Params.BulletSpeed - 2}
+            if o.reachable(pos) {
+                shotPos[pos] = tank.Id
+            }
+            // pos = f.Position { X: tank.Pos.X + 2*o.State.Params.BulletSpeed + 2 + o.State.Params.TankSpeed, Y: tank.Pos.Y}
+			// if o.reachable(pos) && pos.X - tank.Pos.X <= 2 * o.State.Params.BulletSpeed {
+			// 	shotPos[pos] = tank.Id
+			// }
+			pos = f.Position { X: tank.Pos.X - 2*o.State.Params.BulletSpeed - 2, Y: tank.Pos.Y}
+			if o.reachable(pos) {
+				shotPos[pos] = tank.Id
+			}
+        }
+	}
+    return shotPos
+}
 
 // 追击点能不能去
 func (o *Observation) huntable(pos f.Position, tankid string) bool{
-    // 追击点两侧的逃生点
     tank := o.EmyTank[tankid]
-    positions := make([]f.Position, 2)
-    if tank.Pos.Direction == f.DirectionUp || tank.Pos.Direction == f.DirectionDown {
-        positions = []f.Position {
-            f.Position { X: pos.X - o.State.Params.TankSpeed, Y: pos.Y },
-            f.Position { X: pos.X + o.State.Params.TankSpeed, Y: pos.Y },
-        }
-    } else {
-        positions = []f.Position {
-            f.Position { X: pos.X, Y: pos.Y - o.State.Params.TankSpeed},
-            f.Position { X: pos.X, Y: pos.Y + o.State.Params.TankSpeed},
-        }
-    }
-    // 若无可达逃生点，那么不能去
-    if !o.pathReachable(pos, positions[0]) && !o.pathReachable(pos, positions[1]){
-        return false
-    } else {
-        return true
-    }
+    return o.pathReachable(pos, tank.Pos)
+
+    // // 追击点两侧的逃生点
+    // tank := o.EmyTank[tankid]
+    // positions := make([]f.Position, 2)
+    // if tank.Pos.Direction == f.DirectionUp || tank.Pos.Direction == f.DirectionDown {
+    //     positions = []f.Position {
+    //         f.Position { X: pos.X - o.State.Params.TankSpeed, Y: pos.Y },
+    //         f.Position { X: pos.X + o.State.Params.TankSpeed, Y: pos.Y },
+    //     }
+    // } else {
+    //     positions = []f.Position {
+    //         f.Position { X: pos.X, Y: pos.Y - o.State.Params.TankSpeed},
+    //         f.Position { X: pos.X, Y: pos.Y + o.State.Params.TankSpeed},
+    //     }
+    // }
+    // // 若无可达逃生点，那么不能去
+    // if !o.pathReachable(pos, positions[0]) && !o.pathReachable(pos, positions[1]){
+    //     return false
+    // } else {
+    //     return true
+    // }
 }
 
 
