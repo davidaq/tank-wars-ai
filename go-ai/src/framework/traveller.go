@@ -88,8 +88,8 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 				switch state.Terain.Get(x, y) {
 				case 1:
 					self.astar.FillTile(astar.Point{ Col: x, Row: y }, -1)
-				case 2:
-					self.astar.FillTile(astar.Point{ Col: x, Row: y }, 1)
+				// case 2:
+				// 	self.astar.FillTile(astar.Point{ Col: x, Row: y }, 1)
 				}
 			}
 		}
@@ -101,6 +101,10 @@ func (self *Traveller) Search(travel map[string]*Position, state *GameState, thr
 	a := self.astar.Clone()
 	var myTanks []*Tank
 	for _, tank := range state.MyTank {
+		for dir := DirectionUp; dir <= DirectionRight; dir++ {
+			pos := tank.Pos.Step(dir)
+			a.FillTile(astar.Point{ Col: pos.X, Row: pos.Y }, 5)
+		}
 		if _, exists := travel[tank.Id]; exists {
 			t := tank
 			myTanks = append(myTanks, &t)
