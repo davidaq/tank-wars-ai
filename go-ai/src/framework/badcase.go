@@ -57,7 +57,7 @@ func badCaseShootSelf(state *GameState, radar *RadarResult, movements map[string
 			if ePos[pos] {
 				continue tankloop
 			}
-			for i := 0; i <= state.Params.BulletSpeed * 3; i++ {
+			for i := 0; i <= state.Params.BulletSpeed * 2; i++ {
 				if noPass[pos] {
 					movements[tank.Id] = ActionStay
 					fmt.Println("Self shoot prevented", tank.Id)

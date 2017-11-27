@@ -204,16 +204,16 @@ func (self *Player) forestColideShoot(state *GameState, radar *RadarResult, obje
 	for _, tank := range state.MyTank {
 		radarFire := radar.Fire[tank.Id]
 		if tank.Bullet == "" {
-			if radarFire.Left != nil && radarFire.Left.Sin < 0.1 {
+			if radarFire.Left != nil && radarFire.Left.Sin < 0.6 {
 				fireForest[Position { X: tank.Pos.X - 1, Y: tank.Pos.Y }] = FireForest { tank.Id, ActionFireLeft }
 			}
-			if radarFire.Right != nil && radarFire.Right.Sin < 0.1 {
+			if radarFire.Right != nil && radarFire.Right.Sin < 0.6 {
 				fireForest[Position { X: tank.Pos.X + 1, Y: tank.Pos.Y }] = FireForest { tank.Id, ActionFireRight }
 			}
-			if radarFire.Up != nil && radarFire.Up.Sin < 0.1 {
+			if radarFire.Up != nil && radarFire.Up.Sin < 0.6 {
 				fireForest[Position { X: tank.Pos.X, Y: tank.Pos.Y - 1 }] = FireForest { tank.Id, ActionFireUp }
 			}
-			if radarFire.Down != nil && radarFire.Down.Sin < 0.1 {
+			if radarFire.Down != nil && radarFire.Down.Sin < 0.6 {
 				fireForest[Position { X: tank.Pos.X, Y: tank.Pos.Y + 1}] = FireForest { tank.Id, ActionFireDown }
 			}
 		}
