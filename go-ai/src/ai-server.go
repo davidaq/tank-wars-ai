@@ -94,10 +94,22 @@ func (self *PlayerServer) LatestState(raw *player.GameState) (err error) {
 		self.params.FlagX = self.terain.Width / 2
 		self.params.FlagY = self.terain.Height / 2
 	}
+	terain := &f.Terain {
+		Width: self.terain.Width,
+		Height: self.terain.Height,
+		Data: make([][]int, len(self.terain.Height)),
+	}
+	for y, lineIn := range self.terain.Data {
+		line := make([]int, len(lineIn))
+		for x, val := range lineIn {
+			line[x] = val
+		}
+		terain.Data[y] = line
+	}
 	state := &f.GameState {
 		Ended: false,
 		Params: self.params,
-		Terain: self.terain,
+		Terain: terain,
 		FlagWait: 1,
 		MyFlag: int(raw.YourFlagNo),
 		EnemyFlag: int(raw.EnemyFlagNo),
