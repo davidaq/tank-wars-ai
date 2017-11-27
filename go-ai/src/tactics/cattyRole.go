@@ -39,7 +39,7 @@ func (r *CattyRole) patrol() {
         } else {
             if r.obs.mapanalysis.GetForestByPos(r.Tank.Pos).Id == r.forest.Id {
                 fmt.Println("In Forest")
-                randomFire := r.selectRandomFire(5)
+                randomFire := r.selectRandomFire(12)
                 if randomFire != nil {
                     r.obs.Objs[r.Tank.Id] = f.Objective { Action: randomFire.Action }
                 } else {
@@ -74,7 +74,12 @@ func (r *CattyRole) selectRandomFire(rarity int) *f.RadarFire {
     if rand.Int() % rarity == 0 {
         var canFire []*f.RadarFire
         for _, fire := range []*f.RadarFire { r.Fire.Up, r.Fire.Left, r.Fire.Down, r.Fire.Right } {
-            if fire != nil && fire.Sin < 0.9 && fire.Cost > 0 {
+            if fire != nil && fire.Sin < 0.9 && fire.Cost > 0 && fire.Cost < 5 {
+                dir := fire.Action - f.ActionFireUp + f.DirectionUp
+                bPos := r.Tank.Pos.Step(dir)
+                if r.obs.State.Terain.Get(bPos.X, bPos.Y) != 2 {
+                    continue
+                }
                 if fire.Cost > 1 {
                     canFire = append(canFire, fire)
                 }
@@ -292,7 +297,7 @@ func (r *CattyRole) doFireInForest() int {
     var mrf *f.RadarFire
     for _, rf := range []*f.RadarFire{ r.Fire.Up, r.Fire.Down, r.Fire.Left, r.Fire.Right } {
         if rf == nil || !rf.IsStraight { continue }
-        if mrf == nil || mrf.Faith - mrf.Sin < rf.Faith - rf.Sin {
+        if mrf == nil || mrf.Faith < rf.Faith {
             mrf = rf
         }
     }
