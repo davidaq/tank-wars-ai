@@ -9,7 +9,7 @@ import (
 
 
 func forestPartol(pos f.Position, terain *f.Terain, tankSpeed int) f.Position {
-	if n := nextPos(pos.Direction, pos, terain, tankSpeed); n != pos && (terain.Get(n.X, n.Y) == 2 || rand.Int() % 8 == 0) {
+	if n := nextPos(pos.Direction, pos, terain, tankSpeed); n != pos && (terain.Get(n.X, n.Y) == 2 && rand.Int() % 8 != 0) {
 		fmt.Println("Patrol", n)
 		return n
 	} else {
