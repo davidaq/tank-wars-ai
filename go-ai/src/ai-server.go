@@ -102,6 +102,9 @@ func (self *PlayerServer) LatestState(raw *player.GameState) (err error) {
 	for y, lineIn := range self.terain.Data {
 		line := make([]int, len(lineIn))
 		for x, val := range lineIn {
+			if val > 2 {
+				val = 2
+			}
 			line[x] = val
 		}
 		terain.Data[y] = line
