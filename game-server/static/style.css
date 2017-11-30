@@ -56,6 +56,8 @@ body, html {
 #stage .terain .cell {
   background: #EEE;
   float: left;
+  border: 1px solid rgba(100, 0, 200, 0.5);
+  box-sizing: border-box;
 }
 #stage .terain .cell.cell-1 {
   background: #333;
